@@ -1,0 +1,1164 @@
+const studies = [
+  {
+    id: "estudio-ortodontico-completo",
+    name: "Estudio Ortodóntico Completo",
+    category: "Estudio Ortodóntico Completo",
+    description:
+      "Incluye ortopantomografía, lateral de cráneo, escaneo intraoral, modelos en resina, fotografía extraoral e intraoral y análisis cefalométrico",
+    type: "orthodontic-package",
+    fovOptions: ["17x13", "11x10", "8x8", "5x5"],
+  },
+  {
+    id: "ortopantomografia",
+    name: "Ortopantomografía",
+    category: "Radiografías y proyecciones",
+    description: "Radiografía panorámica dental",
+  },
+  {
+    id: "lateral-craneo",
+    name: "Lateral de Craneo",
+    category: "Radiografías y proyecciones",
+    description: "Proyección lateral para análisis cefalométrico",
+  },
+  {
+    id: "pa-craneo",
+    name: "PA De craneo",
+    category: "Radiografías y proyecciones",
+    description: "Proyección posteroanterior de cráneo",
+  },
+  {
+    id: "ap-craneo",
+    name: "A-P de craneo",
+    category: "Radiografías y proyecciones",
+    description: "Proyección anteroposterior de cráneo",
+  },
+  {
+    id: "waters",
+    name: "WATERS",
+    category: "Radiografías y proyecciones",
+    description: "Proyección de senos paranasales",
+  },
+  {
+    id: "atm-comparativa",
+    name: "ATM COMPARATIVA",
+    category: "Radiografías y proyecciones",
+    description: "Evaluación comparativa de articulación temporomandibular",
+  },
+  {
+    id: "carpal",
+    name: "Carpal",
+    category: "Radiografías y proyecciones",
+    description: "Radiografía carpal para valoración de crecimiento",
+  },
+  {
+    id: "senos-paranasales",
+    name: "Senos paranasales",
+    category: "Radiografías y proyecciones",
+    description: "Estudio radiográfico de senos paranasales",
+  },
+  {
+    id: "tomografia-3d",
+    name: "Tomografía 3D",
+    category: "Tomografía 3D",
+    description: "Selecciona tamaño FOV y especificaciones cuando aplique",
+    type: "tomography",
+    fovOptions: ["17x13", "11x10", "8x8", "5x5"],
+  },
+  {
+    id: "fotografia-extraoral-intraoral-digital",
+    name: "FOTOGRAFÍA EXTRAORAL E INTRAORAL DIGITAL",
+    category: "Fotografía, escaneo intraoral y modelos de estudio",
+    description: "Registro fotográfico clínico en formato digital",
+  },
+  {
+    id: "fotografia-extraoral-intraoral-impresa",
+    name: "FOTOGRAFÍA EXTRAORAL E INTRAORAL IMPRESA",
+    category: "Fotografía, escaneo intraoral y modelos de estudio",
+    description: "Registro fotográfico clínico en formato impreso",
+  },
+  {
+    id: "modelos-estudio-yeso",
+    name: "MODELOS DE ESTUDIO EN YESO",
+    category: "Fotografía, escaneo intraoral y modelos de estudio",
+    description: "Modelos físicos para análisis y archivo clínico",
+  },
+  {
+    id: "modelos-estudio-resina",
+    name: "MODELOS DE ESTUDIO EN RESINA",
+    category: "Fotografía, escaneo intraoral y modelos de estudio",
+    description: "Modelos en resina para planeación y presentación",
+  },
+  {
+    id: "escaneo-intraoral-itero",
+    name: "ESCANEO INTRAORAL ITERO",
+    category: "Fotografía, escaneo intraoral y modelos de estudio",
+    description: "Escaneo intraoral digital con iTero",
+  },
+  {
+    id: "analisis-modelos-bolton",
+    name: "ANALISIS DE MODELOS BOLTON",
+    category: "Análisis de modelos",
+    description: "Análisis de discrepancia dentaria Bolton",
+  },
+  {
+    id: "analisis-modelos-moyers",
+    name: "ANALISIS DE MODELOS MOYERS",
+    category: "Análisis de modelos",
+    description: "Análisis predictivo de espacio Moyers",
+  },
+  {
+    id: "nemocef-rickets",
+    name: "NEMOCEF RICKETS",
+    category: "Análisis cefalométrico NEMOCEF",
+    description: "Análisis cefalométrico Rickets",
+  },
+  {
+    id: "nemocef-steiner",
+    name: "NEMOCEF STEINER",
+    category: "Análisis cefalométrico NEMOCEF",
+    description: "Análisis cefalométrico Steiner",
+  },
+  {
+    id: "nemocef-mc-namara",
+    name: "NEMOCEF MC. NAMARA",
+    category: "Análisis cefalométrico NEMOCEF",
+    description: "Análisis cefalométrico Mc. Namara",
+  },
+  {
+    id: "nemocef-tweed",
+    name: "NEMOCEF TWEED",
+    category: "Análisis cefalométrico NEMOCEF",
+    description: "Análisis cefalométrico Tweed",
+  },
+  {
+    id: "nemocef-jaraback",
+    name: "NEMOCEF JARABACK",
+    category: "Análisis cefalométrico NEMOCEF",
+    description: "Análisis cefalométrico Jaraback",
+  },
+  {
+    id: "nemocef-downs",
+    name: "NEMOCEF DOWNS",
+    category: "Análisis cefalométrico NEMOCEF",
+    description: "Análisis cefalométrico Downs",
+  },
+];
+
+const cephalometricStudies = studies.filter((study) => study.category === "Análisis cefalométrico NEMOCEF");
+
+const orders = [
+  {
+    id: "ORD-2026-0001",
+    patient: "Mariana Lopez Garcia",
+    doctor: "Dra. Sofia Herrera",
+    owner: "current-doctor",
+    doctorId: "DR-0001",
+    studies: ["Ortopantomografía", "Lateral de Craneo"],
+    status: "Lista",
+    date: "2026-06-03",
+    result: "Ortopantomografia_Mariana_Lopez.pdf",
+    notes: "Planeación ortodóncica y registro fotográfico inicial.",
+  },
+  {
+    id: "ORD-2026-0002",
+    patient: "Carlos Mendez Ruiz",
+    doctor: "Dra. Sofia Herrera",
+    owner: "current-doctor",
+    doctorId: "DR-0001",
+    studies: ["Ortopantomografía"],
+    status: "Agendada",
+    date: "2026-06-02",
+    result: "",
+    notes: "Valoración general para diagnóstico y plan de tratamiento.",
+  },
+  {
+    id: "ORD-2026-0003",
+    patient: "Valeria Torres Diaz",
+    doctor: "Dr. Marco Padilla",
+    owner: "external-doctor",
+    doctorId: "DR-0002",
+    studies: ["Lateral de Craneo", "PA De craneo"],
+    status: "Proceso",
+    date: "2026-06-01",
+    result: "",
+    notes: "Cefalometría y fotografías para seguimiento.",
+  },
+  {
+    id: "ORD-2026-0004",
+    patient: "Roberto Salinas Vega",
+    doctor: "Dra. Sofia Herrera",
+    owner: "current-doctor",
+    doctorId: "DR-0001",
+    studies: ["ATM COMPARATIVA"],
+    status: "Recibida",
+    date: "2026-06-04",
+    result: "",
+    notes: "Evaluación de ATM y dolor articular referido.",
+  },
+];
+
+const SESSION_KEY = "radioImagenDoctorSession";
+
+const partnerTiers = [
+  {
+    name: "Socio Radio Imagen Dentomaxilar",
+    shortName: "Socio",
+    minPoints: 100,
+    minReferrals: 1,
+    reward: "Acceso al portal y seguimiento digital",
+  },
+  {
+    name: "Socio Activo",
+    shortName: "Activo",
+    minPoints: 500,
+    minReferrals: 5,
+    reward: "Recordatorios y seguimiento preferente",
+  },
+  {
+    name: "Socio Plata",
+    shortName: "Plata",
+    minPoints: 1000,
+    minReferrals: 10,
+    reward: "Prioridad en seguimiento",
+  },
+  {
+    name: "Socio Oro",
+    shortName: "Oro",
+    minPoints: 2500,
+    minReferrals: 25,
+    reward: "Reporte mensual personalizado",
+  },
+  {
+    name: "Socio Diamante",
+    shortName: "Diamante",
+    minPoints: 5000,
+    minReferrals: 50,
+    reward: "Beneficios preferenciales y planeación conjunta",
+  },
+];
+
+const POINTS_PER_REFERRED_PATIENT = 100;
+
+const doctorDirectory = {
+  "sofia.herrera@consulta.mx": {
+    id: "DR-0001",
+    handle: "@sofia-herrera",
+    name: "Dra. Sofia Herrera",
+    specialty: "Ortodoncia y ATM",
+    clinic: "Clínica Herrera Dental",
+    contactPhone: "55 7123 8842",
+    email: "sofia.herrera@consulta.mx",
+    city: "Ciudad de México",
+    metrics: {
+      activeOrders: "18",
+      readyResults: "4 listas",
+      monthlyPatients: "42",
+      growth: "+12%",
+      pendingAppointments: "6",
+      topStudy: "OPG",
+      topStudyDetail: "Ortopantomografía",
+      conversion: "83%",
+    },
+    partner: {
+      referredPatients: 18,
+      points: 1850,
+    },
+  },
+  "marco.padilla@consulta.mx": {
+    id: "DR-0002",
+    handle: "@marco-padilla",
+    name: "Dr. Marco Padilla",
+    specialty: "Cirugía maxilofacial",
+    clinic: "Padilla Maxilofacial",
+    contactPhone: "55 4400 9821",
+    email: "marco.padilla@consulta.mx",
+    city: "Ciudad de México",
+    metrics: {
+      activeOrders: "9",
+      readyResults: "2 listas",
+      monthlyPatients: "28",
+      growth: "+8%",
+      pendingAppointments: "3",
+      topStudy: "ATM COMPARATIVA",
+      topStudyDetail: "Articulación temporomandibular",
+      conversion: "76%",
+    },
+    partner: {
+      referredPatients: 8,
+      points: 820,
+    },
+  },
+};
+
+const viewTitles = {
+  dashboard: "Panel doctor",
+  "new-order": "Nueva orden digital",
+  results: "Resultados",
+  profile: "Mi perfil profesional",
+  future: "Consulta plus",
+};
+
+const pageTitle = document.querySelector("#page-title");
+const loginScreen = document.querySelector("#login-screen");
+const loadingScreen = document.querySelector("#loading-screen");
+const appShell = document.querySelector("#app-shell");
+const loginForm = document.querySelector("#login-form");
+const googleLoginButton = document.querySelector("#google-login");
+const logoutButton = document.querySelector("#logout-button");
+const loadingHandle = document.querySelector("#loading-handle");
+const doctorIdLabel = document.querySelector("#doctor-id-label");
+const navButtons = document.querySelectorAll("[data-view]");
+const studyGrid = document.querySelector("#study-grid");
+const doctorOrderList = document.querySelector("#doctor-order-list");
+const resultsTable = document.querySelector("#results-table");
+const resultsSearch = document.querySelector("#results-search");
+const orderForm = document.querySelector("#order-form");
+const profileForm = document.querySelector("#profile-form");
+const toast = document.querySelector("#toast");
+const currentDate = document.querySelector("#current-date");
+const currentTime = document.querySelector("#current-time");
+const referralDateInput = document.querySelector('input[name="referralDate"]');
+const profilePhotoInput = document.querySelector('input[name="profilePhoto"]');
+const profilePhotoPreview = document.querySelector("#profile-photo-preview");
+const profileInitials = document.querySelector("#profile-initials");
+const doctorPreviewPhoto = document.querySelector("#doctor-preview-photo");
+const doctorPreviewInitials = document.querySelector("#doctor-preview-initials");
+const editableAvatar = document.querySelector(".editable-avatar");
+const photoZoomInput = document.querySelector('input[name="photoZoom"]');
+const photoXInput = document.querySelector('input[name="photoX"]');
+const photoYInput = document.querySelector('input[name="photoY"]');
+const centerPhotoButton = document.querySelector("#center-photo");
+const orderModal = document.querySelector("#order-modal");
+const closeOrderModalButton = document.querySelector("#close-order-modal");
+const modalPatientName = document.querySelector("#modal-patient-name");
+const modalStudies = document.querySelector("#modal-studies");
+const modalOrderDate = document.querySelector("#modal-order-date");
+const modalOrderStatus = document.querySelector("#modal-order-status");
+const modalDoctorName = document.querySelector("#modal-doctor-name");
+const modalResult = document.querySelector("#modal-result");
+const modalNotes = document.querySelector("#modal-notes");
+const partnerTier = document.querySelector("[data-partner-tier]");
+const partnerPoints = document.querySelector("[data-partner-points]");
+const partnerReferrals = document.querySelector("[data-partner-referrals]");
+const partnerNext = document.querySelector("[data-partner-next]");
+const partnerProgress = document.querySelector("[data-partner-progress]");
+const partnerCurrentReward = document.querySelector("[data-partner-current-reward]");
+const partnerNextReward = document.querySelector("[data-partner-next-reward]");
+const partnerLadder = document.querySelector("[data-partner-ladder]");
+let dragStart = null;
+
+const doctorProfile = {
+  id: "DR-0001",
+  handle: "@sofia-herrera",
+  name: "Dra. Sofia Herrera",
+  specialty: "Ortodoncia y ATM",
+  clinic: "Clínica Herrera Dental",
+  contactPhone: "55 7123 8842",
+  email: "sofia.herrera@consulta.mx",
+  city: "Ciudad de México",
+  photo: "",
+  photoZoom: 1,
+  photoX: 0,
+  photoY: 0,
+  metrics: doctorDirectory["sofia.herrera@consulta.mx"].metrics,
+  partner: { ...doctorDirectory["sofia.herrera@consulta.mx"].partner },
+};
+
+function todayISO() {
+  const now = new Date();
+  const timezoneOffset = now.getTimezoneOffset() * 60000;
+  return new Date(now.getTime() - timezoneOffset).toISOString().slice(0, 10);
+}
+
+function updateInternalClock() {
+  const now = new Date();
+
+  currentDate.textContent = now.toLocaleDateString("es-MX", {
+    day: "2-digit",
+    month: "short",
+    year: "numeric",
+  });
+
+  currentTime.textContent = now.toLocaleTimeString("es-MX", {
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+}
+
+function setDefaultReferralDate() {
+  referralDateInput.value = todayISO();
+}
+
+function getInitials(name) {
+  const cleanName = name.replace(/\b(Doctora|Doctor|Dra|Dr)\.?\s*/gi, "").trim();
+  const nameParts = cleanName.split(/\s+/).filter(Boolean);
+  const initials = nameParts.slice(0, 2).map((part) => part[0]).join("");
+  return initials.toUpperCase() || "DR";
+}
+
+function statusClass(status) {
+  return status.toLowerCase().replace(" ", "-");
+}
+
+function showToast(message) {
+  toast.textContent = message;
+  toast.classList.add("visible");
+  window.setTimeout(() => toast.classList.remove("visible"), 2800);
+}
+
+function setView(viewId) {
+  document.querySelectorAll(".view").forEach((view) => {
+    view.classList.toggle("active", view.id === viewId);
+  });
+
+  document.querySelectorAll(".nav-item").forEach((button) => {
+    button.classList.toggle("active", button.dataset.view === viewId);
+  });
+
+  pageTitle.textContent = viewTitles[viewId] || "Radio Imagen";
+}
+
+function applyDoctorProfile(profile) {
+  doctorProfile.id = profile.id;
+  doctorProfile.handle = profile.handle;
+  doctorProfile.name = profile.name;
+  doctorProfile.specialty = profile.specialty;
+  doctorProfile.clinic = profile.clinic;
+  doctorProfile.contactPhone = profile.contactPhone;
+  doctorProfile.email = profile.email;
+  doctorProfile.city = profile.city;
+  doctorProfile.metrics = profile.metrics;
+  doctorProfile.partner = { ...profile.partner };
+}
+
+function findDoctorByEmail(email) {
+  return doctorDirectory[email.toLowerCase()] || doctorDirectory["sofia.herrera@consulta.mx"];
+}
+
+function renderMetrics() {
+  const metrics = doctorProfile.metrics;
+  document.querySelector('[data-metric="activeOrders"]').textContent = metrics.activeOrders;
+  document.querySelector('[data-metric-copy="readyResults"]').textContent = metrics.readyResults;
+  document.querySelector('[data-metric="monthlyPatients"]').textContent = metrics.monthlyPatients;
+  document.querySelector('[data-metric-copy="growth"]').textContent = metrics.growth;
+  document.querySelector('[data-metric="pendingAppointments"]').textContent = metrics.pendingAppointments;
+  document.querySelector('[data-metric="topStudy"]').textContent = metrics.topStudy;
+  document.querySelector('[data-metric-copy="topStudyDetail"]').textContent = metrics.topStudyDetail;
+  document.querySelector('[data-metric="conversion"]').textContent = metrics.conversion;
+}
+
+function getPartnerTier(referrals) {
+  if (referrals < 1) {
+    return {
+      name: "Por activar",
+      shortName: "Inicio",
+      minPoints: 0,
+      minReferrals: 0,
+      reward: "Envía tu primer paciente para activar Socios Radio Imagen Dentomaxilar",
+    };
+  }
+
+  return partnerTiers.reduce(
+    (currentTier, tier) => (referrals >= tier.minReferrals ? tier : currentTier),
+    partnerTiers[0],
+  );
+}
+
+function getNextPartnerTier(referrals) {
+  return partnerTiers.find((tier) => tier.minReferrals > referrals) || null;
+}
+
+function renderPartnerProgram() {
+  const partner = doctorProfile.partner;
+  const currentTier = getPartnerTier(partner.referredPatients);
+  const nextTier = getNextPartnerTier(partner.referredPatients);
+  const previousThreshold = currentTier.minReferrals;
+  const nextThreshold = nextTier?.minReferrals || currentTier.minReferrals;
+  const progressRange = Math.max(nextThreshold - previousThreshold, 1);
+  const progressValue = nextTier
+    ? Math.min(((partner.referredPatients - previousThreshold) / progressRange) * 100, 100)
+    : 100;
+
+  partnerTier.textContent = currentTier.name;
+  partnerPoints.textContent = `${partner.points.toLocaleString("es-MX")} pts`;
+  partnerReferrals.textContent = `${partner.referredPatients} pacientes referidos`;
+  partnerNext.textContent = nextTier
+    ? `${nextTier.minReferrals - partner.referredPatients} pacientes para ${nextTier.shortName}`
+    : "Nivel máximo activo";
+  partnerProgress.style.width = `${Math.max(progressValue, 6)}%`;
+  partnerCurrentReward.textContent = currentTier.reward;
+  partnerNextReward.textContent = nextTier ? nextTier.reward : "Programa completo";
+  partnerLadder.innerHTML = partnerTiers
+    .map(
+      (tier) => `
+        <span class="${partner.referredPatients >= tier.minReferrals ? "active" : ""}">
+          ${tier.shortName}
+          <small>${tier.minReferrals}</small>
+        </span>
+      `,
+    )
+    .join("");
+}
+
+function awardPartnerPoints() {
+  doctorProfile.partner.referredPatients += 1;
+  doctorProfile.partner.points += POINTS_PER_REFERRED_PATIENT;
+}
+
+function renderDoctorScopedData() {
+  renderProfile();
+  renderMetrics();
+  renderPartnerProgram();
+  renderDoctorOrders();
+  renderResults(resultsSearch.value);
+}
+
+function showApp(useLoader = false) {
+  loginScreen.hidden = true;
+  appShell.hidden = true;
+  loadingScreen.hidden = !useLoader;
+  loadingHandle.textContent = doctorProfile.handle;
+
+  const reveal = () => {
+    loadingScreen.hidden = true;
+    appShell.hidden = false;
+    renderDoctorScopedData();
+    setView("dashboard");
+  };
+
+  if (useLoader) {
+    window.setTimeout(reveal, 1100);
+  } else {
+    reveal();
+  }
+}
+
+function showLogin() {
+  appShell.hidden = true;
+  loadingScreen.hidden = true;
+  loginScreen.hidden = false;
+}
+
+function loginDoctor(email, provider = "email") {
+  const profile = findDoctorByEmail(email);
+  applyDoctorProfile(profile);
+  localStorage.setItem(
+    SESSION_KEY,
+    JSON.stringify({
+      email,
+      provider,
+      doctorId: profile.id,
+      handle: profile.handle,
+      signedInAt: new Date().toISOString(),
+    }),
+  );
+  showApp(true);
+  showToast(provider === "google" ? "Sesión iniciada con Google." : "Sesión iniciada con correo.");
+}
+
+function renderStudies() {
+  const studiesByCategory = studies.reduce((groups, study) => {
+    if (!groups[study.category]) {
+      groups[study.category] = [];
+    }
+
+    groups[study.category].push(study);
+    return groups;
+  }, {});
+
+  studyGrid.innerHTML = Object.entries(studiesByCategory)
+    .map(
+      ([category, categoryStudies]) => `
+        <section class="study-category">
+          <h3>${category}</h3>
+          <div class="study-category-grid">
+            ${categoryStudies
+              .map(
+                (study) =>
+                  study.type === "orthodontic-package"
+                    ? `
+                      <div class="study-option special-study-option orthodontic-option" data-orthodontic-card>
+                        <label>
+                          <input type="checkbox" name="studies" value="${study.name}" data-orthodontic-toggle />
+                          <strong>${study.name}</strong>
+                          <span>${study.description}</span>
+                        </label>
+                        <div class="special-study-fields" data-orthodontic-fields hidden>
+                          <label>
+                            Tipo de estudio
+                            <select name="orthodonticStudyType">
+                              <option value="">Seleccionar tipo</option>
+                              <option value="2D">2D</option>
+                              <option value="3D">3D</option>
+                            </select>
+                          </label>
+                          <label>
+                            Análisis cefalométrico
+                            <select name="orthodonticCephalometry">
+                              <option value="">Seleccionar análisis</option>
+                              ${cephalometricStudies
+                                .map((cephalometry) => `<option value="${cephalometry.name}">${cephalometry.name}</option>`)
+                                .join("")}
+                            </select>
+                          </label>
+                          <div class="package-includes">
+                            <span>Incluye:</span>
+                            <ul>
+                              <li>Ortopantomografía</li>
+                              <li>Lateral de Craneo</li>
+                              <li>Escaneo intraoral</li>
+                              <li>Modelos en resina</li>
+                              <li>Fotografía extraoral e intraoral</li>
+                              <li>Análisis cefalométrico seleccionado</li>
+                            </ul>
+                          </div>
+                          <label class="orthodontic-instructions">
+                            Indicaciones especiales
+                            <textarea name="orthodonticInstructions" placeholder="Ej. evaluar clase esqueletal, vía aérea, crecimiento, asimetrías o comentarios para Radio Imagen"></textarea>
+                          </label>
+                          <div class="tomography-fields nested-fields" data-orthodontic-tomography-fields hidden>
+                            <label>
+                              FOV Tomografía 3D
+                              <select name="orthodonticTomographyFov">
+                                <option value="">Seleccionar FOV</option>
+                                ${study.fovOptions.map((fov) => `<option value="${fov}">${fov}</option>`).join("")}
+                              </select>
+                            </label>
+                            <label data-orthodontic-fov-8 hidden>
+                              Especificación 8x8
+                              <select name="orthodonticTomographyArch">
+                                <option value="">Seleccionar zona</option>
+                                <option value="Maxilar">Maxilar</option>
+                                <option value="Mandibular">Mandibular</option>
+                              </select>
+                            </label>
+                            <label data-orthodontic-fov-5 hidden>
+                              Pieza de interés 5x5
+                              <input name="orthodonticTomographyTooth" placeholder="Ej. 1.6, 3.7, incisivo central superior" />
+                            </label>
+                          </div>
+                        </div>
+                      </div>
+                    `
+                    : study.type === "tomography"
+                    ? `
+                      <div class="study-option special-study-option tomography-option" data-tomography-card>
+                        <label>
+                          <input type="checkbox" name="studies" value="${study.name}" data-tomography-toggle />
+                          <strong>${study.name}</strong>
+                          <span>${study.description}</span>
+                        </label>
+                        <div class="tomography-fields" data-tomography-fields hidden>
+                          <label>
+                            Tamaño FOV
+                            <select name="tomographyFov">
+                              <option value="">Seleccionar FOV</option>
+                              ${study.fovOptions.map((fov) => `<option value="${fov}">${fov}</option>`).join("")}
+                            </select>
+                          </label>
+                          <label data-fov-8 hidden>
+                            Especificación 8x8
+                            <select name="tomographyArch">
+                              <option value="">Seleccionar zona</option>
+                              <option value="Maxilar">Maxilar</option>
+                              <option value="Mandibular">Mandibular</option>
+                            </select>
+                          </label>
+                          <label data-fov-5 hidden>
+                            Pieza de interés 5x5
+                            <input name="tomographyTooth" placeholder="Ej. 1.6, 3.7, incisivo central superior" />
+                          </label>
+                        </div>
+                      </div>
+                    `
+                    : `
+                      <label class="study-option">
+                        <input type="checkbox" name="studies" value="${study.name}" />
+                        <strong>${study.name}</strong>
+                        <span>${study.description}</span>
+                      </label>
+                    `,
+              )
+              .join("")}
+          </div>
+        </section>
+      `,
+    )
+    .join("");
+}
+
+function updateTomographyFields() {
+  const tomographyToggle = document.querySelector("[data-tomography-toggle]");
+  const tomographyFields = document.querySelector("[data-tomography-fields]");
+  const fovEightField = document.querySelector("[data-fov-8]");
+  const fovFiveField = document.querySelector("[data-fov-5]");
+  const fovValue = document.querySelector('select[name="tomographyFov"]')?.value;
+
+  if (!tomographyToggle || !tomographyFields) {
+    return;
+  }
+
+  tomographyFields.hidden = !tomographyToggle.checked;
+  fovEightField.hidden = !tomographyToggle.checked || fovValue !== "8x8";
+  fovFiveField.hidden = !tomographyToggle.checked || fovValue !== "5x5";
+}
+
+function updateOrthodonticPackageFields() {
+  const orthodonticToggle = document.querySelector("[data-orthodontic-toggle]");
+  const orthodonticFields = document.querySelector("[data-orthodontic-fields]");
+  const orthodonticTomographyFields = document.querySelector("[data-orthodontic-tomography-fields]");
+  const fovEightField = document.querySelector("[data-orthodontic-fov-8]");
+  const fovFiveField = document.querySelector("[data-orthodontic-fov-5]");
+  const studyType = document.querySelector('select[name="orthodonticStudyType"]')?.value;
+  const fovValue = document.querySelector('select[name="orthodonticTomographyFov"]')?.value;
+
+  if (!orthodonticToggle || !orthodonticFields) {
+    return;
+  }
+
+  const showPackageFields = orthodonticToggle.checked;
+  const showTomographyFields = showPackageFields && studyType === "3D";
+
+  orthodonticFields.hidden = !showPackageFields;
+  orthodonticTomographyFields.hidden = !showTomographyFields;
+  fovEightField.hidden = !showTomographyFields || fovValue !== "8x8";
+  fovFiveField.hidden = !showTomographyFields || fovValue !== "5x5";
+}
+
+function getSelectedStudiesWithDetails(formData) {
+  const selectedStudies = formData.getAll("studies");
+  const orthodonticIndex = selectedStudies.indexOf("Estudio Ortodóntico Completo");
+  const tomographyIndex = selectedStudies.indexOf("Tomografía 3D");
+
+  if (orthodonticIndex !== -1) {
+    const orthodonticType = formData.get("orthodonticStudyType");
+    const cephalometry = formData.get("orthodonticCephalometry");
+    const instructions = formData.get("orthodonticInstructions").trim();
+
+    if (!orthodonticType) {
+      showToast("Selecciona si el Estudio Ortodóntico Completo es 2D o 3D.");
+      return null;
+    }
+
+    if (!cephalometry) {
+      showToast("Selecciona el análisis cefalométrico para el Estudio Ortodóntico Completo.");
+      return null;
+    }
+
+    let orthodonticDetail =
+      `Estudio Ortodóntico Completo ${orthodonticType} - ` +
+      "incluye ortopantomografía, lateral de cráneo, escaneo intraoral, modelos en resina, fotografía extraoral e intraoral" +
+      `, Análisis cefalométrico: ${cephalometry}`;
+
+    if (orthodonticType === "3D") {
+      const fov = formData.get("orthodonticTomographyFov");
+
+      if (!fov) {
+        showToast("Selecciona el FOV para la tomografía del Estudio Ortodóntico 3D.");
+        return null;
+      }
+
+      if (fov === "8x8" && !formData.get("orthodonticTomographyArch")) {
+        showToast("Para FOV 8x8 del estudio ortodóntico selecciona maxilar o mandibular.");
+        return null;
+      }
+
+      if (fov === "5x5" && !formData.get("orthodonticTomographyTooth").trim()) {
+        showToast("Para FOV 5x5 del estudio ortodóntico especifica la pieza de interés.");
+        return null;
+      }
+
+      orthodonticDetail +=
+        fov === "8x8"
+          ? `, Tomografía 3D FOV ${fov} - ${formData.get("orthodonticTomographyArch")}`
+          : fov === "5x5"
+            ? `, Tomografía 3D FOV ${fov} - Pieza ${formData.get("orthodonticTomographyTooth").trim()}`
+            : `, Tomografía 3D FOV ${fov}`;
+    }
+
+    if (instructions) {
+      orthodonticDetail += `, Indicaciones especiales: ${instructions}`;
+    }
+
+    selectedStudies.splice(orthodonticIndex, 1, orthodonticDetail);
+  }
+
+  if (tomographyIndex === -1) {
+    return selectedStudies;
+  }
+
+  const fov = formData.get("tomographyFov");
+
+  if (!fov) {
+    showToast("Selecciona el tamaño FOV para Tomografía 3D.");
+    return null;
+  }
+
+  if (fov === "8x8" && !formData.get("tomographyArch")) {
+    showToast("Para FOV 8x8 selecciona maxilar o mandibular.");
+    return null;
+  }
+
+  if (fov === "5x5" && !formData.get("tomographyTooth").trim()) {
+    showToast("Para FOV 5x5 especifica la pieza de interés.");
+    return null;
+  }
+
+  const detail =
+    fov === "8x8"
+      ? `Tomografía 3D FOV ${fov} - ${formData.get("tomographyArch")}`
+      : fov === "5x5"
+        ? `Tomografía 3D FOV ${fov} - Pieza ${formData.get("tomographyTooth").trim()}`
+        : `Tomografía 3D FOV ${fov}`;
+
+  selectedStudies.splice(tomographyIndex, 1, detail);
+  return selectedStudies;
+}
+
+function renderDoctorOrders() {
+  doctorOrderList.innerHTML = orders
+    .filter((order) => order.doctorId === doctorProfile.id)
+    .map(
+      (order) => `
+        <article class="order-row">
+          <div class="order-name">
+            <strong>${order.patient}</strong>
+            <span class="order-meta">${order.studies.join(", ")}</span>
+          </div>
+          <span class="order-meta">${order.date}</span>
+          <span class="status ${statusClass(order.status)}">${order.status}</span>
+          <button class="small-action" data-order-patient="${order.patient}" type="button">Ver orden</button>
+        </article>
+      `,
+    )
+    .join("");
+}
+
+function renderResults(filter = "") {
+  const normalizedFilter = filter.trim().toLowerCase();
+  const visibleOrders = orders.filter((order) =>
+    order.doctorId === doctorProfile.id && order.patient.toLowerCase().includes(normalizedFilter),
+  );
+
+  resultsTable.innerHTML = visibleOrders
+    .map(
+      (order) => `
+        <article class="result-row">
+          <div class="result-name">
+            <strong>${order.patient}</strong>
+            <span class="result-meta">${order.studies.join(", ")}</span>
+          </div>
+          <span class="result-meta">${order.doctor}</span>
+          <span class="status ${statusClass(order.status)}">${order.status}</span>
+          <button class="download-action ${order.result ? "ready" : ""}" data-file="${order.result}" type="button">
+            ${order.result ? "Descargar" : "Pendiente"}
+          </button>
+        </article>
+      `,
+    )
+    .join("");
+}
+
+function renderProfile() {
+  const initials = getInitials(doctorProfile.name);
+  const photoTranslateX = `${Number(doctorProfile.photoX)}%`;
+  const photoTranslateY = `${Number(doctorProfile.photoY)}%`;
+
+  document.querySelectorAll("[data-profile-name]").forEach((node) => {
+    node.textContent = doctorProfile.name;
+  });
+
+  document.querySelectorAll("[data-profile-specialty]").forEach((node) => {
+    node.textContent = doctorProfile.specialty || "Especialidad no capturada";
+  });
+
+  document.querySelectorAll("[data-profile-clinic]").forEach((node) => {
+    node.textContent = doctorProfile.clinic;
+  });
+  document.querySelectorAll("[data-profile-handle]").forEach((node) => {
+    node.textContent = doctorProfile.handle;
+  });
+  doctorIdLabel.textContent = doctorProfile.id;
+  document.querySelector("[data-profile-contact]").textContent = doctorProfile.contactPhone;
+  document.querySelector("[data-profile-city]").textContent = doctorProfile.city;
+  profileInitials.textContent = initials;
+  doctorPreviewInitials.textContent = initials;
+
+  [profilePhotoPreview, doctorPreviewPhoto].forEach((image) => {
+    image.src = doctorProfile.photo;
+    image.hidden = !doctorProfile.photo;
+    image.style.setProperty("--photo-zoom", doctorProfile.photoZoom);
+    image.style.setProperty("--photo-translate-x", photoTranslateX);
+    image.style.setProperty("--photo-translate-y", photoTranslateY);
+  });
+
+  [profileInitials, doctorPreviewInitials].forEach((node) => {
+    node.hidden = Boolean(doctorProfile.photo);
+  });
+}
+
+function syncPhotoControls() {
+  photoZoomInput.value = doctorProfile.photoZoom;
+  photoXInput.value = doctorProfile.photoX;
+  photoYInput.value = doctorProfile.photoY;
+}
+
+function updatePhotoCrop() {
+  doctorProfile.photoZoom = photoZoomInput.value;
+  doctorProfile.photoX = photoXInput.value;
+  doctorProfile.photoY = photoYInput.value;
+  renderProfile();
+}
+
+function openOrderModal(order) {
+  modalPatientName.textContent = order.patient;
+  modalStudies.textContent = order.studies.join(", ");
+  modalOrderDate.textContent = order.date;
+  modalOrderStatus.textContent = order.status;
+  modalOrderStatus.className = `status ${statusClass(order.status)}`;
+  modalDoctorName.textContent = order.doctor;
+  modalResult.textContent = order.result || "Resultado pendiente";
+  modalNotes.textContent = order.notes || "Sin indicaciones adicionales.";
+  orderModal.hidden = false;
+}
+
+function closeOrderModal() {
+  orderModal.hidden = true;
+}
+
+function clampPhotoOffset(value) {
+  return Math.max(-40, Math.min(40, value));
+}
+
+function startPhotoDrag(event) {
+  if (!doctorProfile.photo) {
+    return;
+  }
+
+  editableAvatar.classList.add("dragging");
+  editableAvatar.setPointerCapture(event.pointerId);
+  dragStart = {
+    pointerId: event.pointerId,
+    x: event.clientX,
+    y: event.clientY,
+    photoX: Number(doctorProfile.photoX),
+    photoY: Number(doctorProfile.photoY),
+  };
+}
+
+function movePhotoDrag(event) {
+  if (!dragStart || dragStart.pointerId !== event.pointerId) {
+    return;
+  }
+
+  const avatarSize = editableAvatar.getBoundingClientRect().width;
+  const deltaX = ((event.clientX - dragStart.x) / avatarSize) * 100;
+  const deltaY = ((event.clientY - dragStart.y) / avatarSize) * 100;
+
+  doctorProfile.photoX = clampPhotoOffset(dragStart.photoX + deltaX);
+  doctorProfile.photoY = clampPhotoOffset(dragStart.photoY + deltaY);
+  syncPhotoControls();
+  renderProfile();
+}
+
+function stopPhotoDrag(event) {
+  if (!dragStart || dragStart.pointerId !== event.pointerId) {
+    return;
+  }
+
+  editableAvatar.classList.remove("dragging");
+  dragStart = null;
+}
+
+navButtons.forEach((button) => {
+  button.addEventListener("click", () => setView(button.dataset.view));
+});
+
+loginForm.addEventListener("submit", (event) => {
+  event.preventDefault();
+  const formData = new FormData(loginForm);
+  loginDoctor(formData.get("loginEmail").trim(), "email");
+});
+
+googleLoginButton.addEventListener("click", () => {
+  loginDoctor("sofia.herrera@consulta.mx", "google");
+});
+
+logoutButton.addEventListener("click", () => {
+  localStorage.removeItem(SESSION_KEY);
+  showLogin();
+  showToast("Sesión cerrada.");
+});
+
+orderForm.addEventListener("submit", (event) => {
+  event.preventDefault();
+  const formData = new FormData(orderForm);
+  const selectedStudies = getSelectedStudiesWithDetails(formData);
+
+  if (!selectedStudies) {
+    return;
+  }
+
+  if (selectedStudies.length === 0) {
+    showToast("Selecciona al menos un estudio para enviar la orden.");
+    return;
+  }
+
+  orders.unshift({
+    id: `ORD-${new Date().getFullYear()}-${String(orders.length + 1).padStart(4, "0")}`,
+    patient: formData.get("patientName"),
+    doctor: doctorProfile.name,
+    owner: "current-doctor",
+    doctorId: doctorProfile.id,
+    studies: selectedStudies,
+    status: "Recibida",
+    date: formData.get("referralDate") || todayISO(),
+    result: "",
+    notes: formData.get("notes").trim(),
+  });
+
+  awardPartnerPoints();
+  orderForm.reset();
+  setDefaultReferralDate();
+  updateTomographyFields();
+  updateOrthodonticPackageFields();
+  renderPartnerProgram();
+  renderDoctorOrders();
+  renderResults(resultsSearch.value);
+  setView("dashboard");
+  showToast("Orden enviada a Radio Imagen. Ya aparece en seguimiento.");
+});
+
+profileForm.addEventListener("submit", (event) => {
+  event.preventDefault();
+  const formData = new FormData(profileForm);
+
+  doctorProfile.name = formData.get("doctorName").trim();
+  doctorProfile.specialty = formData.get("specialty").trim();
+  doctorProfile.clinic = formData.get("clinic").trim();
+  doctorProfile.contactPhone = formData.get("contactPhone").trim();
+  doctorProfile.email = formData.get("email").trim();
+  doctorProfile.city = formData.get("city").trim();
+
+  renderProfile();
+  renderDoctorOrders();
+  renderResults(resultsSearch.value);
+  showToast("Perfil actualizado para las próximas órdenes.");
+});
+
+profilePhotoInput.addEventListener("change", () => {
+  const file = profilePhotoInput.files[0];
+
+  if (!file) {
+    return;
+  }
+
+  if (!file.type.startsWith("image/")) {
+    showToast("Selecciona una imagen en formato PNG, JPG o WebP.");
+    profilePhotoInput.value = "";
+    return;
+  }
+
+  const reader = new FileReader();
+  reader.addEventListener("load", () => {
+    doctorProfile.photo = reader.result;
+    doctorProfile.photoZoom = 1;
+    doctorProfile.photoX = 0;
+    doctorProfile.photoY = 0;
+    syncPhotoControls();
+    renderProfile();
+    showToast("Imagen de perfil actualizada en la vista previa.");
+  });
+  reader.readAsDataURL(file);
+});
+
+[photoZoomInput, photoXInput, photoYInput].forEach((input) => {
+  input.addEventListener("input", updatePhotoCrop);
+});
+
+editableAvatar.addEventListener("pointerdown", startPhotoDrag);
+editableAvatar.addEventListener("pointermove", movePhotoDrag);
+editableAvatar.addEventListener("pointerup", stopPhotoDrag);
+editableAvatar.addEventListener("pointercancel", stopPhotoDrag);
+
+centerPhotoButton.addEventListener("click", () => {
+  doctorProfile.photoZoom = 1;
+  doctorProfile.photoX = 0;
+  doctorProfile.photoY = 0;
+  syncPhotoControls();
+  renderProfile();
+  showToast("Imagen centrada en el recuadro.");
+});
+
+resultsSearch.addEventListener("input", () => renderResults(resultsSearch.value));
+
+studyGrid.addEventListener("change", (event) => {
+  if (
+    event.target.matches("[data-tomography-toggle]") ||
+    event.target.matches('select[name="tomographyFov"]')
+  ) {
+    updateTomographyFields();
+  }
+
+  if (
+    event.target.matches("[data-orthodontic-toggle]") ||
+    event.target.matches('select[name="orthodonticStudyType"]') ||
+    event.target.matches('select[name="orthodonticTomographyFov"]')
+  ) {
+    updateOrthodonticPackageFields();
+  }
+});
+
+document.addEventListener("click", (event) => {
+  const downloadButton = event.target.closest("[data-file]");
+  const orderButton = event.target.closest("[data-order-patient]");
+
+  if (downloadButton) {
+    const file = downloadButton.dataset.file;
+    showToast(file ? `Descarga simulada: ${file}` : "Este resultado aún no está listo.");
+  }
+
+  if (orderButton) {
+    const order = orders.find(
+      (currentOrder) =>
+        currentOrder.doctorId === doctorProfile.id &&
+        currentOrder.patient === orderButton.dataset.orderPatient,
+    );
+
+    if (order) {
+      openOrderModal(order);
+    }
+  }
+});
+
+closeOrderModalButton.addEventListener("click", closeOrderModal);
+
+orderModal.addEventListener("click", (event) => {
+  if (event.target === orderModal) {
+    closeOrderModal();
+  }
+});
+
+document.addEventListener("keydown", (event) => {
+  if (event.key === "Escape" && !orderModal.hidden) {
+    closeOrderModal();
+  }
+});
+
+renderStudies();
+renderProfile();
+syncPhotoControls();
+updateInternalClock();
+setInterval(updateInternalClock, 60000);
+setDefaultReferralDate();
+renderDoctorOrders();
+renderResults();
+
+const savedSession = localStorage.getItem(SESSION_KEY);
+if (savedSession) {
+  const session = JSON.parse(savedSession);
+  applyDoctorProfile(findDoctorByEmail(session.email));
+  showApp();
+} else {
+  showLogin();
+}
