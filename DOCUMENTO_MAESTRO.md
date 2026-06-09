@@ -415,6 +415,7 @@ Catálogo de niveles del programa Socios Radio Imagen.
 | min_points | integer | Puntos mínimos para entrar al nivel |
 | min_referrals | integer | Pacientes referidos mínimos para entrar al nivel |
 | reward_description | text | Beneficio visible para el doctor |
+| benefits | jsonb | Lista de beneficios del nivel |
 | active | boolean | Permite activar/desactivar niveles |
 
 ### doctor_partner_status

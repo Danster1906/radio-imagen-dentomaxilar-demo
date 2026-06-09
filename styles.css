@@ -783,7 +783,7 @@ h2 {
 
 .reward-stack article {
   display: grid;
-  gap: 3px;
+  gap: 7px;
   padding: 10px;
   background: rgba(255, 255, 255, 0.12);
   border: 1px solid rgba(255, 255, 255, 0.2);
@@ -799,6 +799,57 @@ h2 {
 
 .reward-stack strong {
   font-size: 0.9rem;
+}
+
+.reward-stack ul {
+  display: grid;
+  gap: 4px;
+  margin: 0;
+  padding-left: 16px;
+}
+
+.reward-stack li {
+  color: rgba(255, 255, 255, 0.86);
+  font-size: 0.74rem;
+  line-height: 1.25;
+}
+
+.benefit-catalog {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.benefit-catalog article {
+  display: grid;
+  gap: 2px;
+  min-height: 72px;
+  padding: 9px;
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  border-radius: 8px;
+}
+
+.benefit-catalog article.active {
+  background: rgba(255, 255, 255, 0.18);
+}
+
+.benefit-catalog strong,
+.benefit-catalog span,
+.benefit-catalog small {
+  color: #ffffff;
+}
+
+.benefit-catalog strong {
+  font-size: 0.78rem;
+}
+
+.benefit-catalog span,
+.benefit-catalog small {
+  font-size: 0.68rem;
+  line-height: 1.2;
+  opacity: 0.78;
 }
 
 .order-list,

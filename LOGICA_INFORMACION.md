@@ -77,6 +77,14 @@ Niveles iniciales:
 - `Socio Oro`: desde 25 pacientes referidos.
 - `Socio Diamante`: desde 50 pacientes referidos.
 
+Beneficios iniciales:
+
+- `Socio Radio Imagen Dentomaxilar`: acceso a plataforma iTero, Xelis Dental Viewer, Sidexis Dental Viewer, 10% cashback en estudios de pacientes y capacitación 1 a 1.
+- `Socio Activo`: invitación preferente a pláticas/capacitaciones, presentación personalizada de estudios ortodónticos, material digital para explicar estudios, soporte para preparar casos y avisos prioritarios de resultados.
+- `Socio Plata`: prioridad en seguimiento, plantillas personalizadas, resumen mensual de pacientes referidos y revisión trimestral de estudios más solicitados.
+- `Socio Oro`: reporte mensual personalizado, sesión de KPIs, apoyo para campañas de diagnóstico y capacitación grupal para el equipo.
+- `Socio Diamante`: beneficios preferenciales, planeación conjunta, capacitaciones privadas, revisión estratégica de crecimiento y material co-brandeado.
+
 ### Estudio
 
 Catálogo controlado por Radio Imagen.

@@ -161,6 +161,31 @@ El doctor entiende su nivel, puntos acumulados, recompensas y avance hacia el si
 
 Se propone guardar `partner_tiers`, `doctor_partner_status` y `partner_point_events` para soportar niveles, saldos y auditoría de puntos.
 
+## 2026-06-09 - Beneficios por nivel de Socios
+
+### Objetivo
+
+Convertir el programa de socios en un sistema de beneficios concreto por nivel.
+
+### Cambios realizados
+
+- Se agregaron beneficios detallados para `Socio Radio Imagen Dentomaxilar`.
+- Se ampliaron beneficios de `Socio Activo`.
+- Se agregaron beneficios propuestos para `Socio Plata`, `Socio Oro` y `Socio Diamante`.
+- La tarjeta ahora muestra beneficios del nivel actual, beneficios del siguiente nivel y un catálogo compacto de niveles.
+
+### Razón del cambio
+
+El programa necesita comunicar valor inmediato desde el primer paciente referido y mostrar una ruta clara de crecimiento para el doctor.
+
+### Impacto en producto
+
+El doctor puede entender qué recibe al entrar al programa y qué desbloquea al subir de nivel.
+
+### Impacto en datos
+
+`partner_tiers` debe guardar `benefits` como lista estructurada para que Radio Imagen pueda ajustar beneficios sin cambiar código.
+
 ## Plantilla para próximos cambios
 
 ### YYYY-MM-DD - Nombre del cambio

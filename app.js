@@ -205,35 +205,67 @@ const partnerTiers = [
     shortName: "Socio",
     minPoints: 100,
     minReferrals: 1,
-    reward: "Acceso al portal y seguimiento digital",
+    reward: "Kit digital de inicio",
+    benefits: [
+      "Acceso a plataforma iTero",
+      "Xelis Dental Viewer",
+      "Sidexis Dental Viewer",
+      "10% cashback en estudios de tus pacientes",
+      "Capacitación 1 a 1",
+    ],
   },
   {
     name: "Socio Activo",
     shortName: "Activo",
     minPoints: 500,
     minReferrals: 5,
-    reward: "Recordatorios y seguimiento preferente",
+    reward: "Acompañamiento clínico preferente",
+    benefits: [
+      "Invitación preferente para pláticas y capacitaciones",
+      "Presentación de estudios ortodónticos personalizada",
+      "Material digital para explicar estudios a pacientes",
+      "Soporte para preparar casos antes de iniciar tratamiento",
+      "Avisos prioritarios cuando los resultados estén listos",
+    ],
   },
   {
     name: "Socio Plata",
     shortName: "Plata",
     minPoints: 1000,
     minReferrals: 10,
-    reward: "Prioridad en seguimiento",
+    reward: "Impulso de consulta",
+    benefits: [
+      "Prioridad en seguimiento operativo",
+      "Plantillas personalizadas para solicitar estudios",
+      "Resumen mensual de pacientes referidos",
+      "Revisión trimestral de estudios más solicitados",
+    ],
   },
   {
     name: "Socio Oro",
     shortName: "Oro",
     minPoints: 2500,
     minReferrals: 25,
-    reward: "Reporte mensual personalizado",
+    reward: "Inteligencia clínica y comercial",
+    benefits: [
+      "Reporte mensual personalizado",
+      "Sesión de lectura de KPIs de referidos",
+      "Apoyo para campañas internas de diagnóstico",
+      "Capacitación grupal para el equipo de consulta",
+    ],
   },
   {
     name: "Socio Diamante",
     shortName: "Diamante",
     minPoints: 5000,
     minReferrals: 50,
-    reward: "Beneficios preferenciales y planeación conjunta",
+    reward: "Alianza preferencial",
+    benefits: [
+      "Beneficios preferenciales y planeación conjunta",
+      "Agenda preferente para capacitaciones privadas",
+      "Revisión estratégica de crecimiento de consulta",
+      "Material co-brandeado para comunicación con pacientes",
+    ],
   },
 ];
 
@@ -344,6 +376,9 @@ const partnerNext = document.querySelector("[data-partner-next]");
 const partnerProgress = document.querySelector("[data-partner-progress]");
 const partnerCurrentReward = document.querySelector("[data-partner-current-reward]");
 const partnerNextReward = document.querySelector("[data-partner-next-reward]");
+const partnerCurrentBenefits = document.querySelector("[data-partner-current-benefits]");
+const partnerNextBenefits = document.querySelector("[data-partner-next-benefits]");
+const partnerBenefitCatalog = document.querySelector("[data-partner-benefit-catalog]");
 const partnerLadder = document.querySelector("[data-partner-ladder]");
 let dragStart = null;
 
@@ -455,6 +490,7 @@ function getPartnerTier(referrals) {
       minPoints: 0,
       minReferrals: 0,
       reward: "Envía tu primer paciente para activar Socios Radio Imagen Dentomaxilar",
+      benefits: ["Al enviar el primer paciente se desbloquea el kit digital de inicio"],
     };
   }
 
@@ -488,6 +524,8 @@ function renderPartnerProgram() {
   partnerProgress.style.width = `${Math.max(progressValue, 6)}%`;
   partnerCurrentReward.textContent = currentTier.reward;
   partnerNextReward.textContent = nextTier ? nextTier.reward : "Programa completo";
+  partnerCurrentBenefits.innerHTML = renderBenefits(currentTier.benefits);
+  partnerNextBenefits.innerHTML = nextTier ? renderBenefits(nextTier.benefits) : "<li>Todos los beneficios activos</li>";
   partnerLadder.innerHTML = partnerTiers
     .map(
       (tier) => `
@@ -498,6 +536,21 @@ function renderPartnerProgram() {
       `,
     )
     .join("");
+  partnerBenefitCatalog.innerHTML = partnerTiers
+    .map(
+      (tier) => `
+        <article class="${partner.referredPatients >= tier.minReferrals ? "active" : ""}">
+          <strong>${tier.shortName}</strong>
+          <span>${tier.minReferrals} paciente${tier.minReferrals === 1 ? "" : "s"}</span>
+          <small>${tier.reward}</small>
+        </article>
+      `,
+    )
+    .join("");
+}
+
+function renderBenefits(benefits) {
+  return benefits.map((benefit) => `<li>${benefit}</li>`).join("");
 }
 
 function awardPartnerPoints() {
