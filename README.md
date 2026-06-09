@@ -15,11 +15,29 @@ Interfaz inicial para que doctores generen órdenes digitales y Radio Imagen/Rad
 - `PDR_RADIO_IMAGEN.md`: definición funcional del producto.
 - `PDR_CAMBIOS.md`: registro de cambios de producto.
 - `LOGICA_INFORMACION.md`: lógica de datos, permisos y seguimiento.
+- `LOGICA_PUNTOS_SOCIOS.md`: reglas de puntos, niveles, cashback y auditoría del programa de socios.
 - `DATA_MODEL.md`: estructura escalable de base de datos.
+- `database/`: base SQLite demo, esquema, datos semilla y consultas de prueba.
 
 ## Uso local
 
 Abre `index.html` en el navegador.
+
+## Base de datos demo
+
+Reconstruir la base:
+
+```bash
+rm -f database/radio_imagen_demo.sqlite
+sqlite3 database/radio_imagen_demo.sqlite < database/schema.sql
+sqlite3 database/radio_imagen_demo.sqlite < database/seed.sql
+```
+
+Ejecutar reportes demo:
+
+```bash
+sqlite3 database/radio_imagen_demo.sqlite < database/demo_queries.sql
+```
 
 ## Uso en Replit
 

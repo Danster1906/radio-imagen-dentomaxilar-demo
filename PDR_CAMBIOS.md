@@ -186,6 +186,33 @@ El doctor puede entender qué recibe al entrar al programa y qué desbloquea al 
 
 `partner_tiers` debe guardar `benefits` como lista estructurada para que Radio Imagen pueda ajustar beneficios sin cambiar código.
 
+## 2026-06-09 - Base de datos demo y lógica de puntos
+
+### Objetivo
+
+Crear una base de datos demostrativa para visualizar el portal con datos reales y documentar cómo se atribuyen los puntos del programa de socios.
+
+### Cambios realizados
+
+- Se creó `database/schema.sql` con tablas y vistas.
+- Se creó `database/seed.sql` con datos demo de clínicas, doctores, pacientes, órdenes, estudios, resultados, niveles, puntos y cashback.
+- Se generó `database/radio_imagen_demo.sqlite`.
+- Se creó `database/demo_queries.sql` con reportes listos para ejecutar.
+- Se creó `database/README.md`.
+- Se creó `LOGICA_PUNTOS_SOCIOS.md`.
+
+### Razón del cambio
+
+El proyecto necesita una base de datos tangible para probar cómo funcionaría el flujo con datos y explicar la lógica del programa Socios Radio Imagen Dentomaxilar.
+
+### Impacto en producto
+
+Permite enseñar niveles, puntos, estudios más solicitados, métricas del panel y cashback sin depender todavía de un backend.
+
+### Impacto en datos
+
+Se formaliza la atribución de puntos por evento, la separación entre puntos y cashback, y la auditoría con `partner_point_events`.
+
 ## Plantilla para próximos cambios
 
 ### YYYY-MM-DD - Nombre del cambio
