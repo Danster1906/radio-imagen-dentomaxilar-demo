@@ -217,7 +217,7 @@ Se formaliza la atribución de puntos por evento, la separación entre puntos y 
 
 ### Objetivo
 
-Hacer funcionales los filtros `Ayer`, `Hoy`, `Semana`, `Mes` y `Año` del panel del doctor.
+Hacer funcionales los filtros `Hoy`, `Semana`, `Mes` y `Año` del panel del doctor.
 
 ### Cambios realizados
 
@@ -225,6 +225,7 @@ Hacer funcionales los filtros `Ayer`, `Hoy`, `Semana`, `Mes` y `Año` del panel 
 - Los botones de periodo actualizan órdenes activas, pacientes, pendientes, estudio más pedido y conversión.
 - El botón seleccionado queda marcado como activo.
 - El texto de pacientes cambia según el periodo, por ejemplo `Pacientes hoy`, `Pacientes semana` o `Pacientes año`.
+- Se removió `Ayer` porque no aporta suficiente valor para esta vista ejecutiva.
 
 ### Razón del cambio
 

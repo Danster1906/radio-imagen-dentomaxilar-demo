@@ -272,7 +272,6 @@ const partnerTiers = [
 const POINTS_PER_REFERRED_PATIENT = 100;
 
 const metricPeriods = {
-  yesterday: "Ayer",
   today: "Hoy",
   week: "Semana",
   month: "Mes",
@@ -300,17 +299,6 @@ const doctorDirectory = {
       conversion: "83%",
     },
     metricsByPeriod: {
-      yesterday: {
-        activeOrders: "11",
-        readyResults: "2 listas",
-        patientsLabel: "Pacientes ayer",
-        monthlyPatients: "15",
-        growth: "+6% vs día previo",
-        pendingAppointments: "3",
-        topStudy: "OPG",
-        topStudyDetail: "Ortopantomografía",
-        conversion: "79%",
-      },
       today: {
         activeOrders: "18",
         readyResults: "4 listas",
@@ -381,17 +369,6 @@ const doctorDirectory = {
       conversion: "76%",
     },
     metricsByPeriod: {
-      yesterday: {
-        activeOrders: "5",
-        readyResults: "1 lista",
-        patientsLabel: "Pacientes ayer",
-        monthlyPatients: "6",
-        growth: "+3% vs día previo",
-        pendingAppointments: "1",
-        topStudy: "CBCT",
-        topStudyDetail: "Tomografía 3D",
-        conversion: "72%",
-      },
       today: {
         activeOrders: "9",
         readyResults: "2 listas",
