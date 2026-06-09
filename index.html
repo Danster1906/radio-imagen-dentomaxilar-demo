@@ -4,7 +4,7 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Radio Imagen | Órdenes Digitales</title>
-    <link rel="stylesheet" href="styles.css?v=partner-benefits-1" />
+    <link rel="stylesheet" href="styles.css?v=period-metrics-1" />
   </head>
   <body>
     <section class="login-screen" id="login-screen">
@@ -153,11 +153,11 @@
                 <h2 data-profile-clinic>Clínica Herrera Dental</h2>
               </div>
               <div class="period-tabs" aria-label="Periodo de métricas">
-                <button type="button">Ayer</button>
-                <button class="active" type="button">Hoy</button>
-                <button type="button">Semana</button>
-                <button type="button">Mes</button>
-                <button type="button">Año</button>
+                <button data-period="yesterday" type="button">Ayer</button>
+                <button class="active" data-period="today" type="button">Hoy</button>
+                <button data-period="week" type="button">Semana</button>
+                <button data-period="month" type="button">Mes</button>
+                <button data-period="year" type="button">Año</button>
               </div>
             </div>
 
@@ -168,7 +168,7 @@
                 <small data-metric-copy="readyResults">4 listas</small>
               </article>
               <article class="stat-item">
-                <span>Pacientes este mes</span>
+                <span data-metric-label="patients">Pacientes hoy</span>
                 <strong data-metric="monthlyPatients">42</strong>
                 <small data-metric-copy="growth">+12%</small>
               </article>
@@ -543,6 +543,6 @@
     </div>
 
     <div class="toast" id="toast" role="status" aria-live="polite"></div>
-    <script src="app.js?v=partner-benefits-1"></script>
+    <script src="app.js?v=period-metrics-1"></script>
   </body>
 </html>

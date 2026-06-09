@@ -213,6 +213,31 @@ Permite enseñar niveles, puntos, estudios más solicitados, métricas del panel
 
 Se formaliza la atribución de puntos por evento, la separación entre puntos y cashback, y la auditoría con `partner_point_events`.
 
+## 2026-06-09 - Interacción de métricas por periodo
+
+### Objetivo
+
+Hacer funcionales los filtros `Ayer`, `Hoy`, `Semana`, `Mes` y `Año` del panel del doctor.
+
+### Cambios realizados
+
+- Se agregaron datos demo por periodo para cada doctor.
+- Los botones de periodo actualizan órdenes activas, pacientes, pendientes, estudio más pedido y conversión.
+- El botón seleccionado queda marcado como activo.
+- El texto de pacientes cambia según el periodo, por ejemplo `Pacientes hoy`, `Pacientes semana` o `Pacientes año`.
+
+### Razón del cambio
+
+El dashboard necesitaba mostrar cómo se comportaría con información real al cambiar periodos de análisis.
+
+### Impacto en producto
+
+El usuario puede interactuar con el panel y entender cómo se visualizarán KPIs temporales para doctores o clínicas.
+
+### Impacto en datos
+
+En backend, estas métricas deben consultarse por rango de fechas usando `orders.referral_date`, `orders.status`, `order_studies` y `results`.
+
 ## Plantilla para próximos cambios
 
 ### YYYY-MM-DD - Nombre del cambio

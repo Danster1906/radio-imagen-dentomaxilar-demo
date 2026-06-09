@@ -271,6 +271,14 @@ const partnerTiers = [
 
 const POINTS_PER_REFERRED_PATIENT = 100;
 
+const metricPeriods = {
+  yesterday: "Ayer",
+  today: "Hoy",
+  week: "Semana",
+  month: "Mes",
+  year: "Año",
+};
+
 const doctorDirectory = {
   "sofia.herrera@consulta.mx": {
     id: "DR-0001",
@@ -290,6 +298,63 @@ const doctorDirectory = {
       topStudy: "OPG",
       topStudyDetail: "Ortopantomografía",
       conversion: "83%",
+    },
+    metricsByPeriod: {
+      yesterday: {
+        activeOrders: "11",
+        readyResults: "2 listas",
+        patientsLabel: "Pacientes ayer",
+        monthlyPatients: "15",
+        growth: "+6% vs día previo",
+        pendingAppointments: "3",
+        topStudy: "OPG",
+        topStudyDetail: "Ortopantomografía",
+        conversion: "79%",
+      },
+      today: {
+        activeOrders: "18",
+        readyResults: "4 listas",
+        patientsLabel: "Pacientes hoy",
+        monthlyPatients: "42",
+        growth: "+12% vs ayer",
+        pendingAppointments: "6",
+        topStudy: "OPG",
+        topStudyDetail: "Ortopantomografía",
+        conversion: "83%",
+      },
+      week: {
+        activeOrders: "34",
+        readyResults: "11 listas",
+        patientsLabel: "Pacientes semana",
+        monthlyPatients: "96",
+        growth: "+18% vs semana anterior",
+        pendingAppointments: "14",
+        topStudy: "EOC",
+        topStudyDetail: "Estudio ortodóntico completo",
+        conversion: "86%",
+      },
+      month: {
+        activeOrders: "52",
+        readyResults: "19 listas",
+        patientsLabel: "Pacientes mes",
+        monthlyPatients: "184",
+        growth: "+24% vs mes anterior",
+        pendingAppointments: "21",
+        topStudy: "OPG",
+        topStudyDetail: "Ortopantomografía",
+        conversion: "84%",
+      },
+      year: {
+        activeOrders: "118",
+        readyResults: "63 listas",
+        patientsLabel: "Pacientes año",
+        monthlyPatients: "1,248",
+        growth: "+31% acumulado",
+        pendingAppointments: "48",
+        topStudy: "EOC",
+        topStudyDetail: "Estudio ortodóntico completo",
+        conversion: "88%",
+      },
     },
     partner: {
       referredPatients: 18,
@@ -314,6 +379,63 @@ const doctorDirectory = {
       topStudy: "ATM COMPARATIVA",
       topStudyDetail: "Articulación temporomandibular",
       conversion: "76%",
+    },
+    metricsByPeriod: {
+      yesterday: {
+        activeOrders: "5",
+        readyResults: "1 lista",
+        patientsLabel: "Pacientes ayer",
+        monthlyPatients: "6",
+        growth: "+3% vs día previo",
+        pendingAppointments: "1",
+        topStudy: "CBCT",
+        topStudyDetail: "Tomografía 3D",
+        conversion: "72%",
+      },
+      today: {
+        activeOrders: "9",
+        readyResults: "2 listas",
+        patientsLabel: "Pacientes hoy",
+        monthlyPatients: "28",
+        growth: "+8% vs ayer",
+        pendingAppointments: "3",
+        topStudy: "ATM",
+        topStudyDetail: "Articulación temporomandibular",
+        conversion: "76%",
+      },
+      week: {
+        activeOrders: "16",
+        readyResults: "5 listas",
+        patientsLabel: "Pacientes semana",
+        monthlyPatients: "48",
+        growth: "+11% vs semana anterior",
+        pendingAppointments: "7",
+        topStudy: "CBCT",
+        topStudyDetail: "Tomografía 3D",
+        conversion: "78%",
+      },
+      month: {
+        activeOrders: "29",
+        readyResults: "12 listas",
+        patientsLabel: "Pacientes mes",
+        monthlyPatients: "116",
+        growth: "+16% vs mes anterior",
+        pendingAppointments: "11",
+        topStudy: "CBCT",
+        topStudyDetail: "Tomografía 3D",
+        conversion: "81%",
+      },
+      year: {
+        activeOrders: "74",
+        readyResults: "38 listas",
+        patientsLabel: "Pacientes año",
+        monthlyPatients: "692",
+        growth: "+22% acumulado",
+        pendingAppointments: "24",
+        topStudy: "CBCT",
+        topStudyDetail: "Tomografía 3D",
+        conversion: "85%",
+      },
     },
     partner: {
       referredPatients: 8,
@@ -340,6 +462,7 @@ const logoutButton = document.querySelector("#logout-button");
 const loadingHandle = document.querySelector("#loading-handle");
 const doctorIdLabel = document.querySelector("#doctor-id-label");
 const navButtons = document.querySelectorAll("[data-view]");
+const periodButtons = document.querySelectorAll("[data-period]");
 const studyGrid = document.querySelector("#study-grid");
 const doctorOrderList = document.querySelector("#doctor-order-list");
 const resultsTable = document.querySelector("#results-table");
@@ -381,6 +504,7 @@ const partnerNextBenefits = document.querySelector("[data-partner-next-benefits]
 const partnerBenefitCatalog = document.querySelector("[data-partner-benefit-catalog]");
 const partnerLadder = document.querySelector("[data-partner-ladder]");
 let dragStart = null;
+let selectedMetricsPeriod = "today";
 
 const doctorProfile = {
   id: "DR-0001",
@@ -396,6 +520,7 @@ const doctorProfile = {
   photoX: 0,
   photoY: 0,
   metrics: doctorDirectory["sofia.herrera@consulta.mx"].metrics,
+  metricsByPeriod: doctorDirectory["sofia.herrera@consulta.mx"].metricsByPeriod,
   partner: { ...doctorDirectory["sofia.herrera@consulta.mx"].partner },
 };
 
@@ -463,6 +588,7 @@ function applyDoctorProfile(profile) {
   doctorProfile.email = profile.email;
   doctorProfile.city = profile.city;
   doctorProfile.metrics = profile.metrics;
+  doctorProfile.metricsByPeriod = profile.metricsByPeriod;
   doctorProfile.partner = { ...profile.partner };
 }
 
@@ -471,7 +597,8 @@ function findDoctorByEmail(email) {
 }
 
 function renderMetrics() {
-  const metrics = doctorProfile.metrics;
+  const metrics = doctorProfile.metricsByPeriod?.[selectedMetricsPeriod] || doctorProfile.metrics;
+  document.querySelector('[data-metric-label="patients"]').textContent = metrics.patientsLabel || "Pacientes";
   document.querySelector('[data-metric="activeOrders"]').textContent = metrics.activeOrders;
   document.querySelector('[data-metric-copy="readyResults"]').textContent = metrics.readyResults;
   document.querySelector('[data-metric="monthlyPatients"]').textContent = metrics.monthlyPatients;
@@ -480,6 +607,20 @@ function renderMetrics() {
   document.querySelector('[data-metric="topStudy"]').textContent = metrics.topStudy;
   document.querySelector('[data-metric-copy="topStudyDetail"]').textContent = metrics.topStudyDetail;
   document.querySelector('[data-metric="conversion"]').textContent = metrics.conversion;
+  periodButtons.forEach((button) => {
+    button.classList.toggle("active", button.dataset.period === selectedMetricsPeriod);
+    button.setAttribute("aria-pressed", String(button.dataset.period === selectedMetricsPeriod));
+  });
+}
+
+function setMetricsPeriod(period) {
+  if (!metricPeriods[period]) {
+    return;
+  }
+
+  selectedMetricsPeriod = period;
+  renderMetrics();
+  showToast(`Métricas actualizadas: ${metricPeriods[period]}.`);
 }
 
 function getPartnerTier(referrals) {
@@ -1025,6 +1166,10 @@ function stopPhotoDrag(event) {
 
 navButtons.forEach((button) => {
   button.addEventListener("click", () => setView(button.dataset.view));
+});
+
+periodButtons.forEach((button) => {
+  button.addEventListener("click", () => setMetricsPeriod(button.dataset.period));
 });
 
 loginForm.addEventListener("submit", (event) => {
