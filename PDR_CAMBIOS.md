@@ -393,6 +393,22 @@ En producción cada orden debe tener una tabla `result_files` con:
 - `expires_at`
 - `download_count`
 
+## 2026-06-13 - Visibilidad del botón Crear orden
+
+### Objetivo
+
+Evitar que el atajo `Crear orden` aparezca dentro de la pestaña donde ya se está creando una orden.
+
+### Cambios realizados
+
+- El botón superior `Crear orden` permanece visible en `Panel doctor`, `Resultados`, `Mi perfil` y `Consulta plus`.
+- El botón se oculta automáticamente en la pestaña `Nueva orden`.
+- La lógica sigue respetando que el botón sólo exista para cuentas de doctor, no para admin.
+
+### Razón UX
+
+Reduce redundancia y evita que el usuario vea dos acciones con el mismo propósito dentro del formulario de nueva orden.
+
 ## Plantilla para próximos cambios
 
 ### YYYY-MM-DD - Nombre del cambio

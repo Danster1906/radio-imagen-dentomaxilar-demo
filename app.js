@@ -686,6 +686,10 @@ function setView(viewId) {
     button.classList.toggle("active", button.dataset.view === viewId);
   });
 
+  document.querySelectorAll("[data-doctor-only]").forEach((node) => {
+    node.hidden = currentRole !== "doctor" || node.dataset.hideOnView === viewId;
+  });
+
   pageTitle.textContent = viewTitles[viewId] || "Radio Imagen";
 }
 
