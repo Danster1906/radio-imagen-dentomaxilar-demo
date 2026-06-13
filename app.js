@@ -523,6 +523,7 @@ const adminOrderTable = document.querySelector("#admin-order-table");
 const adminDoctorList = document.querySelector("#admin-doctor-list");
 const adminDownloadQueue = document.querySelector("#admin-download-queue");
 const runAgentButton = document.querySelector("#run-agent-button");
+const sendStudiesButton = document.querySelector("#send-studies-button");
 const agentLog = document.querySelector("#agent-log");
 const orderForm = document.querySelector("#order-form");
 const profileForm = document.querySelector("#profile-form");
@@ -1319,7 +1320,7 @@ function matchLocalFileToOrder(order) {
   });
 }
 
-function runAgent(orderId = null) {
+function runAgent(orderId = null, options = {}) {
   const targetOrders = orders.filter((order) => !orderId || order.id === orderId);
   const matches = [];
 
@@ -1345,7 +1346,33 @@ function runAgent(orderId = null) {
   renderAdmin();
   renderDoctorOrders();
   renderResults(resultsSearch.value);
-  showToast(matches.length ? `Agente asignó ${matches.length} resultado(s) y solicitó subida.` : "Agente no encontró coincidencias.");
+  if (!options.silent) {
+    showToast(matches.length ? `Agente asignó ${matches.length} resultado(s) y solicitó subida.` : "Agente no encontró coincidencias.");
+  }
+}
+
+function sendReadyStudies() {
+  runAgent(null, { silent: true });
+
+  const pendingUploads = adminDownloadRequests.filter(
+    (request) => request.status === "Subida inmediata" || request.storage === "upload_requested",
+  );
+
+  if (pendingUploads.length === 0) {
+    showToast("No hay estudios listos para enviar.");
+    return;
+  }
+
+  pendingUploads.forEach((request) => {
+    request.status = "Enviado";
+    request.storage = "cloud_sent";
+    request.expires = "Link enviado al doctor · vigencia 60 min";
+  });
+
+  agentState.uploads = 0;
+  renderAdmin();
+  renderResults(resultsSearch.value);
+  showToast(`${pendingUploads.length} estudio(s) enviados al portal del doctor.`);
 }
 
 function renderProfile() {
@@ -1612,6 +1639,8 @@ adminOrderTable?.addEventListener("change", (event) => {
 });
 
 runAgentButton?.addEventListener("click", () => runAgent());
+
+sendStudiesButton?.addEventListener("click", sendReadyStudies);
 
 studyGrid.addEventListener("change", (event) => {
   if (

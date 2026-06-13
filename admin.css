@@ -37,6 +37,29 @@
   color: var(--muted);
 }
 
+.admin-hero-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+
+.secondary-action {
+  min-height: 46px;
+  padding: 13px 18px;
+  color: var(--brand-dark);
+  background: #ffffff;
+  border: 1px solid #fecaca;
+  border-radius: 8px;
+  font-weight: 900;
+  cursor: pointer;
+}
+
+.secondary-action:hover {
+  background: #fff7f7;
+}
+
 .admin-metrics {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
@@ -245,5 +268,14 @@
   .admin-hero {
     align-items: flex-start;
     flex-direction: column;
+  }
+
+  .admin-hero-actions {
+    width: 100%;
+    justify-content: stretch;
+  }
+
+  .admin-hero-actions button {
+    flex: 1;
   }
 }

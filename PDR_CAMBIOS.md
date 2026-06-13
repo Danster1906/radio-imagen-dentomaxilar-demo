@@ -346,6 +346,23 @@ El flujo real requiere que Radio Imagen opere resultados y descargas sin exponer
 - La subida inmediata debe ejecutarse en backend/local-agent, no desde el navegador.
 - Se requiere auditoría para saber qué admin cambió estatus o liberó un resultado.
 
+## 2026-06-13 - Botón Mandar estudios en admin
+
+### Objetivo
+
+Agregar una acción principal para que Radio Imagen pueda enviar estudios desde la consola admin.
+
+### Cambios realizados
+
+- Se agregó el botón `Mandar estudios` en el encabezado de `Admin Radio Imagen`.
+- El botón usa la cola de descargas y simula el envío de estudios al portal del doctor.
+- Si todavía no hay estudios listos para enviar, primero ejecuta el agente local demo.
+- Se cambió `Alta doctor` a acción secundaria para priorizar el flujo operativo de resultados.
+
+### Razón del cambio
+
+La operación diaria necesita una acción explícita para liberar resultados ya asignados.
+
 ## Plantilla para próximos cambios
 
 ### YYYY-MM-DD - Nombre del cambio
