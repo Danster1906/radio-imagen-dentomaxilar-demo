@@ -239,6 +239,32 @@ El usuario puede interactuar con el panel y entender cómo se visualizarán KPIs
 
 En backend, estas métricas deben consultarse por rango de fechas usando `orders.referral_date`, `orders.status`, `order_studies` y `results`.
 
+## 2026-06-13 - Agente local y guía de deployment en Replit
+
+### Objetivo
+
+Preparar la arquitectura para desplegar el portal en Replit y correr un agente local en la computadora de Radio Imagen.
+
+### Cambios realizados
+
+- Se creó `local-agent/` como proyecto Node.js independiente.
+- Se agregó `local-agent/local-agent.js` para procesar solicitudes de descarga.
+- Se agregó `.env.example` con variables requeridas.
+- Se agregó `local-agent/README.md`.
+- Se creó `REPLIT_DEPLOYMENT.md`.
+
+### Razón del cambio
+
+Replit no puede leer directamente el disco local de Radio Imagen. El portal debe crear solicitudes y el agente local debe procesarlas desde la computadora que sí tiene acceso a los archivos.
+
+### Impacto en producto
+
+Permite un flujo híbrido: Replit publica la app, Supabase coordina la descarga temporal y la computadora local conserva los archivos maestros.
+
+### Impacto en datos
+
+El flujo requiere `result_files`, `download_requests`, `cloud_path`, `signed_url_expires_at` y estados de descarga.
+
 ## Plantilla para próximos cambios
 
 ### YYYY-MM-DD - Nombre del cambio
