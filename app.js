@@ -199,6 +199,7 @@ const orders = [
 
 const adminDownloadRequests = [
   {
+    orderId: "ORD-2026-0001",
     patient: "Mariana Lopez Garcia",
     doctor: "Dra. Sofia Herrera",
     file: "ORD-2026-0001.zip",
@@ -207,6 +208,7 @@ const adminDownloadRequests = [
     expires: "Local vence en 68 días",
   },
   {
+    orderId: "ORD-2026-0003",
     patient: "Valeria Torres Diaz",
     doctor: "Dr. Marco Padilla",
     file: "CBCT_Valeria_Torres.zip",
@@ -215,6 +217,7 @@ const adminDownloadRequests = [
     expires: "Supabase pendiente",
   },
   {
+    orderId: "ORD-2026-0018",
     patient: "Sofia Calderon Reyes",
     doctor: "Dra. Sofia Herrera",
     file: "ORD-2026-0018.pdf",
@@ -225,6 +228,48 @@ const adminDownloadRequests = [
 ];
 
 const SESSION_KEY = "radioImagenDoctorSession";
+const ADMIN_EMAIL = "admin@radioimagen.mx";
+
+const adminProfile = {
+  id: "ADM-0001",
+  handle: "@radio-imagen-admin",
+  name: "Admin Radio Imagen",
+  specialty: "Radiodiagnóstico y operación",
+  clinic: "Radio Imagen Dentomaxilar",
+  contactPhone: "55 0000 0000",
+  email: ADMIN_EMAIL,
+  city: "Ciudad de México",
+};
+
+const localResultFiles = [
+  {
+    file: "Mariana_Lopez_Garcia_OPG_Lateral.zip",
+    patient: "Mariana Lopez Garcia",
+    modality: "OPG + Lateral",
+    status: "local_ready",
+    confidence: 98,
+  },
+  {
+    file: "Valeria_Torres_Diaz_Cefalometria.zip",
+    patient: "Valeria Torres Diaz",
+    modality: "Cefalometría",
+    status: "local_ready",
+    confidence: 94,
+  },
+  {
+    file: "Roberto_Salinas_Vega_ATM.zip",
+    patient: "Roberto Salinas Vega",
+    modality: "ATM comparativa",
+    status: "local_ready",
+    confidence: 96,
+  },
+];
+
+const agentState = {
+  matches: [],
+  uploads: 0,
+  hasRun: false,
+};
 
 const partnerTiers = [
   {
@@ -463,6 +508,7 @@ const loadingScreen = document.querySelector("#loading-screen");
 const appShell = document.querySelector("#app-shell");
 const loginForm = document.querySelector("#login-form");
 const googleLoginButton = document.querySelector("#google-login");
+const adminLoginDemoButton = document.querySelector("#admin-login-demo");
 const logoutButton = document.querySelector("#logout-button");
 const loadingHandle = document.querySelector("#loading-handle");
 const doctorIdLabel = document.querySelector("#doctor-id-label");
@@ -476,6 +522,8 @@ const adminStatusFilter = document.querySelector("#admin-status-filter");
 const adminOrderTable = document.querySelector("#admin-order-table");
 const adminDoctorList = document.querySelector("#admin-doctor-list");
 const adminDownloadQueue = document.querySelector("#admin-download-queue");
+const runAgentButton = document.querySelector("#run-agent-button");
+const agentLog = document.querySelector("#agent-log");
 const orderForm = document.querySelector("#order-form");
 const profileForm = document.querySelector("#profile-form");
 const toast = document.querySelector("#toast");
@@ -514,6 +562,7 @@ const partnerBenefitCatalog = document.querySelector("[data-partner-benefit-cata
 const partnerLadder = document.querySelector("[data-partner-ladder]");
 let dragStart = null;
 let selectedMetricsPeriod = "today";
+let currentRole = "doctor";
 
 const doctorProfile = {
   id: "DR-0001",
@@ -569,6 +618,15 @@ function statusClass(status) {
   return status.toLowerCase().replace(" ", "-");
 }
 
+function normalizeName(value) {
+  return value
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[^a-z0-9]+/g, " ")
+    .trim();
+}
+
 function showToast(message) {
   toast.textContent = message;
   toast.classList.add("visible");
@@ -576,6 +634,14 @@ function showToast(message) {
 }
 
 function setView(viewId) {
+  if (currentRole === "doctor" && viewId === "admin") {
+    viewId = "dashboard";
+  }
+
+  if (currentRole === "admin" && viewId !== "admin") {
+    viewId = "admin";
+  }
+
   document.querySelectorAll(".view").forEach((view) => {
     view.classList.toggle("active", view.id === viewId);
   });
@@ -585,6 +651,35 @@ function setView(viewId) {
   });
 
   pageTitle.textContent = viewTitles[viewId] || "Radio Imagen";
+}
+
+function configureShellForRole(role) {
+  currentRole = role;
+  appShell.dataset.role = role;
+
+  document.querySelectorAll("[data-role-view]").forEach((button) => {
+    button.hidden = button.dataset.roleView !== role;
+  });
+
+  document.querySelectorAll("[data-doctor-only]").forEach((node) => {
+    node.hidden = role !== "doctor";
+  });
+
+  if (role === "admin") {
+    document.querySelectorAll("[data-profile-name]").forEach((node) => {
+      node.textContent = adminProfile.name;
+    });
+    document.querySelectorAll("[data-profile-specialty]").forEach((node) => {
+      node.textContent = adminProfile.specialty;
+    });
+    document.querySelectorAll("[data-profile-clinic]").forEach((node) => {
+      node.textContent = adminProfile.clinic;
+    });
+    document.querySelectorAll("[data-profile-handle]").forEach((node) => {
+      node.textContent = adminProfile.handle;
+    });
+    doctorIdLabel.textContent = adminProfile.id;
+  }
 }
 
 function applyDoctorProfile(profile) {
@@ -599,6 +694,10 @@ function applyDoctorProfile(profile) {
   doctorProfile.metrics = profile.metrics;
   doctorProfile.metricsByPeriod = profile.metricsByPeriod;
   doctorProfile.partner = { ...profile.partner };
+}
+
+function getAccountRole(email) {
+  return email.toLowerCase() === ADMIN_EMAIL ? "admin" : "doctor";
 }
 
 function findDoctorByEmail(email) {
@@ -709,6 +808,11 @@ function awardPartnerPoints() {
 }
 
 function renderDoctorScopedData() {
+  if (currentRole === "admin") {
+    renderAdmin();
+    return;
+  }
+
   renderProfile();
   renderMetrics();
   renderPartnerProgram();
@@ -717,17 +821,18 @@ function renderDoctorScopedData() {
   renderAdmin();
 }
 
-function showApp(useLoader = false) {
+function showApp(useLoader = false, initialView = currentRole === "admin" ? "admin" : "dashboard") {
   loginScreen.hidden = true;
   appShell.hidden = true;
   loadingScreen.hidden = !useLoader;
-  loadingHandle.textContent = doctorProfile.handle;
+  loadingHandle.textContent = currentRole === "admin" ? adminProfile.handle : doctorProfile.handle;
 
   const reveal = () => {
     loadingScreen.hidden = true;
     appShell.hidden = false;
+    configureShellForRole(currentRole);
     renderDoctorScopedData();
-    setView("dashboard");
+    setView(initialView);
   };
 
   if (useLoader) {
@@ -743,21 +848,28 @@ function showLogin() {
   loginScreen.hidden = false;
 }
 
-function loginDoctor(email, provider = "email") {
-  const profile = findDoctorByEmail(email);
-  applyDoctorProfile(profile);
+function loginAccount(email, provider = "email") {
+  const role = getAccountRole(email);
+  currentRole = role;
+
+  if (role === "doctor") {
+    const profile = findDoctorByEmail(email);
+    applyDoctorProfile(profile);
+  }
+
   localStorage.setItem(
     SESSION_KEY,
     JSON.stringify({
       email,
       provider,
-      doctorId: profile.id,
-      handle: profile.handle,
+      role,
+      accountId: role === "admin" ? adminProfile.id : doctorProfile.id,
+      handle: role === "admin" ? adminProfile.handle : doctorProfile.handle,
       signedInAt: new Date().toISOString(),
     }),
   );
-  showApp(true);
-  showToast(provider === "google" ? "Sesión iniciada con Google." : "Sesión iniciada con correo.");
+  showApp(true, role === "admin" ? "admin" : "dashboard");
+  showToast(role === "admin" ? "Sesión admin iniciada." : provider === "google" ? "Sesión iniciada con Google." : "Sesión iniciada con correo.");
 }
 
 function renderStudies() {
@@ -1080,18 +1192,28 @@ function renderAdmin() {
   document.querySelector('[data-admin-metric="activePartners"]').textContent = allDoctors.filter(
     (doctor) => doctor.partner.referredPatients > 0,
   ).length;
+  document.querySelector('[data-agent-metric="localFiles"]').textContent = localResultFiles.length;
+  document.querySelector('[data-agent-metric="matches"]').textContent = agentState.matches.length;
+  document.querySelector('[data-agent-metric="uploads"]').textContent = agentState.uploads;
 
   adminOrderTable.innerHTML = visibleOrders
     .map(
       (order) => `
-        <article class="admin-row">
+        <article class="admin-row" data-admin-order="${order.id}">
           <div>
             <strong>${order.patient}</strong>
             <small>${order.studies.join(", ")}</small>
           </div>
           <span>${order.doctor}</span>
-          <span class="status ${statusClass(order.status)}">${order.status}</span>
-          <button class="small-action" type="button">Asignar</button>
+          <label class="admin-status-control">
+            <span>Estatus</span>
+            <select data-admin-status="${order.id}" aria-label="Cambiar estatus de ${order.patient}">
+              ${["Recibida", "Agendada", "Proceso", "Lista"]
+                .map((status) => `<option value="${status}" ${order.status === status ? "selected" : ""}>${status}</option>`)
+                .join("")}
+            </select>
+          </label>
+          <button class="small-action" data-agent-order="${order.id}" type="button">Asignar y subir</button>
         </article>
       `,
     )
@@ -1129,6 +1251,101 @@ function renderAdmin() {
       `,
     )
     .join("");
+
+  renderAgentLog();
+}
+
+function renderAgentLog() {
+  if (!agentLog) {
+    return;
+  }
+
+  if (!agentState.hasRun) {
+    agentLog.innerHTML = `
+      <article>
+        <strong>Agente en espera</strong>
+        <span>Listo para cruzar ${localResultFiles.length} archivos locales contra ${orders.length} órdenes.</span>
+      </article>
+    `;
+    return;
+  }
+
+  agentLog.innerHTML = agentState.matches
+    .map(
+      (match) => `
+        <article>
+          <strong>${match.patient}</strong>
+          <span>${match.file}</span>
+          <small>${match.confidence}% coincidencia · ${match.action}</small>
+        </article>
+      `,
+    )
+    .join("");
+}
+
+function upsertDownloadRequest(order, fileMatch) {
+  const existingRequest = adminDownloadRequests.find((request) => request.orderId === order.id);
+  const payload = {
+    orderId: order.id,
+    patient: order.patient,
+    doctor: order.doctor,
+    file: fileMatch.file,
+    status: "Subida inmediata",
+    storage: "upload_requested",
+    expires: "Supabase temporal: 60 min al solicitar descarga",
+  };
+
+  if (existingRequest) {
+    Object.assign(existingRequest, payload);
+    return;
+  }
+
+  adminDownloadRequests.unshift(payload);
+}
+
+function assignResultToOrder(order, fileMatch) {
+  order.result = fileMatch.file;
+  order.status = "Lista";
+  upsertDownloadRequest(order, fileMatch);
+}
+
+function matchLocalFileToOrder(order) {
+  const normalizedPatient = normalizeName(order.patient);
+
+  return localResultFiles.find((file) => {
+    const filePatient = normalizeName(file.patient);
+    const fileName = normalizeName(file.file);
+    return filePatient === normalizedPatient || fileName.includes(normalizedPatient.replace(/\s+/g, " "));
+  });
+}
+
+function runAgent(orderId = null) {
+  const targetOrders = orders.filter((order) => !orderId || order.id === orderId);
+  const matches = [];
+
+  targetOrders.forEach((order) => {
+    const fileMatch = matchLocalFileToOrder(order);
+
+    if (!fileMatch) {
+      return;
+    }
+
+    assignResultToOrder(order, fileMatch);
+    matches.push({
+      patient: order.patient,
+      file: fileMatch.file,
+      confidence: fileMatch.confidence,
+      action: "Resultado asignado y subida solicitada",
+    });
+  });
+
+  agentState.hasRun = true;
+  agentState.matches = orderId ? [...matches, ...agentState.matches.filter((match) => match.patient !== targetOrders[0]?.patient)] : matches;
+  agentState.uploads = adminDownloadRequests.filter((request) => request.status === "Subida inmediata").length;
+  renderAdmin();
+  renderDoctorOrders();
+  renderResults(resultsSearch.value);
+  showToast(matches.length ? `Agente asignó ${matches.length} resultado(s) y solicitó subida.` : "Agente no encontró coincidencias.");
 }
 
 function renderProfile() {
@@ -1253,11 +1470,15 @@ periodButtons.forEach((button) => {
 loginForm.addEventListener("submit", (event) => {
   event.preventDefault();
   const formData = new FormData(loginForm);
-  loginDoctor(formData.get("loginEmail").trim(), "email");
+  loginAccount(formData.get("loginEmail").trim(), "email");
 });
 
 googleLoginButton.addEventListener("click", () => {
-  loginDoctor("sofia.herrera@consulta.mx", "google");
+  loginAccount("sofia.herrera@consulta.mx", "google");
+});
+
+adminLoginDemoButton.addEventListener("click", () => {
+  loginAccount(ADMIN_EMAIL, "email");
 });
 
 logoutButton.addEventListener("click", () => {
@@ -1370,6 +1591,28 @@ resultsSearch.addEventListener("input", () => renderResults(resultsSearch.value)
 
 adminStatusFilter?.addEventListener("change", renderAdmin);
 
+adminOrderTable?.addEventListener("change", (event) => {
+  const statusControl = event.target.closest("[data-admin-status]");
+
+  if (!statusControl) {
+    return;
+  }
+
+  const order = orders.find((currentOrder) => currentOrder.id === statusControl.dataset.adminStatus);
+
+  if (!order) {
+    return;
+  }
+
+  order.status = statusControl.value;
+  renderAdmin();
+  renderDoctorOrders();
+  renderResults(resultsSearch.value);
+  showToast(`Estatus actualizado: ${order.patient} · ${order.status}.`);
+});
+
+runAgentButton?.addEventListener("click", () => runAgent());
+
 studyGrid.addEventListener("change", (event) => {
   if (
     event.target.matches("[data-tomography-toggle]") ||
@@ -1390,6 +1633,7 @@ studyGrid.addEventListener("change", (event) => {
 document.addEventListener("click", (event) => {
   const downloadButton = event.target.closest("[data-file]");
   const orderButton = event.target.closest("[data-order-patient]");
+  const agentOrderButton = event.target.closest("[data-agent-order]");
 
   if (downloadButton) {
     const file = downloadButton.dataset.file;
@@ -1406,6 +1650,10 @@ document.addEventListener("click", (event) => {
     if (order) {
       openOrderModal(order);
     }
+  }
+
+  if (agentOrderButton) {
+    runAgent(agentOrderButton.dataset.agentOrder);
   }
 });
 
@@ -1435,8 +1683,13 @@ renderResults();
 const savedSession = localStorage.getItem(SESSION_KEY);
 if (savedSession) {
   const session = JSON.parse(savedSession);
-  applyDoctorProfile(findDoctorByEmail(session.email));
-  showApp();
+  currentRole = session.role || getAccountRole(session.email);
+
+  if (currentRole === "doctor") {
+    applyDoctorProfile(findDoctorByEmail(session.email));
+  }
+
+  showApp(false, currentRole === "admin" ? "admin" : "dashboard");
 } else {
   showLogin();
 }

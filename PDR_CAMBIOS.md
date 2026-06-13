@@ -313,6 +313,39 @@ El proyecto empezará una etapa de deployment y colaboración con más de una he
 
 Reduce riesgo de cambios cruzados y mantiene la documentación como fuente de verdad para Replit, Codex y Claude Code.
 
+## 2026-06-13 - Cuenta admin separada y agente de resultados
+
+### Objetivo
+
+Separar la cuenta de administrador de la cuenta del doctor y simular el flujo operativo de Radio Imagen para estatus, asignación de radiografías y subida temporal.
+
+### Cambios realizados
+
+- Se agregó acceso demo `admin@radioimagen.mx`.
+- La cuenta doctor ya no muestra la vista admin en navegación.
+- La cuenta admin aterriza directamente en `Admin Radio Imagen`.
+- Se agregaron controles para cambiar estatus de cada orden desde admin.
+- Se agregó un agente local demo que cruza nombres de pacientes contra archivos locales.
+- El agente asigna el archivo correcto a la orden, cambia el estatus a `Lista` y crea/actualiza una solicitud de subida inmediata.
+- Se agregó bitácora visual del agente con porcentaje de coincidencia y acción realizada.
+
+### Razón del cambio
+
+El flujo real requiere que Radio Imagen opere resultados y descargas sin exponer controles internos al doctor.
+
+### Lógica de datos
+
+- `orders` representa la orden clínica del paciente.
+- `localResultFiles` representa los archivos disponibles en el CPU/servidor local.
+- `adminDownloadRequests` representa la cola que activa subida temporal a Supabase.
+- `runAgent()` normaliza nombres, busca coincidencias y prepara la subida bajo demanda.
+
+### Riesgos pendientes
+
+- En producción el cruce debe validar folio, fecha de nacimiento y doctor, no solamente nombre.
+- La subida inmediata debe ejecutarse en backend/local-agent, no desde el navegador.
+- Se requiere auditoría para saber qué admin cambió estatus o liberó un resultado.
+
 ## Plantilla para próximos cambios
 
 ### YYYY-MM-DD - Nombre del cambio

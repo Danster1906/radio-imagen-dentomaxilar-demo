@@ -1,3 +1,18 @@
+.admin-login-action {
+  width: 100%;
+  padding: 14px 18px;
+  color: var(--brand-dark);
+  background: #fff7f7;
+  border: 1px solid #fecaca;
+  border-radius: 8px;
+  font-weight: 900;
+  cursor: pointer;
+}
+
+.admin-login-action:hover {
+  background: #fee2e2;
+}
+
 .admin-hero {
   display: flex;
   align-items: center;
@@ -72,13 +87,34 @@
 
 .admin-row {
   display: grid;
-  grid-template-columns: minmax(150px, 1fr) minmax(130px, 0.7fr) minmax(100px, 0.55fr) auto;
+  grid-template-columns: minmax(150px, 1fr) minmax(130px, 0.7fr) minmax(150px, 0.7fr) auto;
   align-items: center;
   gap: 10px;
   padding: 10px;
   background: #fbfcfd;
   border: 1px solid var(--line);
   border-radius: 8px;
+}
+
+.admin-status-control {
+  display: grid;
+  gap: 4px;
+  color: var(--muted);
+  font-size: 0.68rem;
+  font-weight: 900;
+  text-transform: uppercase;
+}
+
+.admin-status-control select,
+.admin-panel select {
+  min-height: 38px;
+  padding: 8px 10px;
+  color: var(--ink);
+  background: #ffffff;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  font: inherit;
+  font-weight: 800;
 }
 
 .admin-row strong,
@@ -138,10 +174,67 @@
   min-height: 44px;
 }
 
+.admin-helper {
+  margin-bottom: 12px;
+  color: var(--muted);
+  font-size: 0.86rem;
+}
+
+.agent-summary {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+  margin-bottom: 10px;
+}
+
+.agent-summary article {
+  display: grid;
+  gap: 4px;
+  padding: 10px;
+  background: #fff7f7;
+  border: 1px solid #fee2e2;
+  border-radius: 8px;
+}
+
+.agent-summary span {
+  color: var(--muted);
+  font-size: 0.68rem;
+  font-weight: 900;
+  text-transform: uppercase;
+}
+
+.agent-summary strong {
+  font-size: 1.25rem;
+}
+
+.agent-log {
+  display: grid;
+  gap: 8px;
+}
+
+.agent-log article {
+  display: grid;
+  gap: 5px;
+  padding: 10px;
+  background: #fbfcfd;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+}
+
+.agent-log span,
+.agent-log small {
+  overflow: hidden;
+  color: var(--muted);
+  font-size: 0.76rem;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 @media (max-width: 1100px) {
   .admin-metrics,
   .admin-grid,
-  .admin-form-grid {
+  .admin-form-grid,
+  .agent-summary {
     grid-template-columns: 1fr;
   }
 

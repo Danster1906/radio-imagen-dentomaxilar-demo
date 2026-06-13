@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Radio Imagen | Órdenes Digitales</title>
     <link rel="stylesheet" href="styles.css?v=period-metrics-2" />
-    <link rel="stylesheet" href="admin.css?v=admin-panel-1" />
+    <link rel="stylesheet" href="admin.css?v=admin-agent-1" />
   </head>
   <body>
     <section class="login-screen" id="login-screen">
@@ -14,28 +14,29 @@
           <div class="brand-mark">RI</div>
           <div>
             <strong>Radio Imagen</strong>
-            <span>Portal para doctores</span>
+            <span>Portal doctor / admin</span>
           </div>
         </div>
 
         <div class="login-copy">
           <span class="eyebrow">Acceso profesional</span>
           <h1>Órdenes digitales y resultados en un solo lugar.</h1>
-          <p>Ingresa con tu correo o continúa con Google para crear órdenes, dar seguimiento y descargar resultados.</p>
+          <p>Ingresa como doctor para crear órdenes o como admin para dar seguimiento radiodiagnóstico.</p>
         </div>
 
         <div class="identity-card" aria-label="Jerarquía de datos por doctor">
-          <span>Perfil asociado</span>
-          <strong>doctor_id único</strong>
-          <small>Las órdenes, métricas y resultados se cargan solo para el perfil autenticado.</small>
+          <span>Cuentas separadas</span>
+          <strong>doctor_id / admin_id</strong>
+          <small>Doctor ve sus pacientes. Admin ve operación, estatus y agente de resultados.</small>
         </div>
 
         <form class="login-form" id="login-form">
           <label>
             Correo profesional
-            <input name="loginEmail" type="email" placeholder="doctor@consultorio.com" required />
+            <input name="loginEmail" type="email" placeholder="doctor@consultorio.com o admin@radioimagen.mx" required />
           </label>
           <button class="primary-action" type="submit">Continuar con correo</button>
+          <button class="admin-login-action" id="admin-login-demo" type="button">Entrar como Admin Radio Imagen</button>
           <button class="google-action" id="google-login" type="button">
             <span>G</span>
             Continuar con Google
@@ -111,12 +112,12 @@
         </div>
 
         <nav class="nav-stack">
-          <button class="nav-item active" data-view="dashboard" type="button">Panel doctor</button>
-          <button class="nav-item" data-view="new-order" type="button">Nueva orden</button>
-          <button class="nav-item" data-view="results" type="button">Resultados</button>
-          <button class="nav-item" data-view="profile" type="button">Mi perfil</button>
-          <button class="nav-item" data-view="admin" type="button">Admin Radio Imagen</button>
-          <button class="nav-item" data-view="future" type="button">Consulta plus</button>
+          <button class="nav-item active" data-role-view="doctor" data-view="dashboard" type="button">Panel doctor</button>
+          <button class="nav-item" data-role-view="doctor" data-view="new-order" type="button">Nueva orden</button>
+          <button class="nav-item" data-role-view="doctor" data-view="results" type="button">Resultados</button>
+          <button class="nav-item" data-role-view="doctor" data-view="profile" type="button">Mi perfil</button>
+          <button class="nav-item" data-role-view="admin" data-view="admin" type="button">Admin Radio Imagen</button>
+          <button class="nav-item" data-role-view="doctor" data-view="future" type="button">Consulta plus</button>
         </nav>
 
         <div class="profile-card">
@@ -143,7 +144,7 @@
               <strong id="current-date">--</strong>
               <small id="current-time">--:--</small>
             </div>
-            <button class="primary-action" data-view="new-order" type="button">Crear orden</button>
+            <button class="primary-action" data-doctor-only data-view="new-order" type="button">Crear orden</button>
           </div>
         </header>
 
@@ -502,7 +503,7 @@
             <div>
               <span class="eyebrow">Operación interna</span>
               <h2>Admin Radio Imagen</h2>
-              <p>Bandeja para alta de doctores, seguimiento de órdenes, socios y descargas temporales.</p>
+              <p>Bandeja separada para cambiar estatus, cruzar pacientes con archivos locales y subir resultados bajo demanda.</p>
             </div>
             <button class="primary-action" type="button">Alta doctor</button>
           </section>
@@ -546,6 +547,34 @@
                 </select>
               </div>
               <div class="admin-table" id="admin-order-table"></div>
+            </section>
+
+            <section class="panel admin-panel">
+              <div class="panel-heading">
+                <div>
+                  <span class="eyebrow">Agente local</span>
+                  <h2>Asignación automática</h2>
+                </div>
+                <button class="small-action" id="run-agent-button" type="button">Correr agente</button>
+              </div>
+              <p class="admin-helper">
+                Cruza nombres de pacientes con archivos del servidor local, asigna el resultado correcto y prepara la subida inmediata.
+              </p>
+              <div class="agent-summary" aria-label="Resumen del agente">
+                <article>
+                  <span>Archivos locales</span>
+                  <strong data-agent-metric="localFiles">--</strong>
+                </article>
+                <article>
+                  <span>Matches</span>
+                  <strong data-agent-metric="matches">--</strong>
+                </article>
+                <article>
+                  <span>Subidas</span>
+                  <strong data-agent-metric="uploads">--</strong>
+                </article>
+              </div>
+              <div class="agent-log" id="agent-log"></div>
             </section>
 
             <section class="panel admin-panel">
