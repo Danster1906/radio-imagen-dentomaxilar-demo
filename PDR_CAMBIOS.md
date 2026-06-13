@@ -447,6 +447,29 @@ Actualizar el programa de socios para que el primer paciente active el nivel `So
 
 El primer paciente debe tener una recompensa clara para activar hábito. Los niveles superiores deben justificar mayor lealtad con herramientas de crecimiento, no sólo descuentos.
 
+## 2026-06-13 - Configuración inicial de Supabase
+
+### Objetivo
+
+Crear el proyecto Supabase real para iniciar operación con base de datos, roles, órdenes, estudios, resultados y storage temporal.
+
+### Cambios realizados
+
+- Se creó el proyecto `radio-imagen-dentomaxilar` en Supabase.
+- Se aplicó la migración inicial de esquema.
+- Se crearon tablas para perfiles, doctores, órdenes, estudios, resultados, descargas, agente local y programa de socios.
+- Se cargaron 23 estudios base.
+- Se cargaron 4 tiers de Socios Radio Imagen.
+- Se creó el bucket privado `result-temp`.
+- Se documentó el estado en `SUPABASE_PROJECT_STATUS.md`.
+
+### Pendiente
+
+- Crear usuarios reales en Supabase Auth.
+- Conectar el frontend al login real.
+- Cambiar órdenes mock por inserciones reales.
+- Conectar admin y agente local a las tablas reales.
+
 ## Plantilla para próximos cambios
 
 ### YYYY-MM-DD - Nombre del cambio
