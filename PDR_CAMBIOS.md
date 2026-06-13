@@ -265,6 +265,54 @@ Permite un flujo híbrido: Replit publica la app, Supabase coordina la descarga 
 
 El flujo requiere `result_files`, `download_requests`, `cloud_path`, `signed_url_expires_at` y estados de descarga.
 
+## 2026-06-13 - Primera interfaz Admin Radio Imagen
+
+### Objetivo
+
+Crear una vista interna para que Radio Imagen pueda visualizar cómo funcionaría la operación administrativa.
+
+### Cambios realizados
+
+- Se agregó navegación `Admin Radio Imagen`.
+- Se creó una vista con KPIs operativos.
+- Se agregó bandeja de órdenes con filtro por estado.
+- Se agregó lista de doctores con nivel de socio, pacientes y puntos.
+- Se agregó cola de descargas para representar el flujo servidor local + Supabase.
+- Se agregó formulario visual de alta rápida de doctor con pacientes históricos.
+
+### Razón del cambio
+
+El producto necesita separar la experiencia del doctor de la operación interna de Radio Imagen.
+
+### Impacto en producto
+
+Permite mostrar cómo Radio Imagen daría seguimiento a órdenes, doctores, socios y solicitudes de descarga.
+
+### Impacto en datos
+
+La vista depende de `doctors`, `orders`, `partner_tiers`, `doctor_partner_status`, `result_files` y `download_requests`.
+
+## 2026-06-13 - Guia de trabajo con Claude Code
+
+### Objetivo
+
+Documentar como usar Claude Code junto con Codex sin mezclar cambios ni perder trazabilidad.
+
+### Cambios realizados
+
+- Se agregó `CLAUDE_CODE_WORKFLOW.md`.
+- Se definió GitHub como punto de integración entre agentes.
+- Se propuso trabajar por ramas separadas para Codex y Claude Code.
+- Se agregó un prompt base para que Claude Code lea la documentación del producto antes de modificar código.
+
+### Razón del cambio
+
+El proyecto empezará una etapa de deployment y colaboración con más de una herramienta de desarrollo.
+
+### Impacto en producto
+
+Reduce riesgo de cambios cruzados y mantiene la documentación como fuente de verdad para Replit, Codex y Claude Code.
+
 ## Plantilla para próximos cambios
 
 ### YYYY-MM-DD - Nombre del cambio

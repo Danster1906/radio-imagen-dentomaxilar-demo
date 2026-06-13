@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Radio Imagen | Órdenes Digitales</title>
     <link rel="stylesheet" href="styles.css?v=period-metrics-2" />
+    <link rel="stylesheet" href="admin.css?v=admin-panel-1" />
   </head>
   <body>
     <section class="login-screen" id="login-screen">
@@ -114,6 +115,7 @@
           <button class="nav-item" data-view="new-order" type="button">Nueva orden</button>
           <button class="nav-item" data-view="results" type="button">Resultados</button>
           <button class="nav-item" data-view="profile" type="button">Mi perfil</button>
+          <button class="nav-item" data-view="admin" type="button">Admin Radio Imagen</button>
           <button class="nav-item" data-view="future" type="button">Consulta plus</button>
         </nav>
 
@@ -491,6 +493,107 @@
                 El doctor entra para mandar órdenes a Radio Imagen. Cuando ese hábito existe,
                 se puede ofrecer agenda, finanzas y métricas como un módulo aparte.
               </p>
+            </section>
+          </div>
+        </section>
+
+        <section class="view" id="admin">
+          <section class="admin-hero">
+            <div>
+              <span class="eyebrow">Operación interna</span>
+              <h2>Admin Radio Imagen</h2>
+              <p>Bandeja para alta de doctores, seguimiento de órdenes, socios y descargas temporales.</p>
+            </div>
+            <button class="primary-action" type="button">Alta doctor</button>
+          </section>
+
+          <section class="admin-metrics" aria-label="Resumen operativo">
+            <article>
+              <span>Órdenes nuevas</span>
+              <strong data-admin-metric="newOrders">--</strong>
+              <small>Por revisar</small>
+            </article>
+            <article>
+              <span>Resultados listos</span>
+              <strong data-admin-metric="readyResults">--</strong>
+              <small>Esperando descarga</small>
+            </article>
+            <article>
+              <span>Solicitudes descarga</span>
+              <strong data-admin-metric="downloadRequests">--</strong>
+              <small>Agente local</small>
+            </article>
+            <article>
+              <span>Socios activos</span>
+              <strong data-admin-metric="activePartners">--</strong>
+              <small>Con referidos</small>
+            </article>
+          </section>
+
+          <div class="admin-grid">
+            <section class="panel admin-panel wide">
+              <div class="panel-heading">
+                <div>
+                  <span class="eyebrow">Seguimiento radiodiagnóstico</span>
+                  <h2>Órdenes recibidas</h2>
+                </div>
+                <select id="admin-status-filter" aria-label="Filtrar órdenes por estado">
+                  <option value="all">Todos</option>
+                  <option value="Recibida">Recibida</option>
+                  <option value="Agendada">Agendada</option>
+                  <option value="Proceso">Proceso</option>
+                  <option value="Lista">Lista</option>
+                </select>
+              </div>
+              <div class="admin-table" id="admin-order-table"></div>
+            </section>
+
+            <section class="panel admin-panel">
+              <div class="panel-heading">
+                <div>
+                  <span class="eyebrow">Doctores</span>
+                  <h2>Alta y socios</h2>
+                </div>
+              </div>
+              <div class="admin-doctor-list" id="admin-doctor-list"></div>
+            </section>
+
+            <section class="panel admin-panel">
+              <div class="panel-heading">
+                <div>
+                  <span class="eyebrow">Servidor local + Supabase</span>
+                  <h2>Cola de descargas</h2>
+                </div>
+              </div>
+              <div class="download-queue" id="admin-download-queue"></div>
+            </section>
+
+            <section class="panel admin-panel wide">
+              <div class="panel-heading">
+                <div>
+                  <span class="eyebrow">Nuevo doctor</span>
+                  <h2>Registro rápido</h2>
+                </div>
+              </div>
+              <div class="admin-form-grid">
+                <label>
+                  Nombre
+                  <input value="Dra. Natalia Rivas" />
+                </label>
+                <label>
+                  Correo
+                  <input value="natalia.rivas@consulta.mx" />
+                </label>
+                <label>
+                  Especialidad
+                  <input value="Ortodoncia" />
+                </label>
+                <label>
+                  Pacientes históricos
+                  <input value="12" />
+                </label>
+                <button class="primary-action" type="button">Crear doctor y asignar puntos</button>
+              </div>
             </section>
           </div>
         </section>

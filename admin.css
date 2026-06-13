@@ -1,0 +1,156 @@
+.admin-hero {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18px;
+  margin-bottom: 14px;
+  padding: 18px;
+  background: linear-gradient(135deg, #ffffff, #fff5f5);
+  border: 1px solid #fee2e2;
+  border-radius: 8px;
+  box-shadow: var(--shadow);
+}
+
+.admin-hero h2 {
+  margin-top: 4px;
+  font-size: 1.6rem;
+}
+
+.admin-hero p {
+  max-width: 760px;
+  margin-top: 6px;
+  color: var(--muted);
+}
+
+.admin-metrics {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 8px;
+  margin-bottom: 14px;
+}
+
+.admin-metrics article {
+  display: grid;
+  gap: 4px;
+  min-height: 78px;
+  align-content: center;
+  padding: 12px;
+  background: #ffffff;
+  border: 1px solid #fee2e2;
+  border-radius: 8px;
+}
+
+.admin-metrics span,
+.admin-metrics small {
+  overflow: hidden;
+  color: var(--muted);
+  font-size: 0.74rem;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.admin-metrics strong {
+  font-size: 1.35rem;
+}
+
+.admin-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.4fr) minmax(320px, 0.8fr);
+  gap: 16px;
+}
+
+.admin-panel.wide {
+  grid-column: span 1;
+}
+
+.admin-table,
+.admin-doctor-list,
+.download-queue {
+  display: grid;
+  gap: 8px;
+}
+
+.admin-row {
+  display: grid;
+  grid-template-columns: minmax(150px, 1fr) minmax(130px, 0.7fr) minmax(100px, 0.55fr) auto;
+  align-items: center;
+  gap: 10px;
+  padding: 10px;
+  background: #fbfcfd;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+}
+
+.admin-row strong,
+.admin-doctor-card strong,
+.download-card strong {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.admin-row span,
+.admin-doctor-card span,
+.download-card span,
+.admin-row small,
+.admin-doctor-card small,
+.download-card small {
+  color: var(--muted);
+  font-size: 0.78rem;
+}
+
+.admin-doctor-card,
+.download-card {
+  display: grid;
+  gap: 6px;
+  padding: 12px;
+  background: #fbfcfd;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+}
+
+.admin-doctor-card header,
+.download-card header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.admin-chip {
+  width: fit-content;
+  padding: 5px 8px;
+  color: var(--brand-dark);
+  background: #fee2e2;
+  border-radius: 999px;
+  font-size: 0.7rem;
+  font-weight: 900;
+}
+
+.admin-form-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr)) auto;
+  gap: 12px;
+  align-items: end;
+}
+
+.admin-form-grid .primary-action {
+  min-height: 44px;
+}
+
+@media (max-width: 1100px) {
+  .admin-metrics,
+  .admin-grid,
+  .admin-form-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .admin-row {
+    grid-template-columns: 1fr;
+  }
+
+  .admin-hero {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+}

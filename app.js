@@ -197,6 +197,33 @@ const orders = [
   },
 ];
 
+const adminDownloadRequests = [
+  {
+    patient: "Mariana Lopez Garcia",
+    doctor: "Dra. Sofia Herrera",
+    file: "ORD-2026-0001.zip",
+    status: "Solicitada",
+    storage: "local_ready",
+    expires: "Local vence en 68 días",
+  },
+  {
+    patient: "Valeria Torres Diaz",
+    doctor: "Dr. Marco Padilla",
+    file: "CBCT_Valeria_Torres.zip",
+    status: "Subiendo",
+    storage: "upload_requested",
+    expires: "Supabase pendiente",
+  },
+  {
+    patient: "Sofia Calderon Reyes",
+    doctor: "Dra. Sofia Herrera",
+    file: "ORD-2026-0018.pdf",
+    status: "Lista",
+    storage: "cloud_ready",
+    expires: "Link vence en 54 min",
+  },
+];
+
 const SESSION_KEY = "radioImagenDoctorSession";
 
 const partnerTiers = [
@@ -426,6 +453,7 @@ const viewTitles = {
   "new-order": "Nueva orden digital",
   results: "Resultados",
   profile: "Mi perfil profesional",
+  admin: "Admin Radio Imagen",
   future: "Consulta plus",
 };
 
@@ -444,6 +472,10 @@ const studyGrid = document.querySelector("#study-grid");
 const doctorOrderList = document.querySelector("#doctor-order-list");
 const resultsTable = document.querySelector("#results-table");
 const resultsSearch = document.querySelector("#results-search");
+const adminStatusFilter = document.querySelector("#admin-status-filter");
+const adminOrderTable = document.querySelector("#admin-order-table");
+const adminDoctorList = document.querySelector("#admin-doctor-list");
+const adminDownloadQueue = document.querySelector("#admin-download-queue");
 const orderForm = document.querySelector("#order-form");
 const profileForm = document.querySelector("#profile-form");
 const toast = document.querySelector("#toast");
@@ -682,6 +714,7 @@ function renderDoctorScopedData() {
   renderPartnerProgram();
   renderDoctorOrders();
   renderResults(resultsSearch.value);
+  renderAdmin();
 }
 
 function showApp(useLoader = false) {
@@ -1030,6 +1063,74 @@ function renderResults(filter = "") {
     .join("");
 }
 
+function renderAdmin() {
+  if (!adminOrderTable || !adminDoctorList || !adminDownloadQueue) {
+    return;
+  }
+
+  const selectedStatus = adminStatusFilter?.value || "all";
+  const allDoctors = Object.values(doctorDirectory);
+  const visibleOrders = orders.filter((order) => selectedStatus === "all" || order.status === selectedStatus);
+  const newOrders = orders.filter((order) => order.status === "Recibida").length;
+  const readyResults = orders.filter((order) => order.status === "Lista").length;
+
+  document.querySelector('[data-admin-metric="newOrders"]').textContent = newOrders;
+  document.querySelector('[data-admin-metric="readyResults"]').textContent = readyResults;
+  document.querySelector('[data-admin-metric="downloadRequests"]').textContent = adminDownloadRequests.length;
+  document.querySelector('[data-admin-metric="activePartners"]').textContent = allDoctors.filter(
+    (doctor) => doctor.partner.referredPatients > 0,
+  ).length;
+
+  adminOrderTable.innerHTML = visibleOrders
+    .map(
+      (order) => `
+        <article class="admin-row">
+          <div>
+            <strong>${order.patient}</strong>
+            <small>${order.studies.join(", ")}</small>
+          </div>
+          <span>${order.doctor}</span>
+          <span class="status ${statusClass(order.status)}">${order.status}</span>
+          <button class="small-action" type="button">Asignar</button>
+        </article>
+      `,
+    )
+    .join("");
+
+  adminDoctorList.innerHTML = allDoctors
+    .map((doctor) => {
+      const tier = getPartnerTier(doctor.partner.referredPatients);
+
+      return `
+        <article class="admin-doctor-card">
+          <header>
+            <strong>${doctor.name}</strong>
+            <span class="admin-chip">${tier.shortName}</span>
+          </header>
+          <span>${doctor.specialty}</span>
+          <small>${doctor.partner.referredPatients} pacientes · ${doctor.partner.points.toLocaleString("es-MX")} pts</small>
+        </article>
+      `;
+    })
+    .join("");
+
+  adminDownloadQueue.innerHTML = adminDownloadRequests
+    .map(
+      (request) => `
+        <article class="download-card">
+          <header>
+            <strong>${request.patient}</strong>
+            <span class="admin-chip">${request.status}</span>
+          </header>
+          <span>${request.doctor}</span>
+          <small>${request.file}</small>
+          <small>${request.storage} · ${request.expires}</small>
+        </article>
+      `,
+    )
+    .join("");
+}
+
 function renderProfile() {
   const initials = getInitials(doctorProfile.name);
   const photoTranslateX = `${Number(doctorProfile.photoX)}%`;
@@ -1266,6 +1367,8 @@ centerPhotoButton.addEventListener("click", () => {
 });
 
 resultsSearch.addEventListener("input", () => renderResults(resultsSearch.value));
+
+adminStatusFilter?.addEventListener("change", renderAdmin);
 
 studyGrid.addEventListener("change", (event) => {
   if (
