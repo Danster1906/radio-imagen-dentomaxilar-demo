@@ -184,6 +184,23 @@ button {
   background: linear-gradient(145deg, rgba(127, 29, 29, 0.72), rgba(15, 23, 42, 0.44));
 }
 
+.login-showcase::after {
+  position: absolute;
+  inset-inline: 0;
+  height: 1px;
+  content: "";
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.5), rgba(220, 38, 38, 0.7), rgba(255, 255, 255, 0.5), transparent);
+  animation: scanLine 5s ease-in-out infinite;
+  pointer-events: none;
+}
+
+@keyframes scanLine {
+  0% { top: 8%; opacity: 0; }
+  6% { opacity: 1; }
+  94% { opacity: 0.7; }
+  100% { top: 92%; opacity: 0; }
+}
+
 .showcase-card {
   position: relative;
   display: grid;
@@ -361,6 +378,40 @@ button {
   gap: 12px;
 }
 
+.brand-logo {
+  height: 44px;
+  width: auto;
+  border-radius: 6px;
+  object-fit: contain;
+}
+
+.sidebar-logo {
+  height: 44px;
+  padding: 5px 10px;
+  background: #ffffff;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.18);
+}
+
+.brand-subtitle {
+  color: rgba(255, 255, 255, 0.7);
+  font-size: 0.82rem;
+}
+
+.login-brand .brand-subtitle {
+  color: var(--muted);
+}
+
+.login-brand .brand-logo {
+  height: 58px;
+}
+
+.login-brand {
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 8px;
+}
+
 .brand-mark {
   display: grid;
   width: 46px;
@@ -409,11 +460,18 @@ button {
   transition: background 150ms ease, color 150ms ease, border-color 150ms ease;
 }
 
-.nav-item:hover,
+.nav-item:hover {
+  color: #ffffff;
+  background: rgba(255, 255, 255, 0.08);
+  border-color: rgba(255, 255, 255, 0.12);
+}
+
 .nav-item.active {
   color: #ffffff;
-  background: rgba(255, 255, 255, 0.13);
-  border-color: rgba(255, 255, 255, 0.16);
+  background: rgba(255, 255, 255, 0.1);
+  border-color: rgba(255, 255, 255, 0.18);
+  box-shadow: inset 3px 0 0 rgba(255, 255, 255, 0.9);
+  padding-left: 11px;
 }
 
 .profile-card {
@@ -661,7 +719,8 @@ h2 {
 .stat-item strong {
   max-width: 100%;
   overflow: hidden;
-  font-size: 1.22rem;
+  font-size: 1.32rem;
+  font-variant-numeric: tabular-nums;
   letter-spacing: -0.02em;
   line-height: 1.05;
   text-overflow: ellipsis;
@@ -710,7 +769,9 @@ h2 {
   align-items: center;
   justify-content: space-between;
   gap: 16px;
-  margin-bottom: 18px;
+  padding-bottom: 14px;
+  margin-bottom: 16px;
+  border-bottom: 1px solid var(--line);
 }
 
 .partner-panel {
@@ -917,13 +978,25 @@ h2 {
 
 .status {
   display: inline-flex;
+  align-items: center;
+  gap: 6px;
   width: fit-content;
   min-height: 28px;
-  align-items: center;
   padding: 0 10px;
   border-radius: 999px;
   font-size: 0.78rem;
   font-weight: 800;
+}
+
+.status::before {
+  content: "";
+  display: inline-block;
+  flex-shrink: 0;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: currentColor;
+  opacity: 0.75;
 }
 
 .status.recibida {
