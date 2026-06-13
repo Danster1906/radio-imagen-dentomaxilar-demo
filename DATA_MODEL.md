@@ -185,7 +185,7 @@ Catálogo de niveles del programa Socios Radio Imagen.
 | Campo | Tipo | Nota |
 | --- | --- | --- |
 | id | uuid | Primary key |
-| name | text | Socio Radio Imagen Dentomaxilar, Socio Activo, Socio Plata, Socio Oro, Socio Diamante |
+| name | text | Socio Activo, Socio Plata, Socio Oro, Socio Diamante |
 | min_points | integer | Puntos mínimos para entrar al nivel |
 | min_referrals | integer | Pacientes referidos mínimos para entrar al nivel |
 | reward_description | text | Beneficio visible para el doctor |

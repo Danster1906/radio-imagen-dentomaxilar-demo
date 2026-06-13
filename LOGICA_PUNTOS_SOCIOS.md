@@ -57,15 +57,14 @@ El nivel principal se calcula por número de pacientes referidos acumulados.
 
 | Nivel | Pacientes referidos mínimos | Puntos base equivalentes |
 | --- | ---: | ---: |
-| Socio Radio Imagen Dentomaxilar | 1 | 100 |
-| Socio Activo | 5 | 500 |
-| Socio Plata | 10 | 1,000 |
+| Socio Activo | 1 | 100 |
+| Socio Plata | 15 | 1,500 |
 | Socio Oro | 25 | 2,500 |
 | Socio Diamante | 50 | 5,000 |
 
 ## Beneficios por nivel
 
-### Socio Radio Imagen Dentomaxilar
+### Socio Activo
 
 Se desbloquea desde el primer paciente referido.
 
@@ -74,31 +73,22 @@ Beneficios:
 - Acceso a plataforma iTero.
 - Xelis Dental Viewer.
 - Sidexis Dental Viewer.
-- 10% cashback en los estudios de sus pacientes.
-- Capacitación 1 a 1.
-
-### Socio Activo
-
-Se desbloquea desde 5 pacientes referidos.
-
-Beneficios:
-
-- Invitación preferente para pláticas y capacitaciones.
-- Presentación de estudios ortodónticos personalizada.
-- Material digital para explicar estudios a pacientes.
-- Soporte para preparar casos antes de iniciar tratamiento.
-- Avisos prioritarios cuando los resultados estén listos.
+- Acceso a pláticas mensuales.
+- Branding del doctor o clínica en sus estudios.
+- Preferencia en comunicación con Radio Imagen.
+- Newsletter semanal con información actualizada del mundo del diagnóstico.
 
 ### Socio Plata
 
-Se desbloquea desde 10 pacientes referidos.
+Se desbloquea desde 15 pacientes referidos.
 
 Beneficios:
 
-- Prioridad en seguimiento operativo.
+- Consulta personalizada de redes sociales con implementación IA.
+- Cortesías mensuales para estudios seleccionados.
+- Kit de contenidos para explicar diagnósticos a pacientes.
+- Revisión mensual de pacientes referidos y conversión.
 - Plantillas personalizadas para solicitar estudios.
-- Resumen mensual de pacientes referidos.
-- Revisión trimestral de estudios más solicitados.
 
 ### Socio Oro
 
@@ -106,10 +96,11 @@ Se desbloquea desde 25 pacientes referidos.
 
 Beneficios:
 
-- Reporte mensual personalizado.
-- Sesión de lectura de KPIs de referidos.
-- Apoyo para campañas internas de diagnóstico.
+- Dashboard mensual de desempeño y estudios más solicitados.
+- Sesión bimestral de estrategia para crecer referencias.
 - Capacitación grupal para el equipo de consulta.
+- Prioridad extendida para agenda y liberación de resultados.
+- Material co-brandeado para campañas de diagnóstico.
 
 ### Socio Diamante
 
@@ -117,10 +108,11 @@ Se desbloquea desde 50 pacientes referidos.
 
 Beneficios:
 
-- Beneficios preferenciales y planeación conjunta.
-- Agenda preferente para capacitaciones privadas.
-- Revisión estratégica de crecimiento de consulta.
-- Material co-brandeado para comunicación con pacientes.
+- Plan trimestral de crecimiento de consulta con KPIs.
+- Capacitaciones privadas para el equipo completo.
+- Eventos o webinars co-brandeados con Radio Imagen.
+- Atención prioritaria para casos especiales y coordinación clínica.
+- Reporte ejecutivo de retorno por pacientes referidos.
 
 ## Eventos de puntos
 
@@ -164,7 +156,7 @@ Dr. Marco:
 - Total = 820 puntos.
 - Nivel por pacientes referidos = Socio Activo.
 - Siguiente nivel = Socio Plata.
-- Le faltan 2 pacientes para llegar a 10.
+- Le faltan 7 pacientes para llegar a 15.
 
 ## Cashback
 

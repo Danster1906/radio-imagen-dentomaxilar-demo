@@ -409,6 +409,44 @@ Evitar que el atajo `Crear orden` aparezca dentro de la pestaña donde ya se est
 
 Reduce redundancia y evita que el usuario vea dos acciones con el mismo propósito dentro del formulario de nueva orden.
 
+## 2026-06-13 - Ajuste de tiers Socios Radio Imagen
+
+### Objetivo
+
+Actualizar el programa de socios para que el primer paciente active el nivel `Socio Activo` y hacer más valiosos los niveles superiores.
+
+### Cambios realizados
+
+- `Socio Activo` ahora inicia desde 1 paciente referido.
+- Se eliminaron los beneficios anteriores del nivel intermedio de 5 pacientes.
+- `Socio Activo` incluye iTero, Xelis, Sidexis, pláticas mensuales, branding, comunicación preferente y newsletter semanal.
+- `Socio Plata` sube a 15 pacientes referidos.
+- `Socio Plata` incluye consulta personalizada de redes sociales con implementación IA y cortesías mensuales.
+- Se propusieron beneficios nuevos para `Socio Oro` y `Socio Diamante`.
+- Se actualizó `LOGICA_PUNTOS_SOCIOS.md` para alinear documentación y prototipo.
+
+### Beneficios sugeridos para niveles superiores
+
+`Socio Oro` debe enfocarse en crecimiento y equipo:
+
+- Dashboard mensual de desempeño.
+- Sesión bimestral de estrategia.
+- Capacitación grupal para el equipo de consulta.
+- Prioridad extendida para agenda y liberación de resultados.
+- Material co-brandeado para campañas de diagnóstico.
+
+`Socio Diamante` debe sentirse como alianza estratégica:
+
+- Plan trimestral de crecimiento con KPIs.
+- Capacitaciones privadas.
+- Eventos o webinars co-brandeados.
+- Atención prioritaria para casos especiales.
+- Reporte ejecutivo de retorno por pacientes referidos.
+
+### Razón de producto
+
+El primer paciente debe tener una recompensa clara para activar hábito. Los niveles superiores deben justificar mayor lealtad con herramientas de crecimiento, no sólo descuentos.
+
 ## Plantilla para próximos cambios
 
 ### YYYY-MM-DD - Nombre del cambio
