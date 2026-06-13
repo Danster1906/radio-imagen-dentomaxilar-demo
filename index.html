@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Radio Imagen | Órdenes Digitales</title>
     <link rel="stylesheet" href="styles.css?v=period-metrics-2" />
-    <link rel="stylesheet" href="admin.css?v=send-studies-1" />
+    <link rel="stylesheet" href="admin.css?v=download-options-1" />
   </head>
   <body>
     <section class="login-screen" id="login-screen">
@@ -676,7 +676,45 @@
       </section>
     </div>
 
+    <div class="modal-backdrop" id="download-modal" hidden>
+      <section class="order-modal download-modal" role="dialog" aria-modal="true" aria-labelledby="download-modal-title">
+        <header class="modal-header">
+          <div>
+            <span class="eyebrow">Centro de descarga</span>
+            <h2 id="download-modal-title">Descargar estudio</h2>
+          </div>
+          <button class="icon-action" id="close-download-modal" type="button" aria-label="Cerrar descarga">×</button>
+        </header>
+
+        <div class="modal-body">
+          <div class="modal-main">
+            <span class="eyebrow">Paciente</span>
+            <h3 id="download-patient-name">--</h3>
+            <p id="download-study-summary">--</p>
+          </div>
+
+          <section class="download-choice primary-download">
+            <div>
+              <span class="eyebrow">Recomendado</span>
+              <h3>Estudio completo</h3>
+              <p>Descarga un ZIP con todos los archivos liberados del paciente.</p>
+            </div>
+            <button class="primary-action" id="download-full-study" type="button">Descargar todo</button>
+          </section>
+
+          <section class="download-choice">
+            <div>
+              <span class="eyebrow">Por archivo</span>
+              <h3>Descargar componentes</h3>
+              <p>Útil cuando el doctor sólo necesita un PDF, DICOM, fotografías, modelos o análisis.</p>
+            </div>
+            <div class="download-file-list" id="download-file-list"></div>
+          </section>
+        </div>
+      </section>
+    </div>
+
     <div class="toast" id="toast" role="status" aria-live="polite"></div>
-    <script src="app.js?v=period-metrics-2"></script>
+    <script src="app.js?v=download-options-1"></script>
   </body>
 </html>

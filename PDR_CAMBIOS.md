@@ -363,6 +363,36 @@ Agregar una acción principal para que Radio Imagen pueda enviar estudios desde 
 
 La operación diaria necesita una acción explícita para liberar resultados ya asignados.
 
+## 2026-06-13 - Descarga completa o por componentes
+
+### Objetivo
+
+Permitir que el doctor descargue todo el estudio completo o solamente archivos específicos.
+
+### Cambios realizados
+
+- Se agregó un centro de descarga en modal desde la vista `Resultados`.
+- El botón `Descargar` abre opciones cuando el resultado está listo.
+- Se agregó descarga recomendada de `Estudio completo`.
+- Se agregaron componentes individuales como panorámica, lateral, cefalometría, fotografías, reportes o archivos del estudio.
+- Se agregó estructura `resultPackages` para representar el paquete completo y sus archivos internos.
+
+### Razón UX
+
+La tabla de resultados debe mantenerse simple. La decisión de descargar todo o partes del estudio aparece sólo cuando el doctor ya decidió descargar.
+
+### Lógica futura
+
+En producción cada orden debe tener una tabla `result_files` con:
+
+- `order_id`
+- `file_type`
+- `display_name`
+- `storage_path`
+- `is_part_of_full_package`
+- `expires_at`
+- `download_count`
+
 ## Plantilla para próximos cambios
 
 ### YYYY-MM-DD - Nombre del cambio

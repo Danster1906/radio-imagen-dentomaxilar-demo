@@ -265,6 +265,34 @@ const localResultFiles = [
   },
 ];
 
+const resultPackages = {
+  "ORD-2026-0001": {
+    complete: "Mariana_Lopez_Garcia_Estudio_Completo.zip",
+    files: [
+      { label: "Radiografía panorámica", type: "PDF", file: "Mariana_Lopez_Garcia_OPG.pdf" },
+      { label: "Lateral de cráneo", type: "PDF", file: "Mariana_Lopez_Garcia_Lateral.pdf" },
+      { label: "Análisis cefalométrico", type: "PDF", file: "Mariana_Lopez_Garcia_Cefalometria.pdf" },
+      { label: "Fotografías clínicas", type: "ZIP", file: "Mariana_Lopez_Garcia_Fotografias.zip" },
+    ],
+  },
+  "ORD-2026-0003": {
+    complete: "Valeria_Torres_Diaz_Estudio_Completo.zip",
+    files: [
+      { label: "Lateral de cráneo", type: "PDF", file: "Valeria_Torres_Diaz_Lateral.pdf" },
+      { label: "PA de cráneo", type: "PDF", file: "Valeria_Torres_Diaz_PA.pdf" },
+      { label: "Trazado cefalométrico", type: "PDF", file: "Valeria_Torres_Diaz_Cefalometria.pdf" },
+    ],
+  },
+  "ORD-2026-0004": {
+    complete: "Roberto_Salinas_Vega_ATM_Completo.zip",
+    files: [
+      { label: "ATM boca cerrada", type: "PDF", file: "Roberto_Salinas_Vega_ATM_Cerrada.pdf" },
+      { label: "ATM boca abierta", type: "PDF", file: "Roberto_Salinas_Vega_ATM_Abierta.pdf" },
+      { label: "Reporte comparativo", type: "PDF", file: "Roberto_Salinas_Vega_ATM_Reporte.pdf" },
+    ],
+  },
+};
+
 const agentState = {
   matches: [],
   uploads: 0,
@@ -543,6 +571,12 @@ const photoYInput = document.querySelector('input[name="photoY"]');
 const centerPhotoButton = document.querySelector("#center-photo");
 const orderModal = document.querySelector("#order-modal");
 const closeOrderModalButton = document.querySelector("#close-order-modal");
+const downloadModal = document.querySelector("#download-modal");
+const closeDownloadModalButton = document.querySelector("#close-download-modal");
+const downloadPatientName = document.querySelector("#download-patient-name");
+const downloadStudySummary = document.querySelector("#download-study-summary");
+const downloadFullStudyButton = document.querySelector("#download-full-study");
+const downloadFileList = document.querySelector("#download-file-list");
 const modalPatientName = document.querySelector("#modal-patient-name");
 const modalStudies = document.querySelector("#modal-studies");
 const modalOrderDate = document.querySelector("#modal-order-date");
@@ -564,6 +598,7 @@ const partnerLadder = document.querySelector("[data-partner-ladder]");
 let dragStart = null;
 let selectedMetricsPeriod = "today";
 let currentRole = "doctor";
+let activeDownloadOrder = null;
 
 const doctorProfile = {
   id: "DR-0001",
@@ -1167,13 +1202,73 @@ function renderResults(filter = "") {
           </div>
           <span class="result-meta">${order.doctor}</span>
           <span class="status ${statusClass(order.status)}">${order.status}</span>
-          <button class="download-action ${order.result ? "ready" : ""}" data-file="${order.result}" type="button">
+          <button class="download-action ${order.result ? "ready" : ""}" data-download-order="${order.id}" type="button" ${order.result ? "" : "disabled"}>
             ${order.result ? "Descargar" : "Pendiente"}
           </button>
         </article>
       `,
     )
     .join("");
+}
+
+function getResultPackage(order) {
+  if (resultPackages[order.id]) {
+    return resultPackages[order.id];
+  }
+
+  const baseName = normalizeName(order.patient).replace(/\s+/g, "_");
+  return {
+    complete: order.result || `${baseName}_Estudio_Completo.zip`,
+    files: [
+      {
+        label: "Paquete liberado por Radio Imagen",
+        type: "ZIP",
+        file: order.result || `${baseName}_Resultado.zip`,
+      },
+      {
+        label: "Reporte clínico",
+        type: "PDF",
+        file: `${baseName}_Reporte.pdf`,
+      },
+    ],
+  };
+}
+
+function openDownloadModal(order) {
+  activeDownloadOrder = order;
+  const resultPackage = getResultPackage(order);
+
+  downloadPatientName.textContent = order.patient;
+  downloadStudySummary.textContent = order.studies.join(", ");
+  downloadFullStudyButton.dataset.downloadFile = resultPackage.complete;
+  downloadFullStudyButton.dataset.downloadLabel = "estudio completo";
+  downloadFileList.innerHTML = resultPackage.files
+    .map(
+      (file) => `
+        <article class="download-file-card">
+          <div>
+            <strong>${file.label}</strong>
+            <span>${file.type} · ${file.file}</span>
+          </div>
+          <button class="small-action" data-download-file="${file.file}" data-download-label="${file.label}" type="button">
+            Descargar
+          </button>
+        </article>
+      `,
+    )
+    .join("");
+
+  downloadModal.hidden = false;
+}
+
+function closeDownloadModal() {
+  downloadModal.hidden = true;
+  activeDownloadOrder = null;
+}
+
+function simulateDownload(file, label = "archivo") {
+  const patient = activeDownloadOrder?.patient || "paciente";
+  showToast(`Descarga simulada: ${label} · ${patient} · ${file}`);
 }
 
 function renderAdmin() {
@@ -1660,13 +1755,27 @@ studyGrid.addEventListener("change", (event) => {
 });
 
 document.addEventListener("click", (event) => {
-  const downloadButton = event.target.closest("[data-file]");
+  const downloadOrderButton = event.target.closest("[data-download-order]");
+  const downloadFileButton = event.target.closest("[data-download-file]");
   const orderButton = event.target.closest("[data-order-patient]");
   const agentOrderButton = event.target.closest("[data-agent-order]");
 
-  if (downloadButton) {
-    const file = downloadButton.dataset.file;
-    showToast(file ? `Descarga simulada: ${file}` : "Este resultado aún no está listo.");
+  if (downloadOrderButton) {
+    const order = orders.find(
+      (currentOrder) =>
+        currentOrder.doctorId === doctorProfile.id &&
+        currentOrder.id === downloadOrderButton.dataset.downloadOrder,
+    );
+
+    if (order?.result) {
+      openDownloadModal(order);
+    } else {
+      showToast("Este resultado aún no está listo.");
+    }
+  }
+
+  if (downloadFileButton) {
+    simulateDownload(downloadFileButton.dataset.downloadFile, downloadFileButton.dataset.downloadLabel);
   }
 
   if (orderButton) {
@@ -1694,9 +1803,21 @@ orderModal.addEventListener("click", (event) => {
   }
 });
 
+closeDownloadModalButton.addEventListener("click", closeDownloadModal);
+
+downloadModal.addEventListener("click", (event) => {
+  if (event.target === downloadModal) {
+    closeDownloadModal();
+  }
+});
+
 document.addEventListener("keydown", (event) => {
   if (event.key === "Escape" && !orderModal.hidden) {
     closeOrderModal();
+  }
+
+  if (event.key === "Escape" && !downloadModal.hidden) {
+    closeDownloadModal();
   }
 });
 
