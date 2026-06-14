@@ -379,15 +379,15 @@ button {
 }
 
 .brand-logo {
-  height: 44px;
+  height: 56px;
   width: auto;
   border-radius: 6px;
   object-fit: contain;
 }
 
 .sidebar-logo {
-  height: 44px;
-  padding: 5px 10px;
+  height: 52px;
+  padding: 6px 12px;
   background: #ffffff;
   border-radius: 8px;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.18);
@@ -403,7 +403,7 @@ button {
 }
 
 .login-brand .brand-logo {
-  height: 58px;
+  height: 72px;
 }
 
 .login-brand {
@@ -2024,6 +2024,99 @@ textarea:focus {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 14px;
+}
+
+.branch-grid-2 {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  max-width: 860px;
+}
+
+.branch-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 4px;
+}
+
+.branch-grid small {
+  display: block;
+  margin-top: 8px;
+  color: var(--muted);
+  font-size: 0.78rem;
+}
+
+.public-cta p {
+  max-width: 600px;
+  margin: 0 auto 6px;
+  color: var(--muted);
+  font-size: 1rem;
+  line-height: 1.55;
+}
+
+.public-footer {
+  display: grid;
+  gap: 28px;
+  padding: clamp(28px, 4vw, 54px) clamp(18px, 4vw, 54px);
+  background: var(--ink);
+  color: rgba(255, 255, 255, 0.7);
+}
+
+.footer-brand .brand-logo {
+  height: 48px;
+  background: rgba(255, 255, 255, 0.06);
+  border-radius: 8px;
+  padding: 6px 10px;
+}
+
+.footer-cols {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 24px;
+}
+
+.footer-cols div {
+  display: grid;
+  gap: 6px;
+  align-content: start;
+}
+
+.footer-cols strong {
+  color: #ffffff;
+  font-size: 0.88rem;
+}
+
+.footer-cols span,
+.footer-cols a {
+  font-size: 0.82rem;
+  line-height: 1.4;
+}
+
+.footer-cols a {
+  color: rgba(255, 255, 255, 0.6);
+  text-decoration: none;
+  transition: color 150ms ease;
+}
+
+.footer-cols a:hover {
+  color: #ffffff;
+}
+
+.footer-copy {
+  margin: 0;
+  padding-top: 20px;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  color: rgba(255, 255, 255, 0.38);
+  font-size: 0.78rem;
+}
+
+@media (max-width: 680px) {
+  .footer-cols {
+    grid-template-columns: 1fr;
+  }
+
+  .branch-grid-2 {
+    grid-template-columns: 1fr;
+  }
 }
 
 .branch-grid dl {
