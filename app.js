@@ -1064,10 +1064,11 @@ function validateAttendedOrder(orderId, nextStatus = "Completa") {
 function createDoctorFromAdmin(formData) {
   const email = formData.get("doctorEmail").trim().toLowerCase();
   const name = formData.get("doctorName").trim();
+  const password = formData.get("doctorPassword").trim();
   const validatedPatients = Math.max(Number(formData.get("validatedPatients")) || 0, 0);
 
-  if (!email || !name) {
-    showToast("Nombre y correo del doctor son obligatorios.");
+  if (!email || !name || !password) {
+    showToast("Nombre, correo y contraseña son obligatorios.");
     return;
   }
 
@@ -1096,7 +1097,7 @@ function createDoctorFromAdmin(formData) {
     },
   };
   authorizedAccounts[email] = {
-    password: DEFAULT_DOCTOR_PASSWORD,
+    password,
     role: "doctor",
   };
 
@@ -1105,7 +1106,7 @@ function createDoctorFromAdmin(formData) {
   adminDoctorForm.querySelectorAll("input").forEach((input) => {
     input.value = input.name === "validatedPatients" ? "0" : "";
   });
-  showToast(`${name} creado como ${doctorCode}. Contraseña inicial: ${DEFAULT_DOCTOR_PASSWORD}`);
+  showToast(`${name} creado como ${doctorCode}. Contraseña inicial guardada.`);
 }
 
 function renderDoctorScopedData() {
@@ -1618,6 +1619,8 @@ function renderAdmin() {
             <span class="admin-chip">${tier.shortName}</span>
           </header>
           <span>${doctor.specialty}</span>
+          <small class="admin-credential-line">Correo: ${doctor.email}</small>
+          <small class="admin-credential-line">Contraseña: ${authorizedAccounts[doctor.email]?.password || "No asignada"}</small>
           <small>${doctor.partner.referredPatients} pacientes validados · ${doctor.partner.points.toLocaleString("es-MX")} pts</small>
         </article>
       `;

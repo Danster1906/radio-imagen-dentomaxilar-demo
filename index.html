@@ -4,8 +4,8 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Radio Imagen | Órdenes Digitales</title>
-    <link rel="stylesheet" href="styles.css?v=admin-simple-1" />
-    <link rel="stylesheet" href="admin.css?v=admin-simple-1" />
+    <link rel="stylesheet" href="styles.css?v=admin-credentials-1" />
+    <link rel="stylesheet" href="admin.css?v=admin-credentials-1" />
   </head>
   <body>
     <section class="login-screen" id="login-screen">
@@ -550,6 +550,28 @@
                   <option value="Cancelada">Cancelada</option>
                 </select>
               </div>
+              <div class="admin-status-guide" aria-label="Guía de estatus">
+                <article>
+                  <strong>Recibida</strong>
+                  <span>La orden llegó. Falta contactar al paciente.</span>
+                </article>
+                <article>
+                  <strong>Agendada</strong>
+                  <span>El paciente ya tiene cita confirmada.</span>
+                </article>
+                <article>
+                  <strong>Completa</strong>
+                  <span>El paciente vino y el estudio ya se realizó.</span>
+                </article>
+                <article>
+                  <strong>Lista</strong>
+                  <span>El resultado ya puede verlo o descargarlo el doctor.</span>
+                </article>
+                <article>
+                  <strong>Cancelada</strong>
+                  <span>La orden se cerró porque no seguirá el flujo.</span>
+                </article>
+              </div>
               <div class="admin-table" id="admin-order-table"></div>
             </section>
 
@@ -616,6 +638,10 @@
                 <label>
                   Correo
                   <input name="doctorEmail" type="email" value="natalia.rivas@consulta.mx" required />
+                </label>
+                <label>
+                  Contraseña inicial
+                  <input name="doctorPassword" type="text" value="Dentista2026!" autocomplete="new-password" required />
                 </label>
                 <label>
                   Especialidad
@@ -728,6 +754,6 @@
     </div>
 
     <div class="toast" id="toast" role="status" aria-live="polite"></div>
-    <script src="app.js?v=admin-simple-1"></script>
+    <script src="app.js?v=admin-credentials-1"></script>
   </body>
 </html>

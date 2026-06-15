@@ -620,6 +620,35 @@ Radio Imagen puede usar el panel como bandeja de trabajo: contactar, agendar, co
 
 No cambia la estructura de datos. Sólo cambia presentación y flujo de acciones en el prototipo.
 
+## 2026-06-15 - Guía de estatus y contraseña en alta de doctores
+
+### Objetivo
+
+Hacer más claro el manejo operativo de órdenes y permitir que Radio Imagen asigne credenciales desde el alta del doctor.
+
+### Cambios realizados
+
+- Se agregó una guía visual de estatus dentro de la bandeja admin.
+- Se agregó el campo `Contraseña inicial` al formulario de nuevo doctor.
+- El alta de doctor ahora guarda la contraseña capturada en el demo.
+- La lista de doctores en admin muestra correo y contraseña de acceso para control interno.
+
+### Lógica operativa de estatus
+
+- `Recibida`: el doctor ya envió la orden; Radio Imagen debe contactar al paciente.
+- `Agendada`: el paciente ya tiene cita confirmada.
+- `Completa`: el paciente asistió y el estudio ya se realizó; aquí cuenta como paciente validado para puntos/tier.
+- `Lista para descargar`: el resultado ya fue asignado y está visible para el doctor.
+- `Cancelada`: la orden queda cerrada y no avanza.
+
+### Impacto en producto
+
+El admin puede entender rápidamente qué acción corresponde a cada orden y puede crear doctores con contraseña propia sin depender de una clave fija.
+
+### Impacto en datos
+
+En el prototipo, la contraseña vive en el objeto local `authorizedAccounts`. En producción debe pasar a Supabase Auth y no mostrarse como texto plano.
+
 ## Plantilla para próximos cambios
 
 ### YYYY-MM-DD - Nombre del cambio
