@@ -80,8 +80,8 @@ button {
 }
 
 .login-copy h1 {
-  max-width: 12ch;
-  font-size: clamp(2.6rem, 5vw, 4.9rem);
+  max-width: 11ch;
+  font-size: clamp(2.35rem, 4.4vw, 4.25rem);
   font-weight: 800;
   line-height: 0.92;
   letter-spacing: -0.04em;
@@ -758,8 +758,15 @@ h2 {
 .future-layout,
 .profile-layout {
   display: grid;
-  grid-template-columns: minmax(0, 1.6fr) minmax(320px, 0.8fr);
+  grid-template-columns: minmax(0, 1fr) minmax(300px, 390px);
   gap: 18px;
+}
+
+.content-grid > *,
+.future-layout > *,
+.profile-layout > *,
+.dashboard-side {
+  min-width: 0;
 }
 
 .dashboard-side {
@@ -769,7 +776,9 @@ h2 {
 }
 
 .panel {
+  min-width: 0;
   padding: 20px;
+  overflow: hidden;
 }
 
 .panel.wide {
@@ -961,14 +970,17 @@ h2 {
 .feature-grid {
   display: grid;
   gap: 12px;
+  min-width: 0;
 }
 
 .order-row,
 .result-row {
   display: grid;
-  grid-template-columns: minmax(180px, 1.2fr) minmax(150px, 0.9fr) minmax(130px, 0.7fr) auto;
+  grid-template-columns: minmax(0, 1.45fr) minmax(92px, 0.58fr) max-content max-content;
   align-items: center;
-  gap: 14px;
+  gap: 10px;
+  min-width: 0;
+  max-width: 100%;
   padding: 14px;
   background: #fafafa;
   border: 1px solid var(--line);
@@ -986,6 +998,15 @@ h2 {
 .result-name {
   display: grid;
   gap: 3px;
+  min-width: 0;
+}
+
+.order-name strong,
+.result-name strong,
+.order-meta,
+.result-meta {
+  min-width: 0;
+  overflow-wrap: anywhere;
 }
 
 .status {
@@ -1094,6 +1115,12 @@ h2 {
 @media (min-width: 1180px) {
   .panel:not(.wide) .flow-diagram {
     gap: 2px;
+  }
+}
+
+@media (max-width: 1240px) {
+  .content-grid {
+    grid-template-columns: 1fr;
   }
 }
 
@@ -1357,7 +1384,7 @@ textarea:focus {
 }
 
 .result-row {
-  grid-template-columns: minmax(180px, 1.2fr) minmax(160px, 1fr) minmax(120px, 0.7fr) auto;
+  grid-template-columns: minmax(0, 1.35fr) minmax(120px, 0.82fr) max-content max-content;
 }
 
 .download-action,
@@ -1675,7 +1702,8 @@ textarea:focus {
   }
 
   .login-copy h1 {
-    font-size: 2.6rem;
+    max-width: 10ch;
+    font-size: 2.15rem;
   }
 
   .login-showcase {

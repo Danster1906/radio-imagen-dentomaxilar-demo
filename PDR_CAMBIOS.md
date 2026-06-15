@@ -562,6 +562,34 @@ El doctor no tendrá que interpretar estatus internos. Verá el avance real de s
 - `orders.completed_at` registra cuando el paciente acudió y se realizó el estudio.
 - `order_status_events` debe guardar auditoría de cada cambio.
 
+## 2026-06-15 - Login privado y corrección visual del panel doctor
+
+### Objetivo
+
+Quitar la sensación de demo pública y hacer que el acceso sea privado para dentistas autorizados por Radio Imagen.
+
+### Cambios realizados
+
+- El login ahora pide correo autorizado y contraseña.
+- Se quitaron las opciones de Google y entrada demo de admin.
+- Se agregaron credenciales de demo controladas en `authorizedAccounts`.
+- Al dar de alta un doctor desde admin, se le asigna una contraseña inicial de demo.
+- Se redujo el tamaño del encabezado de login para evitar una pantalla gigante en móvil.
+- El panel doctor ahora evita que las filas de pacientes se desborden encima de la tarjeta de socios.
+- El dashboard cambia a una sola columna en anchos medianos para evitar encimados.
+
+### Razón del cambio
+
+El producto debe sentirse privado y exclusivo para doctores dados de alta, no como un portal abierto o social login.
+
+### Impacto en producto
+
+El doctor sólo entra con credenciales asignadas por Radio Imagen. La vista de pacientes y socios deja de encimarse en pantallas medianas.
+
+### Impacto en datos
+
+En producción, estas credenciales deben vivir en Supabase Auth. El demo mantiene contraseñas locales sólo para simular el flujo.
+
 ## Plantilla para próximos cambios
 
 ### YYYY-MM-DD - Nombre del cambio

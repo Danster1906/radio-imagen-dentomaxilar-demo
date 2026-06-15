@@ -235,6 +235,22 @@ const adminDownloadRequests = [
 
 const SESSION_KEY = "radioImagenDoctorSession";
 const ADMIN_EMAIL = "admin@radioimagen.mx";
+const DEFAULT_DOCTOR_PASSWORD = "Dentista2026!";
+
+const authorizedAccounts = {
+  [ADMIN_EMAIL]: {
+    password: "RadioImagen2026!",
+    role: "admin",
+  },
+  "sofia.herrera@consulta.mx": {
+    password: DEFAULT_DOCTOR_PASSWORD,
+    role: "doctor",
+  },
+  "marco.padilla@consulta.mx": {
+    password: DEFAULT_DOCTOR_PASSWORD,
+    role: "doctor",
+  },
+};
 
 const adminProfile = {
   id: "ADM-0001",
@@ -534,8 +550,6 @@ const loginScreen = document.querySelector("#login-screen");
 const loadingScreen = document.querySelector("#loading-screen");
 const appShell = document.querySelector("#app-shell");
 const loginForm = document.querySelector("#login-form");
-const googleLoginButton = document.querySelector("#google-login");
-const adminLoginDemoButton = document.querySelector("#admin-login-demo");
 const logoutButton = document.querySelector("#logout-button");
 const loadingHandle = document.querySelector("#loading-handle");
 const doctorIdLabel = document.querySelector("#doctor-id-label");
@@ -1011,13 +1025,17 @@ function createDoctorFromAdmin(formData) {
       points: validatedPatients * POINTS_PER_REFERRED_PATIENT,
     },
   };
+  authorizedAccounts[email] = {
+    password: DEFAULT_DOCTOR_PASSWORD,
+    role: "doctor",
+  };
 
   renderAdmin();
   adminDoctorForm.reset();
   adminDoctorForm.querySelectorAll("input").forEach((input) => {
     input.value = input.name === "validatedPatients" ? "0" : "";
   });
-  showToast(`${name} creado como ${doctorCode} con ${validatedPatients} pacientes validados.`);
+  showToast(`${name} creado como ${doctorCode}. Contraseña inicial: ${DEFAULT_DOCTOR_PASSWORD}`);
 }
 
 function renderDoctorScopedData() {
@@ -1061,20 +1079,33 @@ function showLogin() {
   loginScreen.hidden = false;
 }
 
-function loginAccount(email, provider = "email") {
-  const role = getAccountRole(email);
+function loginAccount(email, password) {
+  const normalizedEmail = email.toLowerCase();
+  const account = authorizedAccounts[normalizedEmail];
+
+  if (!account) {
+    showToast("Correo no autorizado. Radio Imagen debe dar de alta la cuenta.");
+    return;
+  }
+
+  if (account.password !== password) {
+    showToast("Contraseña incorrecta.");
+    return;
+  }
+
+  const role = account.role || getAccountRole(normalizedEmail);
   currentRole = role;
 
   if (role === "doctor") {
-    const profile = findDoctorByEmail(email);
+    const profile = findDoctorByEmail(normalizedEmail);
     applyDoctorProfile(profile);
   }
 
   localStorage.setItem(
     SESSION_KEY,
     JSON.stringify({
-      email,
-      provider,
+      email: normalizedEmail,
+      provider: "password",
       role,
       accountId: role === "admin" ? adminProfile.id : doctorProfile.id,
       handle: role === "admin" ? adminProfile.handle : doctorProfile.handle,
@@ -1082,7 +1113,7 @@ function loginAccount(email, provider = "email") {
     }),
   );
   showApp(true, role === "admin" ? "admin" : "dashboard");
-  showToast(role === "admin" ? "Sesión admin iniciada." : provider === "google" ? "Sesión iniciada con Google." : "Sesión iniciada con correo.");
+  showToast(role === "admin" ? "Sesión admin iniciada." : "Sesión iniciada.");
 }
 
 function renderStudies() {
@@ -1781,15 +1812,7 @@ periodButtons.forEach((button) => {
 loginForm.addEventListener("submit", (event) => {
   event.preventDefault();
   const formData = new FormData(loginForm);
-  loginAccount(formData.get("loginEmail").trim(), "email");
-});
-
-googleLoginButton.addEventListener("click", () => {
-  loginAccount("sofia.herrera@consulta.mx", "google");
-});
-
-adminLoginDemoButton.addEventListener("click", () => {
-  loginAccount(ADMIN_EMAIL, "email");
+  loginAccount(formData.get("loginEmail").trim(), formData.get("loginPassword"));
 });
 
 logoutButton.addEventListener("click", () => {

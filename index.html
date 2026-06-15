@@ -4,40 +4,39 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Radio Imagen | Órdenes Digitales</title>
-    <link rel="stylesheet" href="styles.css?v=logout-nav-1" />
-    <link rel="stylesheet" href="admin.css?v=logout-nav-1" />
+    <link rel="stylesheet" href="styles.css?v=private-login-1" />
+    <link rel="stylesheet" href="admin.css?v=private-login-1" />
   </head>
   <body>
     <section class="login-screen" id="login-screen">
       <div class="login-panel">
         <div class="brand login-brand">
           <img class="brand-logo" src="logo-4k.png" alt="Radio Imagen Dentomaxilar" />
-          <span class="brand-subtitle">Portal doctor / admin</span>
+          <span class="brand-subtitle">Portal privado para dentistas</span>
         </div>
 
         <div class="login-copy">
-          <span class="eyebrow">Acceso profesional</span>
-          <h1>Órdenes digitales y resultados en un solo lugar.</h1>
-          <p>Ingresa como doctor para crear órdenes o como admin para dar seguimiento radiodiagnóstico.</p>
+          <span class="eyebrow">Acceso exclusivo</span>
+          <h1>Portal privado Radio Imagen.</h1>
+          <p>Ingresa con el correo autorizado y la contraseña asignada por Radio Imagen Dentomaxilar.</p>
         </div>
 
-        <div class="identity-card" aria-label="Jerarquía de datos por doctor">
-          <span>Cuentas separadas</span>
-          <strong>doctor_id / admin_id</strong>
-          <small>Doctor ve sus pacientes. Admin ve operación, estatus y agente de resultados.</small>
+        <div class="identity-card" aria-label="Acceso privado por doctor">
+          <span>Cuenta autorizada</span>
+          <strong>Correo + contraseña privada</strong>
+          <small>Cada doctor entra sólo a sus pacientes, órdenes, resultados y beneficios.</small>
         </div>
 
         <form class="login-form" id="login-form">
           <label>
-            Correo profesional
-            <input name="loginEmail" type="email" placeholder="doctor@consultorio.com o admin@radioimagen.mx" required />
+            Correo autorizado
+            <input name="loginEmail" type="email" placeholder="doctor@consultorio.com" autocomplete="username" required />
           </label>
-          <button class="primary-action" type="submit">Continuar con correo</button>
-          <button class="admin-login-action" id="admin-login-demo" type="button">Entrar como Admin Radio Imagen</button>
-          <button class="google-action" id="google-login" type="button">
-            <span>G</span>
-            Continuar con Google
-          </button>
+          <label>
+            Contraseña
+            <input name="loginPassword" type="password" placeholder="Contraseña asignada" autocomplete="current-password" required />
+          </label>
+          <button class="primary-action" type="submit">Iniciar sesión</button>
         </form>
 
         <div class="login-trust">
@@ -728,6 +727,6 @@
     </div>
 
     <div class="toast" id="toast" role="status" aria-live="polite"></div>
-    <script src="app.js?v=logout-nav-1"></script>
+    <script src="app.js?v=private-login-1"></script>
   </body>
 </html>
