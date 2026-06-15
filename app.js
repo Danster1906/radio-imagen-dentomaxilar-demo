@@ -1679,7 +1679,8 @@ function renderManualUploadOptions() {
 
   manualUploadOrder.innerHTML = eligibleOrders
     .map((order) => {
-      const label = `${order.patient} · ${order.doctor} · ${order.status}`;
+      const studiesLabel = order.studies.join(", ");
+      const label = `${order.patient} · ${studiesLabel} · ${order.status}`;
       return `<option value="${order.id}" ${order.id === currentValue ? "selected" : ""}>${label}</option>`;
     })
     .join("");

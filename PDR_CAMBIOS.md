@@ -710,6 +710,28 @@ Usar Supabase Storage con bucket privado, RLS por doctor/orden y links firmados 
 
 En el prototipo, el archivo se simula usando el nombre del archivo seleccionado en navegador. En producción, ese valor debe ser la ruta real del objeto en Supabase Storage.
 
+## 2026-06-15 - Nomenclatura clara para subida de resultados
+
+### Objetivo
+
+Evitar confusión entre el estudio solicitado, el tipo de entrega y el formato técnico del archivo.
+
+### Cambios realizados
+
+- El campo `Orden` cambió a `Paciente / orden`.
+- El selector de orden ahora muestra paciente, estudios solicitados y estatus.
+- El campo `Tipo de archivo` cambió a `Entrega que subes`.
+- Las opciones ahora usan lenguaje operativo: estudio completo, reporte, radiografía, tomografía 3D - DICOM, fotografías y modelo 3D.
+- Se evitó agregar una guía visual extra para no saturar la operación diaria.
+
+### Decisión de producto
+
+No es necesario poner DICOM ni PDF en la selección de orden. La orden debe identificar al paciente y los estudios que pidió el doctor. La entrega identifica qué archivo está liberando Radio Imagen.
+
+### Impacto en datos
+
+No cambia la estructura. Sólo se aclara la etiqueta de la entrega y el texto visible en el selector.
+
 ## Plantilla para próximos cambios
 
 ### YYYY-MM-DD - Nombre del cambio

@@ -4,8 +4,8 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Radio Imagen | Órdenes Digitales</title>
-    <link rel="stylesheet" href="styles.css?v=manual-upload-1" />
-    <link rel="stylesheet" href="admin.css?v=manual-upload-1" />
+    <link rel="stylesheet" href="styles.css?v=result-names-2" />
+    <link rel="stylesheet" href="admin.css?v=result-names-2" />
   </head>
   <body>
     <section class="login-screen" id="login-screen">
@@ -619,22 +619,22 @@
                 </div>
               </div>
               <p class="admin-helper">
-                Úsalo cuando ya tienes el archivo final. La orden queda lista para el doctor sin esperar al agente ni a una solicitud de descarga.
+                Primero eliges el paciente/orden. Después indicas qué entrega estás subiendo; el formato real lo toma del archivo seleccionado.
               </p>
               <form class="manual-upload-form" id="manual-upload-form">
                 <label>
-                  Orden
+                  Paciente / orden
                   <select name="manualOrderId" id="manual-upload-order" required></select>
                 </label>
                 <label>
-                  Tipo de archivo
+                  Entrega que subes
                   <select name="manualFileType">
-                    <option value="Estudio completo">Estudio completo</option>
-                    <option value="Radiografía">Radiografía</option>
-                    <option value="DICOM">DICOM</option>
-                    <option value="Fotografías">Fotografías</option>
-                    <option value="Modelo 3D">Modelo 3D</option>
-                    <option value="Reporte">Reporte</option>
+                    <option value="Estudio completo">Estudio completo (.zip)</option>
+                    <option value="Reporte">Reporte o interpretación (.pdf)</option>
+                    <option value="Radiografía">Radiografía o imagen (.pdf / .jpg)</option>
+                    <option value="DICOM">Tomografía 3D - DICOM (.dcm / .zip)</option>
+                    <option value="Fotografías">Fotografías clínicas (.zip)</option>
+                    <option value="Modelo 3D">Modelo 3D / STL (.stl / .ply)</option>
                   </select>
                 </label>
                 <label class="manual-file-picker">
@@ -830,6 +830,6 @@
     </div>
 
     <div class="toast" id="toast" role="status" aria-live="polite"></div>
-    <script src="app.js?v=manual-upload-1"></script>
+    <script src="app.js?v=result-names-2"></script>
   </body>
 </html>
