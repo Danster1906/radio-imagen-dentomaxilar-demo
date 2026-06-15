@@ -649,6 +649,34 @@ El admin puede entender rápidamente qué acción corresponde a cada orden y pue
 
 En el prototipo, la contraseña vive en el objeto local `authorizedAccounts`. En producción debe pasar a Supabase Auth y no mostrarse como texto plano.
 
+## 2026-06-15 - Separación del admin por módulos
+
+### Objetivo
+
+Ordenar la vista de administrador para que Dashboard, seguimiento de órdenes, resultados y doctores no compitan en la misma pantalla.
+
+### Cambios realizados
+
+- Se agregó navegación interna en Admin: `Dashboard`, `Órdenes`, `Resultados` y `Doctores`.
+- El Dashboard conserva las métricas generales y una lectura rápida de prioridades.
+- La bandeja de seguimiento ahora vive sólo en el módulo `Órdenes`.
+- La asignación local, agente y cola de descargas viven en `Resultados`.
+- La lista de doctores y el alta de doctor viven en `Doctores`.
+- El botón `Alta doctor` abre directamente el módulo de doctores.
+- El botón `Mandar estudios` abre el módulo de resultados antes de ejecutar el envío.
+
+### Razón del cambio
+
+La operación admin necesita una separación mental clara: revisar estado general, dar seguimiento a órdenes, manejar archivos/resultados y administrar doctores son tareas distintas.
+
+### Impacto en producto
+
+El panel admin se vuelve más fácil de operar diariamente y reduce la sensación de desorden en la pantalla.
+
+### Impacto en datos
+
+No cambia la estructura de datos. Sólo cambia navegación, agrupación visual y comportamiento de botones internos.
+
 ## Plantilla para próximos cambios
 
 ### YYYY-MM-DD - Nombre del cambio

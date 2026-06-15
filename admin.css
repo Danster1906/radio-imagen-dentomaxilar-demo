@@ -47,6 +47,47 @@
   justify-content: flex-end;
 }
 
+.admin-section-nav {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 14px;
+  padding: 6px;
+  overflow-x: auto;
+  background: #ffffff;
+  border: 1px solid #fee2e2;
+  border-radius: 8px;
+  box-shadow: 0 10px 24px rgba(153, 27, 27, 0.06);
+}
+
+.admin-section-nav button {
+  min-height: 42px;
+  padding: 10px 14px;
+  color: var(--muted);
+  background: transparent;
+  border: 0;
+  border-radius: 7px;
+  font: inherit;
+  font-weight: 900;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background 150ms ease, color 150ms ease, transform 150ms ease;
+}
+
+.admin-section-nav button:hover {
+  color: var(--brand-dark);
+  background: #fff7f7;
+}
+
+.admin-section-nav button.active {
+  color: #ffffff;
+  background: var(--brand);
+  box-shadow: 0 8px 18px rgba(220, 38, 38, 0.18);
+}
+
+.admin-section[hidden] {
+  display: none;
+}
+
 .secondary-action {
   min-height: 46px;
   padding: 13px 18px;
@@ -91,6 +132,44 @@
 
 .admin-metrics strong {
   font-size: 1.55rem;
+}
+
+.admin-dashboard-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.1fr);
+  gap: 16px;
+}
+
+.admin-priority-list {
+  display: grid;
+  gap: 10px;
+  margin: 14px 0 0;
+  padding-left: 20px;
+  color: var(--ink);
+  font-weight: 800;
+}
+
+.admin-priority-list li::marker {
+  color: var(--brand);
+  font-weight: 900;
+}
+
+.admin-module-map {
+  display: grid;
+  grid-template-columns: max-content 1fr;
+  gap: 10px 14px;
+  margin-top: 14px;
+  align-items: baseline;
+}
+
+.admin-module-map span {
+  color: var(--brand-dark);
+  font-weight: 900;
+}
+
+.admin-module-map small {
+  color: var(--muted);
+  font-weight: 800;
 }
 
 .admin-grid {
@@ -440,7 +519,8 @@
 @media (max-width: 1100px) {
   .admin-grid,
   .admin-form-grid,
-  .agent-summary {
+  .agent-summary,
+  .admin-dashboard-grid {
     grid-template-columns: 1fr;
   }
 
@@ -474,6 +554,14 @@
   }
 
   .admin-status-guide {
+    grid-template-columns: 1fr;
+  }
+
+  .admin-section-nav {
+    margin-inline: -2px;
+  }
+
+  .admin-module-map {
     grid-template-columns: 1fr;
   }
 }

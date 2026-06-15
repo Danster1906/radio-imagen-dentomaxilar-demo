@@ -4,8 +4,8 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Radio Imagen | Órdenes Digitales</title>
-    <link rel="stylesheet" href="styles.css?v=admin-credentials-1" />
-    <link rel="stylesheet" href="admin.css?v=admin-credentials-1" />
+    <link rel="stylesheet" href="styles.css?v=admin-sections-1" />
+    <link rel="stylesheet" href="admin.css?v=admin-sections-1" />
   </head>
   <body>
     <section class="login-screen" id="login-screen">
@@ -506,35 +506,69 @@
             </div>
           </section>
 
-          <section class="admin-metrics" aria-label="Flujo operativo de órdenes">
-            <article>
-              <span>Recibidas</span>
-              <strong data-admin-metric="newOrders">--</strong>
-              <small>Contactar por WhatsApp</small>
-            </article>
-            <article>
-              <span>Agendadas</span>
-              <strong data-admin-metric="scheduledOrders">--</strong>
-              <small>Esperando paciente</small>
-            </article>
-            <article>
-              <span>Completas</span>
-              <strong data-admin-metric="completedOrders">--</strong>
-              <small>Asignar resultado</small>
-            </article>
-            <article>
-              <span>Listas</span>
-              <strong data-admin-metric="readyResults">--</strong>
-              <small>Para descargar</small>
-            </article>
-            <article>
-              <span>Descargas</span>
-              <strong data-admin-metric="downloadRequests">--</strong>
-              <small>Solicitudes activas</small>
-            </article>
+          <nav class="admin-section-nav" aria-label="Módulos de administración">
+            <button class="active" data-admin-section="dashboard" type="button">Dashboard</button>
+            <button data-admin-section="orders" type="button">Órdenes</button>
+            <button data-admin-section="results" type="button">Resultados</button>
+            <button data-admin-section="doctors" type="button">Doctores</button>
+          </nav>
+
+          <section class="admin-section active" data-admin-section-panel="dashboard">
+            <section class="admin-metrics" aria-label="Flujo operativo de órdenes">
+              <article>
+                <span>Recibidas</span>
+                <strong data-admin-metric="newOrders">--</strong>
+                <small>Contactar por WhatsApp</small>
+              </article>
+              <article>
+                <span>Agendadas</span>
+                <strong data-admin-metric="scheduledOrders">--</strong>
+                <small>Esperando paciente</small>
+              </article>
+              <article>
+                <span>Completas</span>
+                <strong data-admin-metric="completedOrders">--</strong>
+                <small>Asignar resultado</small>
+              </article>
+              <article>
+                <span>Listas</span>
+                <strong data-admin-metric="readyResults">--</strong>
+                <small>Para descargar</small>
+              </article>
+              <article>
+                <span>Descargas</span>
+                <strong data-admin-metric="downloadRequests">--</strong>
+                <small>Solicitudes activas</small>
+              </article>
+            </section>
+
+            <section class="admin-dashboard-grid">
+              <article class="panel admin-panel">
+                <span class="eyebrow">Prioridad operativa</span>
+                <h2>Qué revisar primero</h2>
+                <ol class="admin-priority-list">
+                  <li>Contactar órdenes recibidas.</li>
+                  <li>Confirmar asistencia de pacientes agendados.</li>
+                  <li>Asignar archivos a estudios completos.</li>
+                  <li>Enviar estudios listos cuando el doctor los solicite.</li>
+                </ol>
+              </article>
+              <article class="panel admin-panel">
+                <span class="eyebrow">Lectura rápida</span>
+                <h2>Separación del admin</h2>
+                <div class="admin-module-map">
+                  <span>Órdenes</span>
+                  <small>Seguimiento paciente por paciente</small>
+                  <span>Resultados</span>
+                  <small>Agente local, archivos y descargas</small>
+                  <span>Doctores</span>
+                  <small>Alta, credenciales y socios</small>
+                </div>
+              </article>
+            </section>
           </section>
 
-          <div class="admin-grid">
+          <div class="admin-grid admin-section" data-admin-section-panel="orders" hidden>
             <section class="panel admin-panel wide">
               <div class="panel-heading">
                 <div>
@@ -574,7 +608,9 @@
               </div>
               <div class="admin-table" id="admin-order-table"></div>
             </section>
+          </div>
 
+          <div class="admin-grid admin-section" data-admin-section-panel="results" hidden>
             <section class="panel admin-panel">
               <div class="panel-heading">
                 <div>
@@ -606,21 +642,23 @@
             <section class="panel admin-panel">
               <div class="panel-heading">
                 <div>
-                  <span class="eyebrow">Doctores</span>
-                  <h2>Alta y socios</h2>
-                </div>
-              </div>
-              <div class="admin-doctor-list" id="admin-doctor-list"></div>
-            </section>
-
-            <section class="panel admin-panel">
-              <div class="panel-heading">
-                <div>
                   <span class="eyebrow">Servidor local + Supabase</span>
                   <h2>Cola de descargas</h2>
                 </div>
               </div>
               <div class="download-queue" id="admin-download-queue"></div>
+            </section>
+          </div>
+
+          <div class="admin-grid admin-section" data-admin-section-panel="doctors" hidden>
+            <section class="panel admin-panel">
+              <div class="panel-heading">
+                <div>
+                  <span class="eyebrow">Doctores</span>
+                  <h2>Alta y socios</h2>
+                </div>
+              </div>
+              <div class="admin-doctor-list" id="admin-doctor-list"></div>
             </section>
 
             <section class="panel admin-panel wide">
@@ -754,6 +792,6 @@
     </div>
 
     <div class="toast" id="toast" role="status" aria-live="polite"></div>
-    <script src="app.js?v=admin-credentials-1"></script>
+    <script src="app.js?v=admin-sections-1"></script>
   </body>
 </html>

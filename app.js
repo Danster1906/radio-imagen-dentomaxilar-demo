@@ -565,6 +565,8 @@ const adminDoctorList = document.querySelector("#admin-doctor-list");
 const adminDownloadQueue = document.querySelector("#admin-download-queue");
 const adminDoctorForm = document.querySelector("#admin-doctor-form");
 const focusNewDoctorButton = document.querySelector("#focus-new-doctor");
+const adminSectionButtons = document.querySelectorAll("[data-admin-section]");
+const adminSectionPanels = document.querySelectorAll("[data-admin-section-panel]");
 const runAgentButton = document.querySelector("#run-agent-button");
 const sendStudiesButton = document.querySelector("#send-studies-button");
 const agentLog = document.querySelector("#agent-log");
@@ -747,6 +749,19 @@ function showToast(message) {
   toast.textContent = message;
   toast.classList.add("visible");
   window.setTimeout(() => toast.classList.remove("visible"), 2800);
+}
+
+function setAdminSection(sectionId) {
+  adminSectionButtons.forEach((button) => {
+    const isActive = button.dataset.adminSection === sectionId;
+    button.classList.toggle("active", isActive);
+    button.setAttribute("aria-selected", String(isActive));
+  });
+
+  adminSectionPanels.forEach((panel) => {
+    panel.hidden = panel.dataset.adminSectionPanel !== sectionId;
+    panel.classList.toggle("active", panel.dataset.adminSectionPanel === sectionId);
+  });
 }
 
 function setView(viewId) {
@@ -2034,11 +2049,19 @@ adminOrderTable?.addEventListener("change", (event) => {
 
 runAgentButton?.addEventListener("click", () => runAgent());
 
-sendStudiesButton?.addEventListener("click", sendReadyStudies);
+sendStudiesButton?.addEventListener("click", () => {
+  setAdminSection("results");
+  sendReadyStudies();
+});
 
 focusNewDoctorButton?.addEventListener("click", () => {
+  setAdminSection("doctors");
   adminDoctorForm?.scrollIntoView({ behavior: "smooth", block: "center" });
   adminDoctorForm?.querySelector('input[name="doctorName"]')?.focus();
+});
+
+adminSectionButtons.forEach((button) => {
+  button.addEventListener("click", () => setAdminSection(button.dataset.adminSection));
 });
 
 adminDoctorForm?.addEventListener("submit", (event) => {
