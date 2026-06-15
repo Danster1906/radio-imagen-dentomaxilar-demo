@@ -124,9 +124,13 @@ Orden digital referida a Radio Imagen.
 | doctor_id | uuid | FK doctors.id |
 | patient_id | uuid | FK patients.id |
 | referral_date | date | Autollenada con fecha del día |
-| status | text | recibida, en_revision, agendada, en_proceso, lista, entregada, cancelada |
+| status | text | recibida, agendada, proceso, no_asistio, atendida, lista, enviada, cancelada |
 | clinical_notes | text | Indicaciones del doctor |
 | internal_notes | text | Notas visibles solo para Radio Imagen |
+| counts_for_partner | boolean | `true` sólo cuando Radio Imagen valida que el paciente fue atendido |
+| patient_attended_at | timestamp | Fecha/hora en que admin validó la asistencia |
+| validated_by | uuid | Admin que validó la asistencia |
+| partner_points_awarded_at | timestamp | Fecha/hora en que se otorgaron puntos de socio |
 | created_at | timestamp | Fecha real de creación |
 | updated_at | timestamp | Última modificación |
 
@@ -142,6 +146,13 @@ Historial de seguimiento de cada orden.
 | changed_by_user_id | uuid | FK users.id |
 | note | text | Comentario opcional |
 | created_at | timestamp | Fecha del cambio |
+
+Regla operativa:
+
+- Una orden creada por el doctor es una referencia, pero no suma puntos todavía.
+- Sólo suma puntos cuando admin valida que el paciente llegó y se hizo el estudio.
+- La validación cambia `counts_for_partner` a `true`.
+- Una misma orden no debe generar puntos dos veces.
 
 ### order_assignments
 Asignación interna de seguimiento.
@@ -201,7 +212,7 @@ Estado acumulado del doctor dentro del programa.
 | doctor_id | uuid | FK doctors.id |
 | current_tier_id | uuid | FK partner_tiers.id |
 | total_points | integer | Puntos acumulados vigentes |
-| referred_patients_count | integer | Pacientes referidos acumulados |
+| referred_patients_count | integer | Pacientes atendidos/validados acumulados |
 | updated_at | timestamp | Última actualización |
 
 ### partner_point_events

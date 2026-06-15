@@ -158,6 +158,9 @@ const orders = [
     date: "2026-06-03",
     result: "Ortopantomografia_Mariana_Lopez.pdf",
     notes: "Planeación ortodóncica y registro fotográfico inicial.",
+    countsForPartner: true,
+    validatedAt: "2026-06-03",
+    validatedBy: "Admin Radio Imagen",
   },
   {
     id: "ORD-2026-0002",
@@ -170,6 +173,7 @@ const orders = [
     date: "2026-06-02",
     result: "",
     notes: "Valoración general para diagnóstico y plan de tratamiento.",
+    countsForPartner: false,
   },
   {
     id: "ORD-2026-0003",
@@ -182,6 +186,7 @@ const orders = [
     date: "2026-06-01",
     result: "",
     notes: "Cefalometría y fotografías para seguimiento.",
+    countsForPartner: false,
   },
   {
     id: "ORD-2026-0004",
@@ -194,6 +199,7 @@ const orders = [
     date: "2026-06-04",
     result: "",
     notes: "Evaluación de ATM y dolor articular referido.",
+    countsForPartner: false,
   },
 ];
 
@@ -368,6 +374,8 @@ const metricPeriods = {
   month: "Mes",
   year: "Año",
 };
+
+const adminOrderStatuses = ["Recibida", "Agendada", "Proceso", "No asistió", "Atendida", "Lista", "Enviada"];
 
 const doctorDirectory = {
   "sofia.herrera@consulta.mx": {
@@ -642,7 +650,15 @@ function getInitials(name) {
 }
 
 function statusClass(status) {
-  return status.toLowerCase().replace(" ", "-");
+  return status
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/\s+/g, "-");
+}
+
+function getDoctorById(doctorId) {
+  return Object.values(doctorDirectory).find((doctor) => doctor.id === doctorId);
 }
 
 function normalizeName(value) {
@@ -797,7 +813,7 @@ function renderPartnerProgram() {
 
   partnerTier.textContent = currentTier.name;
   partnerPoints.textContent = `${partner.points.toLocaleString("es-MX")} pts`;
-  partnerReferrals.textContent = `${partner.referredPatients} pacientes referidos`;
+  partnerReferrals.textContent = `${partner.referredPatients} pacientes validados`;
   partnerNext.textContent = nextTier
     ? `${nextTier.minReferrals - partner.referredPatients} pacientes para ${nextTier.shortName}`
     : "Nivel máximo activo";
@@ -836,6 +852,41 @@ function renderBenefits(benefits) {
 function awardPartnerPoints() {
   doctorProfile.partner.referredPatients += 1;
   doctorProfile.partner.points += POINTS_PER_REFERRED_PATIENT;
+}
+
+function validateAttendedOrder(orderId) {
+  const order = orders.find((currentOrder) => currentOrder.id === orderId);
+
+  if (!order) {
+    return;
+  }
+
+  if (order.countsForPartner) {
+    showToast(`${order.patient} ya fue validado. No se duplican puntos.`);
+    return;
+  }
+
+  const doctor = getDoctorById(order.doctorId);
+
+  order.status = "Atendida";
+  order.countsForPartner = true;
+  order.validatedAt = todayISO();
+  order.validatedBy = adminProfile.name;
+
+  if (doctor) {
+    doctor.partner.referredPatients += 1;
+    doctor.partner.points += POINTS_PER_REFERRED_PATIENT;
+
+    if (doctorProfile.id === doctor.id) {
+      doctorProfile.partner = { ...doctor.partner };
+    }
+  }
+
+  renderAdmin();
+  renderPartnerProgram();
+  renderDoctorOrders();
+  renderResults(resultsSearch.value);
+  showToast(`Paciente atendido validado: ${order.patient}. Se sumaron ${POINTS_PER_REFERRED_PATIENT} pts.`);
 }
 
 function renderDoctorScopedData() {
@@ -1294,17 +1345,29 @@ function renderAdmin() {
           <div>
             <strong>${order.patient}</strong>
             <small>${order.studies.join(", ")}</small>
+            <small class="validation-copy">
+              ${
+                order.countsForPartner
+                  ? `Validado ${order.validatedAt} · ${order.validatedBy}`
+                  : "Pendiente de validar asistencia"
+              }
+            </small>
           </div>
           <span>${order.doctor}</span>
           <label class="admin-status-control">
             <span>Estatus</span>
             <select data-admin-status="${order.id}" aria-label="Cambiar estatus de ${order.patient}">
-              ${["Recibida", "Agendada", "Proceso", "Lista"]
+              ${adminOrderStatuses
                 .map((status) => `<option value="${status}" ${order.status === status ? "selected" : ""}>${status}</option>`)
                 .join("")}
             </select>
           </label>
-          <button class="small-action" data-agent-order="${order.id}" type="button">Asignar y subir</button>
+          <div class="admin-row-actions">
+            <button class="small-action validate-action ${order.countsForPartner ? "validated" : ""}" data-validate-order="${order.id}" type="button" ${order.countsForPartner ? "disabled" : ""}>
+              ${order.countsForPartner ? "Validado" : "Validar atendido"}
+            </button>
+            <button class="small-action" data-agent-order="${order.id}" type="button">Asignar y subir</button>
+          </div>
         </article>
       `,
     )
@@ -1321,7 +1384,7 @@ function renderAdmin() {
             <span class="admin-chip">${tier.shortName}</span>
           </header>
           <span>${doctor.specialty}</span>
-          <small>${doctor.partner.referredPatients} pacientes · ${doctor.partner.points.toLocaleString("es-MX")} pts</small>
+          <small>${doctor.partner.referredPatients} pacientes validados · ${doctor.partner.points.toLocaleString("es-MX")} pts</small>
         </article>
       `;
     })
@@ -1629,18 +1692,18 @@ orderForm.addEventListener("submit", (event) => {
     date: formData.get("referralDate") || todayISO(),
     result: "",
     notes: formData.get("notes").trim(),
+    countsForPartner: false,
   });
 
-  awardPartnerPoints();
   orderForm.reset();
   setDefaultReferralDate();
   updateTomographyFields();
   updateOrthodonticPackageFields();
-  renderPartnerProgram();
+  renderAdmin();
   renderDoctorOrders();
   renderResults(resultsSearch.value);
   setView("dashboard");
-  showToast("Orden enviada a Radio Imagen. Ya aparece en seguimiento.");
+  showToast("Orden enviada. Sumará puntos cuando Radio Imagen valide que el paciente fue atendido.");
 });
 
 profileForm.addEventListener("submit", (event) => {
@@ -1721,6 +1784,11 @@ adminOrderTable?.addEventListener("change", (event) => {
     return;
   }
 
+  if (statusControl.value === "Atendida" && !order.countsForPartner) {
+    validateAttendedOrder(order.id);
+    return;
+  }
+
   order.status = statusControl.value;
   renderAdmin();
   renderDoctorOrders();
@@ -1754,6 +1822,7 @@ document.addEventListener("click", (event) => {
   const downloadFileButton = event.target.closest("[data-download-file]");
   const orderButton = event.target.closest("[data-order-patient]");
   const agentOrderButton = event.target.closest("[data-agent-order]");
+  const validateOrderButton = event.target.closest("[data-validate-order]");
 
   if (downloadOrderButton) {
     const order = orders.find(
@@ -1787,6 +1856,10 @@ document.addEventListener("click", (event) => {
 
   if (agentOrderButton) {
     runAgent(agentOrderButton.dataset.agentOrder);
+  }
+
+  if (validateOrderButton) {
+    validateAttendedOrder(validateOrderButton.dataset.validateOrder);
   }
 });
 

@@ -470,6 +470,39 @@ Crear el proyecto Supabase real para iniciar operación con base de datos, roles
 - Cambiar órdenes mock por inserciones reales.
 - Conectar admin y agente local a las tablas reales.
 
+## 2026-06-15 - Validación de paciente atendido
+
+### Objetivo
+
+Separar una orden referida de un paciente realmente atendido para que el programa de socios sólo sume puntos cuando Radio Imagen confirme la asistencia.
+
+### Cambios realizados
+
+- Las órdenes nuevas ya no suman puntos automáticamente.
+- Se agregó estado `Atendida` y `No asistió`.
+- Se agregó botón admin `Validar atendido`.
+- Una orden validada queda marcada como `countsForPartner`.
+- El botón queda bloqueado después de validar para evitar doble conteo.
+- Al validar se suman 100 puntos y un paciente validado al doctor correspondiente.
+- La UI de socios ahora habla de `pacientes validados`.
+- Supabase recibió campos de validación en `orders`.
+- Supabase recibió la tabla `order_status_events`.
+
+### Regla operativa
+
+```text
+Doctor crea orden -> no suma puntos
+Paciente llega y se hace estudio -> admin valida atendido
+Admin valida atendido -> suma 100 puntos una sola vez
+No asistió / cancelada -> no suma puntos
+```
+
+### Pendiente
+
+- Conectar esta validación al frontend real de Supabase.
+- Registrar `partner_point_events` desde una acción transaccional segura.
+- Mover helpers RLS a un esquema privado antes de producción.
+
 ## Plantilla para próximos cambios
 
 ### YYYY-MM-DD - Nombre del cambio

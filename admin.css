@@ -166,6 +166,35 @@
   font-size: 0.78rem;
 }
 
+.validation-copy {
+  display: block;
+  margin-top: 4px;
+  color: #991b1b;
+  font-weight: 800;
+}
+
+.admin-row-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+
+.validate-action {
+  color: #ffffff;
+  background: var(--brand);
+  border-color: var(--brand);
+}
+
+.validate-action.validated,
+.validate-action:disabled {
+  color: #166534;
+  background: #dcfce7;
+  border-color: #bbf7d0;
+  cursor: default;
+}
+
 .admin-doctor-card,
 .download-card {
   display: grid;

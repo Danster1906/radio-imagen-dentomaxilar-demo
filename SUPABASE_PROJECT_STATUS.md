@@ -23,7 +23,8 @@ No usar ni subir llaves privadas/service role al hosting.
 
 - `20260613232826_initial_radio_imagen_schema`
 - `20260613232912_harden_role_helper_functions`
-- `20260613232958_revoke_public_execute_role_helpers`
+- `20260613232941_revoke_public_execute_role_helpers`
+- `20260615174535_add_attended_validation_control`
 
 ## Tablas creadas
 
@@ -33,6 +34,7 @@ No usar ni subir llaves privadas/service role al hosting.
 - `doctor_partner_status`
 - `studies`
 - `orders`
+- `order_status_events`
 - `order_studies`
 - `result_packages`
 - `result_files`
@@ -85,7 +87,30 @@ Antes de producción conviene moverlas a un esquema privado o reemplazarlas por 
 3. Insertar doctores en `doctor_profiles`.
 4. Conectar login del frontend a Supabase Auth.
 5. Cambiar el formulario `Nueva orden` para insertar en `orders` y `order_studies`.
-6. Cambiar admin para leer y actualizar órdenes reales.
-7. Crear edge function o endpoint seguro para solicitar descargas.
-8. Conectar el agente local a `download_requests` y `result_files`.
+6. Cambiar admin para validar pacientes atendidos y crear `partner_point_events`.
+7. Cambiar admin para leer y actualizar órdenes reales.
+8. Crear edge function o endpoint seguro para solicitar descargas.
+9. Conectar el agente local a `download_requests` y `result_files`.
 
+## Control de pacientes validados
+
+Una orden referida no suma puntos automáticamente.
+
+Campos agregados a `orders`:
+
+- `counts_for_partner`
+- `patient_attended_at`
+- `validated_by`
+- `partner_points_awarded_at`
+
+Tabla agregada:
+
+- `order_status_events`
+
+Regla:
+
+```text
+Orden creada -> no suma puntos
+Admin valida paciente atendido -> suma 100 puntos una sola vez
+No asistió / cancelada -> no suma puntos
+```
