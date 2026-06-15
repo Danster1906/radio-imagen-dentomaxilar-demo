@@ -27,6 +27,8 @@ No usar ni subir llaves privadas/service role al hosting.
 - `20260615174535_add_attended_validation_control`
 - `20260615180425_simplify_order_status_workflow`
 - `20260615180513_enable_realtime_operational_tables`
+- `prepare_operational_access_policies`
+- `harden_helpers_and_add_operational_indexes`
 
 ## Tablas creadas
 
@@ -68,19 +70,26 @@ Configuración:
 - Privado
 - Límite inicial: 500 MB por archivo
 - Uso previsto: almacenamiento temporal de resultados solicitados por doctores
+- Políticas activas:
+  - Admin autenticado puede subir, actualizar, leer y eliminar archivos.
+  - Doctor autenticado sólo puede leer archivos dentro de su carpeta `doctor_id`.
 
-## Advertencias pendientes
+## Seguridad
 
-Supabase Advisor conserva advertencias para:
+Estado actual:
 
-- `current_app_role()`
-- `current_doctor_id()`
+- Security Advisor: sin warnings.
+- RLS activo en tablas operativas.
+- Helpers `current_app_role()` y `current_doctor_id()` movidos a esquema privado `app_private`.
+- Bucket `result-temp` privado.
 
-Motivo:
+## Performance
 
-Son funciones `SECURITY DEFINER` usadas por las políticas RLS para saber si el usuario es doctor o admin.
+Estado actual:
 
-Antes de producción conviene moverlas a un esquema privado o reemplazarlas por un patrón que no aparezca como RPC ejecutable para usuarios autenticados.
+- Se agregaron índices para llaves foráneas operativas.
+- Performance Advisor aún puede mostrar índices como `unused_index` porque todavía no hay tráfico real.
+- También puede mostrar recomendaciones `auth_rls_initplan` para optimizar políticas a escala; no bloquean el piloto inicial.
 
 ## Próximos pasos operativos
 

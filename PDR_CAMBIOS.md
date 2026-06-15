@@ -753,6 +753,35 @@ El frontend se puede publicar ya para piloto visual, pero no se debe abrir a doc
 
 No cambia la base de datos. El proyecto Supabase ya existe, pero las tablas operativas estan vacias y necesitan usuarios/perfiles reales antes del piloto.
 
+## 2026-06-15 - Configuración operativa de Supabase
+
+### Objetivo
+
+Dejar Supabase preparado para operación real con doctores autenticados, RLS, Storage privado y altas internas desde admin.
+
+### Cambios realizados
+
+- Se aplicó migración `prepare_operational_access_policies`.
+- Se aplicó migración `harden_helpers_and_add_operational_indexes`.
+- Se agregaron políticas para que admin pueda crear perfiles, doctores y estado de socio.
+- Se permitió que el doctor actualice su propio perfil profesional.
+- Se configuró Storage `result-temp` como bucket privado con acceso admin y lectura por carpeta del doctor.
+- Se movieron helpers de rol a esquema privado `app_private`.
+- Se agregaron índices para llaves foráneas operativas.
+- Se creó `SUPABASE_ALTA_USUARIOS.sql` como plantilla de alta inicial.
+- Se actualizó `SUPABASE_PROJECT_STATUS.md`.
+
+### Estado verificado
+
+- Security Advisor: sin warnings.
+- Bucket `result-temp`: privado, límite 500 MB.
+- Catálogos cargados: 4 niveles de socios y 23 estudios.
+- Tablas operativas listas pero sin usuarios/doctores reales todavía.
+
+### Lo que queda manual
+
+Supabase Auth debe crear los usuarios reales desde Dashboard o con una llave secreta en backend. No se debe exponer `service_role` en el frontend.
+
 ## Plantilla para próximos cambios
 
 ### YYYY-MM-DD - Nombre del cambio

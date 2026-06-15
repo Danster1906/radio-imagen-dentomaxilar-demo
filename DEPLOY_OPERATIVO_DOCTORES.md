@@ -128,6 +128,12 @@ admin@radioimagen.mx
 
 Luego insertar perfil en SQL Editor.
 
+Plantilla local lista:
+
+```text
+SUPABASE_ALTA_USUARIOS.sql
+```
+
 ### Admin
 
 ```sql
@@ -253,4 +259,3 @@ Debe cumplirse:
 - Resultados se suben a Supabase Storage.
 - Doctor descarga sin pedir apoyo manual.
 - El estatus se actualiza para doctor y admin.
-
