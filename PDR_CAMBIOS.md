@@ -577,6 +577,7 @@ Quitar la sensación de demo pública y hacer que el acceso sea privado para den
 - Se redujo el tamaño del encabezado de login para evitar una pantalla gigante en móvil.
 - El panel doctor ahora evita que las filas de pacientes se desborden encima de la tarjeta de socios.
 - El dashboard cambia a una sola columna en anchos medianos para evitar encimados.
+- Se simplificó el login a una sola tarjeta centrada, sin showcase lateral ni métricas decorativas.
 
 ### Razón del cambio
 
