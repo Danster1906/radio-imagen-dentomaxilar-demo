@@ -487,13 +487,22 @@ button {
 
 .logout-action {
   width: 100%;
-  min-height: 36px;
-  margin-top: 14px;
+  min-height: 42px;
+  margin-top: 8px;
   color: #ffffff;
   background: rgba(255, 255, 255, 0.08);
   border: 1px solid rgba(255, 255, 255, 0.2);
   border-radius: 8px;
   font-weight: 800;
+  text-align: left;
+  padding: 0 14px;
+  transition: background 150ms ease, border-color 150ms ease, transform 150ms ease;
+}
+
+.logout-action:hover {
+  background: rgba(255, 255, 255, 0.14);
+  border-color: rgba(255, 255, 255, 0.32);
+  transform: translateY(-1px);
 }
 
 .workspace {
