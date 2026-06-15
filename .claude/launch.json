@@ -1,0 +1,11 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "radio-imagen",
+      "runtimeExecutable": "bash",
+      "runtimeArgs": ["-c", "npx http-server -p $PORT --cors -c-1 ."],
+      "port": 3434
+    }
+  ]
+}
