@@ -18,6 +18,7 @@ Interfaz inicial para que doctores generen órdenes digitales y Radio Imagen/Rad
 - `LOGICA_PUNTOS_SOCIOS.md`: reglas de puntos, niveles, cashback y auditoría del programa de socios.
 - `CONFIG_SUPABASE_STORAGE_TEMPORAL.md`: configuración propuesta para usar Supabase como almacenamiento temporal bajo demanda.
 - `REPLIT_DEPLOYMENT.md`: guía para publicar el portal en Replit y conectarlo con Supabase/agente local.
+- `DEPLOY_OPERATIVO_DOCTORES.md`: ruta concreta para publicar el portal e iniciar operación real con doctores.
 - `DATA_MODEL.md`: estructura escalable de base de datos.
 - `database/`: base SQLite demo, esquema, datos semilla y consultas de prueba.
 - `local-agent/`: agente local Node.js para subir resultados a Supabase bajo demanda.

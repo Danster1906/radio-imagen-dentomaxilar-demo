@@ -732,6 +732,27 @@ No es necesario poner DICOM ni PDF en la selección de orden. La orden debe iden
 
 No cambia la estructura. Sólo se aclara la etiqueta de la entrega y el texto visible en el selector.
 
+## 2026-06-15 - Paquete de deployment operativo
+
+### Objetivo
+
+Preparar el proyecto para publicar una version actualizada y definir el camino minimo para que doctores puedan usar la herramienta en operacion real.
+
+### Cambios realizados
+
+- Se genero el paquete `deploy/radio-imagen-operativo-v1.zip` con la version actual del frontend.
+- Se agrego `DEPLOY_OPERATIVO_DOCTORES.md` con pasos para Neubox, Replit, Supabase Auth, perfiles, Storage y piloto real.
+- Se actualizo `DEPLOY_NEUBOX.md` para apuntar al paquete nuevo.
+- Se actualizo `README.md` para incluir la guia operativa de deployment.
+
+### Decision de producto
+
+El frontend se puede publicar ya para piloto visual, pero no se debe abrir a doctores reales como operacion definitiva hasta conectar Supabase Auth, Postgres y Storage.
+
+### Impacto en datos
+
+No cambia la base de datos. El proyecto Supabase ya existe, pero las tablas operativas estan vacias y necesitan usuarios/perfiles reales antes del piloto.
+
 ## Plantilla para próximos cambios
 
 ### YYYY-MM-DD - Nombre del cambio

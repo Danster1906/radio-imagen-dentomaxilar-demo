@@ -1,0 +1,835 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Radio Imagen | Órdenes Digitales</title>
+    <link rel="stylesheet" href="styles.css?v=result-names-2" />
+    <link rel="stylesheet" href="admin.css?v=result-names-2" />
+  </head>
+  <body>
+    <section class="login-screen" id="login-screen">
+      <div class="login-panel">
+        <div class="brand login-brand">
+          <img class="brand-logo" src="img/brand/radio-imagen-logo.png" alt="Radio Imagen Dentomaxilar" />
+          <span class="brand-subtitle">Portal privado para dentistas</span>
+        </div>
+
+        <div class="login-copy">
+          <span class="eyebrow">Acceso exclusivo</span>
+          <h1>Portal privado Radio Imagen.</h1>
+          <p>Ingresa con el correo autorizado y la contraseña asignada por Radio Imagen Dentomaxilar.</p>
+        </div>
+
+        <form class="login-form" id="login-form">
+          <label>
+            Correo autorizado
+            <input name="loginEmail" type="email" placeholder="doctor@consultorio.com" autocomplete="username" required />
+          </label>
+          <label>
+            Contraseña
+            <input name="loginPassword" type="password" placeholder="Contraseña asignada" autocomplete="current-password" required />
+          </label>
+          <button class="primary-action" type="submit">Iniciar sesión</button>
+        </form>
+
+        <p class="login-note">Acceso privado para doctores dados de alta por Radio Imagen.</p>
+
+        <div class="login-trust">
+          <span>Portal privado</span>
+          <span>Fecha automática</span>
+          <span>Resultados centralizados</span>
+        </div>
+      </div>
+
+      <aside class="login-showcase" aria-label="Resumen del portal">
+        <div class="showcase-card main">
+          <span>Órdenes activas</span>
+          <strong>18</strong>
+          <small>4 listas para descargar</small>
+        </div>
+        <div class="showcase-card">
+          <span>Conversión</span>
+          <strong>83%</strong>
+        </div>
+        <div class="showcase-card">
+          <span>Estudio más pedido</span>
+          <strong>OPG</strong>
+          <small>Ortopantomografía</small>
+        </div>
+      </aside>
+    </section>
+
+    <section class="loading-screen" id="loading-screen" hidden>
+      <div class="particle-field" aria-hidden="true">
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+      </div>
+      <div class="loading-card" role="status" aria-live="polite">
+        <div class="brand login-brand">
+          <img class="brand-logo" src="img/brand/radio-imagen-logo-white.png" alt="Radio Imagen Dentomaxilar" />
+          <div>
+            <strong>Cargando portal</strong>
+            <span id="loading-handle">@doctor</span>
+          </div>
+        </div>
+        <div class="skeleton-stack" aria-label="Preparando datos del doctor">
+          <div class="skeleton skeleton-title"></div>
+          <div class="skeleton-row">
+            <div class="skeleton metric"></div>
+            <div class="skeleton metric"></div>
+            <div class="skeleton metric"></div>
+          </div>
+          <div class="skeleton skeleton-line"></div>
+          <div class="skeleton skeleton-line short"></div>
+        </div>
+        <p>Preparando perfil, métricas y órdenes del doctor autenticado.</p>
+      </div>
+    </section>
+
+    <div class="app-shell authenticated" id="app-shell" hidden>
+      <aside class="sidebar" aria-label="Navegación principal">
+        <div class="brand">
+          <img class="brand-logo sidebar-logo" src="img/brand/radio-imagen-logo-white.png" alt="Radio Imagen Dentomaxilar" />
+        </div>
+
+        <nav class="nav-stack">
+          <button class="nav-item active" data-role-view="doctor" data-view="dashboard" type="button">Panel doctor</button>
+          <button class="nav-item" data-role-view="doctor" data-view="new-order" type="button">Nueva orden</button>
+          <button class="nav-item" data-role-view="doctor" data-view="results" type="button">Resultados</button>
+          <button class="nav-item" data-role-view="doctor" data-view="profile" type="button">Mi perfil</button>
+          <button class="nav-item" data-role-view="admin" data-view="admin" type="button">Admin Radio Imagen</button>
+          <button class="nav-item" data-role-view="doctor" data-view="future" type="button">Consulta plus</button>
+          <button class="logout-action" id="logout-button" type="button">Cerrar sesión</button>
+        </nav>
+
+        <div class="profile-card">
+          <span class="eyebrow">Cuenta activa</span>
+          <strong data-profile-name>Dra. Sofia Herrera</strong>
+          <span data-profile-specialty>Ortodoncia y ATM</span>
+          <small class="profile-handle" data-profile-handle>@sofia-herrera</small>
+        </div>
+      </aside>
+
+      <main class="workspace">
+        <header class="topbar">
+          <div>
+            <h1 id="page-title">Panel doctor</h1>
+            <p class="page-context">
+              <span data-profile-handle>@sofia-herrera</span>
+              <span id="doctor-id-label">DR-0001</span>
+            </p>
+          </div>
+          <div class="topbar-actions">
+            <div class="internal-clock" aria-label="Reloj interno de la herramienta">
+              <span>Hoy</span>
+              <strong id="current-date">--</strong>
+              <small id="current-time">--:--</small>
+            </div>
+            <button
+              class="primary-action"
+              data-doctor-only
+              data-hide-on-view="new-order"
+              data-view="new-order"
+              type="button"
+            >
+              Crear orden
+            </button>
+          </div>
+        </header>
+
+        <section class="view active" id="dashboard">
+          <section class="stats-bar" aria-label="Resumen de desempeño del doctor">
+            <div class="stats-header">
+              <div>
+                <span class="eyebrow">Clínica / doctor</span>
+                <h2 data-profile-clinic>Clínica Herrera Dental</h2>
+              </div>
+              <div class="period-tabs" aria-label="Periodo de métricas">
+                <button class="active" data-period="today" type="button">Hoy</button>
+                <button data-period="week" type="button">Semana</button>
+                <button data-period="month" type="button">Mes</button>
+                <button data-period="year" type="button">Año</button>
+              </div>
+            </div>
+
+            <div class="stat-strip">
+              <article class="stat-item">
+                <span>Órdenes activas</span>
+                <strong data-metric="activeOrders">18</strong>
+                <small data-metric-copy="readyResults">4 listas</small>
+              </article>
+              <article class="stat-item">
+                <span data-metric-label="patients">Pacientes hoy</span>
+                <strong data-metric="monthlyPatients">42</strong>
+                <small data-metric-copy="growth">+12%</small>
+              </article>
+              <article class="stat-item">
+                <span>Pendientes de cita</span>
+                <strong data-metric="pendingAppointments">6</strong>
+                <small>Por contactar</small>
+              </article>
+              <article class="stat-item">
+                <span>Estudio más pedido</span>
+                <strong class="metric-short" data-metric="topStudy">OPG</strong>
+                <small data-metric-copy="topStudyDetail">Ortopantomografía</small>
+              </article>
+              <article class="stat-item">
+                <span>Conversión</span>
+                <strong data-metric="conversion">83%</strong>
+                <small>Referidos atendidos</small>
+              </article>
+            </div>
+          </section>
+
+          <div class="content-grid">
+            <section class="panel wide">
+              <div class="panel-heading">
+                <div>
+                  <span class="eyebrow">Seguimiento</span>
+                  <h2>Pacientes referidos</h2>
+                </div>
+                <button class="ghost-action" data-view="results" type="button">Ver resultados</button>
+              </div>
+              <div class="order-list" id="doctor-order-list"></div>
+            </section>
+
+            <div class="dashboard-side">
+              <section class="panel partner-panel">
+                <div class="panel-heading">
+                  <div>
+                    <span class="eyebrow">Socios Radio Imagen Dentomaxilar</span>
+                    <h2 data-partner-tier>Socio Plata</h2>
+                  </div>
+                  <span class="partner-badge" data-partner-points>1,850 pts</span>
+                </div>
+
+                <div class="partner-progress" aria-label="Progreso al siguiente nivel">
+                  <div>
+                    <span data-partner-referrals>18 pacientes referidos</span>
+                    <strong data-partner-next>7 pacientes para Oro</strong>
+                  </div>
+                  <div class="progress-track">
+                    <span data-partner-progress style="width: 53%"></span>
+                  </div>
+                </div>
+
+                <div class="partner-ladder" data-partner-ladder aria-label="Niveles de socio">
+                  <span>Activo</span>
+                  <span>Plata</span>
+                  <span>Oro</span>
+                  <span>Diamante</span>
+                </div>
+
+                <div class="reward-stack" aria-label="Recompensas activas">
+                  <article>
+                    <span>Activo</span>
+                    <strong data-partner-current-reward>Impulso digital con IA</strong>
+                    <ul data-partner-current-benefits>
+                      <li>Consulta personalizada de redes sociales con implementación IA</li>
+                    </ul>
+                  </article>
+                  <article>
+                    <span>Siguiente</span>
+                    <strong data-partner-next-reward>Reporte mensual personalizado</strong>
+                    <ul data-partner-next-benefits>
+                      <li>Reporte mensual personalizado</li>
+                    </ul>
+                  </article>
+                </div>
+
+                <div class="benefit-catalog" data-partner-benefit-catalog aria-label="Beneficios por nivel"></div>
+              </section>
+
+              <section class="panel">
+                <div class="panel-heading">
+                  <div>
+                    <span class="eyebrow">Flujo recomendado</span>
+                    <h2>Orden digital</h2>
+                  </div>
+                </div>
+                <div class="flow-diagram" aria-label="Diagrama del flujo de orden digital">
+                  <div class="flow-step">
+                    <span>1</span>
+                    <p>Doctor llena datos del paciente</p>
+                  </div>
+                  <div class="flow-step">
+                    <span>2</span>
+                    <p>Selecciona estudios solicitados</p>
+                  </div>
+                  <div class="flow-step">
+                    <span>3</span>
+                    <p>Radio Imagen recibe la orden</p>
+                  </div>
+                  <div class="flow-step">
+                    <span>4</span>
+                    <p>Suma puntos y se actualiza estado</p>
+                  </div>
+                </div>
+              </section>
+            </div>
+          </div>
+        </section>
+
+        <section class="view" id="new-order">
+          <form class="order-form" id="order-form">
+            <section class="panel">
+              <div class="panel-heading">
+                <div>
+                  <span class="eyebrow">Orden de servicio</span>
+                  <h2>Datos del paciente</h2>
+                </div>
+              </div>
+
+              <div class="form-grid">
+                <label>
+                  Nombre completo
+                  <input name="patientName" placeholder="Ej. Andrea Ruiz Martinez" required />
+                </label>
+                <label>
+                  Fecha de nacimiento
+                  <input name="birthDate" type="date" required />
+                </label>
+                <label>
+                  Telefono
+                  <input name="phone" placeholder="Ej. 55 1234 5678" />
+                </label>
+                <label>
+                  Fecha de remisión
+                  <input name="referralDate" type="date" />
+                </label>
+                <label class="full">
+                  Indicaciones clínicas
+                  <textarea name="notes" placeholder="Motivo del estudio, zona de interés o comentarios para Radio Imagen"></textarea>
+                </label>
+              </div>
+            </section>
+
+            <section class="panel">
+              <div class="panel-heading">
+                <div>
+                  <span class="eyebrow">Selección de estudios</span>
+                  <h2>Estudios solicitados</h2>
+                </div>
+              </div>
+
+              <div class="study-grid" id="study-grid"></div>
+            </section>
+
+            <section class="panel form-summary">
+              <div>
+                <span class="eyebrow">Resumen</span>
+                <h2>Doctor referente</h2>
+                <p><span data-profile-name>Dra. Sofia Herrera</span>, <span data-profile-specialty>Ortodoncia y ATM</span></p>
+              </div>
+              <button class="primary-action" type="submit">Enviar orden</button>
+            </section>
+          </form>
+        </section>
+
+        <section class="view" id="results">
+          <div class="panel">
+            <div class="panel-heading">
+              <div>
+                <span class="eyebrow">Resultados</span>
+                <h2>Archivos disponibles</h2>
+              </div>
+              <input class="search-field" id="results-search" placeholder="Buscar paciente" />
+            </div>
+            <div class="results-table" id="results-table"></div>
+          </div>
+        </section>
+
+        <section class="view" id="profile">
+          <div class="profile-layout">
+            <section class="panel">
+              <div class="panel-heading">
+                <div>
+                  <span class="eyebrow">Perfil profesional</span>
+                  <h2>Datos visibles para Radio Imagen</h2>
+                </div>
+              </div>
+
+              <form class="profile-form" id="profile-form">
+                <div class="profile-photo-editor">
+                  <div class="avatar editable-avatar">
+                    <img id="profile-photo-preview" alt="" hidden />
+                    <span id="profile-initials">SH</span>
+                  </div>
+                  <div class="photo-controls">
+                    <p class="photo-hint">Arrastra la imagen dentro del recuadro para ajustar el encuadre.</p>
+                    <label class="photo-upload">
+                      Imagen de perfil
+                      <input name="profilePhoto" type="file" accept="image/png,image/jpeg,image/webp" />
+                      <span>Puede ser foto del doctor, logo del consultorio o imagen profesional.</span>
+                    </label>
+
+                    <div class="crop-controls" aria-label="Ajustar encuadre de imagen de perfil">
+                      <label>
+                        Zoom
+                        <input name="photoZoom" type="range" min="1" max="2.4" step="0.05" value="1" />
+                      </label>
+                      <label>
+                        Horizontal
+                        <input name="photoX" type="range" min="-40" max="40" step="1" value="0" />
+                      </label>
+                      <label>
+                        Vertical
+                        <input name="photoY" type="range" min="-40" max="40" step="1" value="0" />
+                      </label>
+                      <button class="ghost-action compact-action" id="center-photo" type="button">Centrar</button>
+                    </div>
+                  </div>
+                </div>
+
+                <div class="form-grid">
+                  <label>
+                    Nombre profesional
+                    <input name="doctorName" value="Dra. Sofia Herrera" required />
+                  </label>
+                  <label>
+                    Especialidad
+                    <input name="specialty" value="Ortodoncia y ATM" placeholder="Ej. Endodoncia, Ortodoncia, Cirugía maxilofacial" />
+                  </label>
+                  <label>
+                    Clínica o consultorio
+                    <input name="clinic" value="Clínica Herrera Dental" />
+                  </label>
+                  <label>
+                    Teléfono de contacto
+                    <input name="contactPhone" value="55 7123 8842" />
+                  </label>
+                  <label>
+                    Correo
+                    <input name="email" type="email" value="sofia.herrera@consulta.mx" />
+                  </label>
+                  <label>
+                    Ciudad
+                    <input name="city" value="Ciudad de México" />
+                  </label>
+                  <label class="full">
+                    Notas para Radio Imagen
+                    <textarea name="profileNotes">Preferencia por reportes enviados en PDF y aviso por WhatsApp cuando el estudio esté listo.</textarea>
+                  </label>
+                </div>
+
+                <div class="form-summary">
+                  <p>Estos datos ayudan a identificar al doctor referente y preparan el portal para futuros módulos de agenda y KPIs.</p>
+                  <button class="primary-action" type="submit">Guardar perfil</button>
+                </div>
+              </form>
+            </section>
+
+            <section class="panel">
+              <span class="eyebrow">Vista rápida</span>
+              <div class="doctor-preview">
+                <div class="avatar">
+                  <img id="doctor-preview-photo" alt="" hidden />
+                  <span id="doctor-preview-initials">SH</span>
+                </div>
+                <h2 data-profile-name>Dra. Sofia Herrera</h2>
+                <p data-profile-specialty>Ortodoncia y ATM</p>
+                <dl>
+                  <div>
+                    <dt>Consultorio</dt>
+                    <dd data-profile-clinic>Clínica Herrera Dental</dd>
+                  </div>
+                  <div>
+                    <dt>Contacto</dt>
+                    <dd data-profile-contact>55 7123 8842</dd>
+                  </div>
+                  <div>
+                    <dt>Ciudad</dt>
+                    <dd data-profile-city>Ciudad de México</dd>
+                  </div>
+                </dl>
+              </div>
+            </section>
+          </div>
+        </section>
+
+        <section class="view" id="future">
+          <div class="future-layout">
+            <section class="panel wide">
+              <div class="panel-heading">
+                <div>
+                  <span class="eyebrow">Servicio premium futuro</span>
+                  <h2>Consulta plus para doctores</h2>
+                </div>
+              </div>
+              <div class="feature-grid">
+                <article>
+                  <strong>Agenda</strong>
+                  <span>Citas, recordatorios y seguimiento de pacientes.</span>
+                </article>
+                <article>
+                  <strong>Finanzas</strong>
+                  <span>Ingresos, gastos, no-shows y ticket promedio.</span>
+                </article>
+                <article>
+                  <strong>KPIs</strong>
+                  <span>Pacientes nuevos, referidos, crecimiento y conversión.</span>
+                </article>
+                <article>
+                  <strong>Coach</strong>
+                  <span>Recomendaciones mensuales para mejorar la consulta.</span>
+                </article>
+              </div>
+            </section>
+            <section class="panel">
+              <span class="eyebrow">Principio de producto</span>
+              <h2>Primero hábito, luego expansión</h2>
+              <p>
+                El doctor entra para mandar órdenes a Radio Imagen. Cuando ese hábito existe,
+                se puede ofrecer agenda, finanzas y métricas como un módulo aparte.
+              </p>
+            </section>
+          </div>
+        </section>
+
+        <section class="view" id="admin">
+          <section class="admin-hero">
+            <div>
+              <span class="eyebrow">Operación interna</span>
+              <h2>Admin Radio Imagen</h2>
+              <p>Una bandeja para saber qué orden llegó, cuál ya fue agendada, cuál se completó y qué resultado falta enviar.</p>
+            </div>
+            <div class="admin-hero-actions">
+              <button class="primary-action" id="send-studies-button" type="button">Mandar estudios</button>
+              <button class="secondary-action" id="focus-new-doctor" type="button">Alta doctor</button>
+            </div>
+          </section>
+
+          <nav class="admin-section-nav" aria-label="Módulos de administración">
+            <button class="active" data-admin-section="dashboard" type="button">Dashboard</button>
+            <button data-admin-section="orders" type="button">Órdenes</button>
+            <button data-admin-section="results" type="button">Resultados</button>
+            <button data-admin-section="doctors" type="button">Doctores</button>
+          </nav>
+
+          <section class="admin-section active" data-admin-section-panel="dashboard">
+            <section class="admin-metrics" aria-label="Flujo operativo de órdenes">
+              <article>
+                <span>Recibidas</span>
+                <strong data-admin-metric="newOrders">--</strong>
+                <small>Contactar por WhatsApp</small>
+              </article>
+              <article>
+                <span>Agendadas</span>
+                <strong data-admin-metric="scheduledOrders">--</strong>
+                <small>Esperando paciente</small>
+              </article>
+              <article>
+                <span>Completas</span>
+                <strong data-admin-metric="completedOrders">--</strong>
+                <small>Asignar resultado</small>
+              </article>
+              <article>
+                <span>Listas</span>
+                <strong data-admin-metric="readyResults">--</strong>
+                <small>Para descargar</small>
+              </article>
+              <article>
+                <span>Descargas</span>
+                <strong data-admin-metric="downloadRequests">--</strong>
+                <small>Solicitudes activas</small>
+              </article>
+            </section>
+
+            <section class="admin-dashboard-grid">
+              <article class="panel admin-panel">
+                <span class="eyebrow">Prioridad operativa</span>
+                <h2>Qué revisar primero</h2>
+                <ol class="admin-priority-list">
+                  <li>Contactar órdenes recibidas.</li>
+                  <li>Confirmar asistencia de pacientes agendados.</li>
+                  <li>Asignar archivos a estudios completos.</li>
+                  <li>Enviar estudios listos cuando el doctor los solicite.</li>
+                </ol>
+              </article>
+              <article class="panel admin-panel">
+                <span class="eyebrow">Lectura rápida</span>
+                <h2>Separación del admin</h2>
+                <div class="admin-module-map">
+                  <span>Órdenes</span>
+                  <small>Seguimiento paciente por paciente</small>
+                  <span>Resultados</span>
+                  <small>Agente local, archivos y descargas</small>
+                  <span>Doctores</span>
+                  <small>Alta, credenciales y socios</small>
+                </div>
+              </article>
+            </section>
+          </section>
+
+          <div class="admin-grid admin-section" data-admin-section-panel="orders" hidden>
+            <section class="panel admin-panel wide">
+              <div class="panel-heading">
+                <div>
+                  <span class="eyebrow">Bandeja principal</span>
+                  <h2>Seguimiento de órdenes</h2>
+                </div>
+                <select id="admin-status-filter" aria-label="Filtrar órdenes por estado">
+                  <option value="all">Todos</option>
+                  <option value="Recibida">Recibida</option>
+                  <option value="Agendada">Agendada</option>
+                  <option value="Completa">Completa</option>
+                  <option value="Lista para descargar">Lista para descargar</option>
+                  <option value="Cancelada">Cancelada</option>
+                </select>
+              </div>
+              <div class="admin-status-guide" aria-label="Guía de estatus">
+                <article>
+                  <strong>Recibida</strong>
+                  <span>La orden llegó. Falta contactar al paciente.</span>
+                </article>
+                <article>
+                  <strong>Agendada</strong>
+                  <span>El paciente ya tiene cita confirmada.</span>
+                </article>
+                <article>
+                  <strong>Completa</strong>
+                  <span>El paciente vino y el estudio ya se realizó.</span>
+                </article>
+                <article>
+                  <strong>Lista</strong>
+                  <span>El resultado ya puede verlo o descargarlo el doctor.</span>
+                </article>
+                <article>
+                  <strong>Cancelada</strong>
+                  <span>La orden se cerró porque no seguirá el flujo.</span>
+                </article>
+              </div>
+              <div class="admin-table" id="admin-order-table"></div>
+            </section>
+          </div>
+
+          <div class="admin-grid admin-section" data-admin-section-panel="results" hidden>
+            <section class="panel admin-panel wide manual-upload-panel">
+              <div class="panel-heading">
+                <div>
+                  <span class="eyebrow">Subida directa</span>
+                  <h2>Asignar resultado manual</h2>
+                </div>
+              </div>
+              <p class="admin-helper">
+                Primero eliges el paciente/orden. Después indicas qué entrega estás subiendo; el formato real lo toma del archivo seleccionado.
+              </p>
+              <form class="manual-upload-form" id="manual-upload-form">
+                <label>
+                  Paciente / orden
+                  <select name="manualOrderId" id="manual-upload-order" required></select>
+                </label>
+                <label>
+                  Entrega que subes
+                  <select name="manualFileType">
+                    <option value="Estudio completo">Estudio completo (.zip)</option>
+                    <option value="Reporte">Reporte o interpretación (.pdf)</option>
+                    <option value="Radiografía">Radiografía o imagen (.pdf / .jpg)</option>
+                    <option value="DICOM">Tomografía 3D - DICOM (.dcm / .zip)</option>
+                    <option value="Fotografías">Fotografías clínicas (.zip)</option>
+                    <option value="Modelo 3D">Modelo 3D / STL (.stl / .ply)</option>
+                  </select>
+                </label>
+                <label class="manual-file-picker">
+                  Archivo
+                  <input name="manualResultFile" type="file" accept=".pdf,.zip,.dcm,.stl,.ply,.obj,image/png,image/jpeg" required />
+                </label>
+                <button class="primary-action" type="submit">Subir y liberar al doctor</button>
+              </form>
+              <div class="manual-upload-note">
+                <strong>Flujo recomendado</strong>
+                <span>Admin sube archivo → Supabase Storage privado → orden lista → doctor descarga directo.</span>
+              </div>
+            </section>
+
+            <section class="panel admin-panel">
+              <div class="panel-heading">
+                <div>
+                  <span class="eyebrow">Resultados</span>
+                  <h2>Asignación local</h2>
+                </div>
+                <button class="small-action" id="run-agent-button" type="button">Correr agente</button>
+              </div>
+              <p class="admin-helper">
+                Cruza nombres de pacientes con archivos del servidor local, asigna el resultado correcto y prepara la subida inmediata.
+              </p>
+              <div class="agent-summary" aria-label="Resumen del agente">
+                <article>
+                  <span>Archivos locales</span>
+                  <strong data-agent-metric="localFiles">--</strong>
+                </article>
+                <article>
+                  <span>Matches</span>
+                  <strong data-agent-metric="matches">--</strong>
+                </article>
+                <article>
+                  <span>Subidas</span>
+                  <strong data-agent-metric="uploads">--</strong>
+                </article>
+              </div>
+              <div class="agent-log" id="agent-log"></div>
+            </section>
+
+            <section class="panel admin-panel">
+              <div class="panel-heading">
+                <div>
+                  <span class="eyebrow">Servidor local + Supabase</span>
+                  <h2>Cola de descargas</h2>
+                </div>
+              </div>
+              <div class="download-queue" id="admin-download-queue"></div>
+            </section>
+          </div>
+
+          <div class="admin-grid admin-section" data-admin-section-panel="doctors" hidden>
+            <section class="panel admin-panel">
+              <div class="panel-heading">
+                <div>
+                  <span class="eyebrow">Doctores</span>
+                  <h2>Alta y socios</h2>
+                </div>
+              </div>
+              <div class="admin-doctor-list" id="admin-doctor-list"></div>
+            </section>
+
+            <section class="panel admin-panel wide">
+              <div class="panel-heading">
+                <div>
+                  <span class="eyebrow">Nuevo doctor</span>
+                  <h2>Registro rápido</h2>
+                </div>
+              </div>
+              <form class="admin-form-grid" id="admin-doctor-form">
+                <label>
+                  Nombre
+                  <input name="doctorName" value="Dra. Natalia Rivas" required />
+                </label>
+                <label>
+                  Correo
+                  <input name="doctorEmail" type="email" value="natalia.rivas@consulta.mx" required />
+                </label>
+                <label>
+                  Contraseña inicial
+                  <input name="doctorPassword" type="text" value="Dentista2026!" autocomplete="new-password" required />
+                </label>
+                <label>
+                  Especialidad
+                  <input name="doctorSpecialty" value="Ortodoncia" />
+                </label>
+                <label>
+                  Clínica
+                  <input name="doctorClinic" value="Clínica Rivas Ortodoncia" />
+                </label>
+                <label>
+                  Teléfono
+                  <input name="doctorPhone" value="55 0000 0000" />
+                </label>
+                <label>
+                  Ciudad
+                  <input name="doctorCity" value="Ciudad de México" />
+                </label>
+                <label>
+                  Pacientes validados
+                  <input name="validatedPatients" min="0" type="number" value="12" />
+                </label>
+                <button class="primary-action" type="submit">Crear doctor y asignar puntos</button>
+              </form>
+            </section>
+          </div>
+        </section>
+      </main>
+    </div>
+
+    <div class="modal-backdrop" id="order-modal" hidden>
+      <section class="order-modal" role="dialog" aria-modal="true" aria-labelledby="order-modal-title">
+        <header class="modal-header">
+          <div>
+            <span class="eyebrow">Orden referida</span>
+            <h2 id="order-modal-title">Detalle de orden</h2>
+          </div>
+          <button class="icon-action" id="close-order-modal" type="button" aria-label="Cerrar orden">×</button>
+        </header>
+
+        <div class="modal-body">
+          <div class="modal-main">
+            <span class="eyebrow">Paciente</span>
+            <h3 id="modal-patient-name">--</h3>
+            <p id="modal-studies">--</p>
+          </div>
+
+          <dl class="order-detail-list">
+            <div>
+              <dt>Fecha de remisión</dt>
+              <dd id="modal-order-date">--</dd>
+            </div>
+            <div>
+              <dt>Estado</dt>
+              <dd><span class="status recibida" id="modal-order-status">--</span></dd>
+            </div>
+            <div>
+              <dt>Doctor referente</dt>
+              <dd id="modal-doctor-name">--</dd>
+            </div>
+            <div>
+              <dt>Resultado</dt>
+              <dd id="modal-result">--</dd>
+            </div>
+          </dl>
+
+          <section class="modal-notes">
+            <span class="eyebrow">Indicaciones clínicas</span>
+            <p id="modal-notes">Sin indicaciones adicionales.</p>
+          </section>
+        </div>
+      </section>
+    </div>
+
+    <div class="modal-backdrop" id="download-modal" hidden>
+      <section class="order-modal download-modal" role="dialog" aria-modal="true" aria-labelledby="download-modal-title">
+        <header class="modal-header">
+          <div>
+            <span class="eyebrow">Centro de descarga</span>
+            <h2 id="download-modal-title">Descargar estudio</h2>
+          </div>
+          <button class="icon-action" id="close-download-modal" type="button" aria-label="Cerrar descarga">×</button>
+        </header>
+
+        <div class="modal-body">
+          <div class="modal-main">
+            <span class="eyebrow">Paciente</span>
+            <h3 id="download-patient-name">--</h3>
+            <p id="download-study-summary">--</p>
+          </div>
+
+          <section class="download-choice primary-download">
+            <div>
+              <span class="eyebrow">Recomendado</span>
+              <h3>Estudio completo</h3>
+              <p>Descarga un ZIP con todos los archivos liberados del paciente.</p>
+            </div>
+            <button class="primary-action" id="download-full-study" type="button">Descargar todo</button>
+          </section>
+
+          <section class="download-choice">
+            <div>
+              <span class="eyebrow">Por archivo</span>
+              <h3>Descargar componentes</h3>
+              <p>Útil cuando el doctor sólo necesita un PDF, DICOM, fotografías, modelos o análisis.</p>
+            </div>
+            <div class="download-file-list" id="download-file-list"></div>
+          </section>
+        </div>
+      </section>
+    </div>
+
+    <div class="toast" id="toast" role="status" aria-live="polite"></div>
+    <script src="app.js?v=result-names-2"></script>
+  </body>
+</html>
