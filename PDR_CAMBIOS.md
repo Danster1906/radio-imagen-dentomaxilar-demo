@@ -529,6 +529,39 @@ En Supabase, el alta real debe crear:
 - Registro en `doctor_partner_status`.
 - Eventos históricos en `partner_point_events` si se cargan pacientes validados previos.
 
+## 2026-06-15 - Supabase multitenant y flujo simple de estatus
+
+### Objetivo
+
+Preparar el producto final para que cada doctor vea sólo su información y Radio Imagen pueda actualizar el seguimiento operativo de las órdenes.
+
+### Cambios realizados
+
+- Se simplificó el flujo visible de estatus a `Recibida`, `Agendada`, `Completa`, `Lista para descargar` y `Cancelada`.
+- En el demo, `Completa` reemplaza a `Atendida` como validación de paciente atendido.
+- En el demo, `Lista para descargar` reemplaza a `Lista` como estado final visible para resultados.
+- El admin puede cambiar a `Agendada` y el doctor verá el mismo estado.
+- El admin valida asistencia al cambiar a `Completa`; ahí se suman puntos.
+- Supabase recibió campos `scheduled_at`, `scheduled_by` y `completed_at` en `orders`.
+- Supabase recibió el nuevo constraint de estatus en `orders`.
+- Supabase Realtime quedó habilitado para `orders`, `order_status_events`, `result_files` y `download_requests`.
+- Se creó `SUPABASE_MULTITENANT_IMPLEMENTATION.md` con instrucciones para una IA o desarrollador.
+
+### Razón del cambio
+
+Reducir complejidad operativa. Radio Imagen sólo necesita saber si la orden fue recibida, agendada, completada y liberada para descarga.
+
+### Impacto en producto
+
+El doctor no tendrá que interpretar estatus internos. Verá el avance real de su paciente: recibido, agendado, completo y listo para descargar.
+
+### Impacto en datos
+
+- `orders.status` acepta: `Recibida`, `Agendada`, `Completa`, `Lista para descargar`, `Cancelada`.
+- `orders.scheduled_at` registra la cita acordada por WhatsApp.
+- `orders.completed_at` registra cuando el paciente acudió y se realizó el estudio.
+- `order_status_events` debe guardar auditoría de cada cambio.
+
 ## Plantilla para próximos cambios
 
 ### YYYY-MM-DD - Nombre del cambio

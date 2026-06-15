@@ -154,7 +154,7 @@ const orders = [
     owner: "current-doctor",
     doctorId: "DR-0001",
     studies: ["Ortopantomografía", "Lateral de Craneo"],
-    status: "Lista",
+    status: "Lista para descargar",
     date: "2026-06-03",
     result: "Ortopantomografia_Mariana_Lopez.pdf",
     notes: "Planeación ortodóncica y registro fotográfico inicial.",
@@ -182,7 +182,7 @@ const orders = [
     owner: "external-doctor",
     doctorId: "DR-0002",
     studies: ["Lateral de Craneo", "PA De craneo"],
-    status: "Proceso",
+    status: "Completa",
     date: "2026-06-01",
     result: "",
     notes: "Cefalometría y fotografías para seguimiento.",
@@ -375,7 +375,7 @@ const metricPeriods = {
   year: "Año",
 };
 
-const adminOrderStatuses = ["Recibida", "Agendada", "Proceso", "No asistió", "Atendida", "Lista", "Enviada"];
+const adminOrderStatuses = ["Recibida", "Agendada", "Completa", "Lista para descargar", "Cancelada"];
 
 const doctorDirectory = {
   "sofia.herrera@consulta.mx": {
@@ -913,7 +913,31 @@ function awardPartnerPoints() {
   doctorProfile.partner.points += POINTS_PER_REFERRED_PATIENT;
 }
 
-function validateAttendedOrder(orderId) {
+function getOrderOperationalCopy(order) {
+  if (order.status === "Recibida") {
+    return "WhatsApp pendiente para agendar";
+  }
+
+  if (order.status === "Agendada") {
+    return order.scheduledAt ? `Agendado ${order.scheduledAt}` : "Paciente agendado";
+  }
+
+  if (order.status === "Lista para descargar") {
+    return "Resultado liberado para el doctor";
+  }
+
+  if (order.status === "Cancelada") {
+    return "No suma puntos";
+  }
+
+  if (order.countsForPartner) {
+    return `Validado ${order.validatedAt} · ${order.validatedBy}`;
+  }
+
+  return "Pendiente de validar asistencia";
+}
+
+function validateAttendedOrder(orderId, nextStatus = "Completa") {
   const order = orders.find((currentOrder) => currentOrder.id === orderId);
 
   if (!order) {
@@ -921,16 +945,21 @@ function validateAttendedOrder(orderId) {
   }
 
   if (order.countsForPartner) {
-    showToast(`${order.patient} ya fue validado. No se duplican puntos.`);
+    order.status = nextStatus;
+    renderAdmin();
+    renderDoctorOrders();
+    renderResults(resultsSearch.value);
+    showToast(`${order.patient} ya estaba validado. Estatus actualizado a ${nextStatus}.`);
     return;
   }
 
   const doctor = getDoctorById(order.doctorId);
 
-  order.status = "Atendida";
+  order.status = nextStatus;
   order.countsForPartner = true;
   order.validatedAt = todayISO();
   order.validatedBy = adminProfile.name;
+  order.completedAt = todayISO();
 
   if (doctor) {
     doctor.partner.referredPatients += 1;
@@ -945,7 +974,7 @@ function validateAttendedOrder(orderId) {
   renderPartnerProgram();
   renderDoctorOrders();
   renderResults(resultsSearch.value);
-  showToast(`Paciente atendido validado: ${order.patient}. Se sumaron ${POINTS_PER_REFERRED_PATIENT} pts.`);
+  showToast(`Paciente completado: ${order.patient}. Se sumaron ${POINTS_PER_REFERRED_PATIENT} pts.`);
 }
 
 function createDoctorFromAdmin(formData) {
@@ -1428,7 +1457,7 @@ function renderAdmin() {
   const allDoctors = Object.values(doctorDirectory);
   const visibleOrders = orders.filter((order) => selectedStatus === "all" || order.status === selectedStatus);
   const newOrders = orders.filter((order) => order.status === "Recibida").length;
-  const readyResults = orders.filter((order) => order.status === "Lista").length;
+  const readyResults = orders.filter((order) => order.status === "Lista para descargar").length;
 
   document.querySelector('[data-admin-metric="newOrders"]').textContent = newOrders;
   document.querySelector('[data-admin-metric="readyResults"]').textContent = readyResults;
@@ -1448,11 +1477,7 @@ function renderAdmin() {
             <strong>${order.patient}</strong>
             <small>${order.studies.join(", ")}</small>
             <small class="validation-copy">
-              ${
-                order.countsForPartner
-                  ? `Validado ${order.validatedAt} · ${order.validatedBy}`
-                  : "Pendiente de validar asistencia"
-              }
+              ${getOrderOperationalCopy(order)}
             </small>
           </div>
           <span>${order.doctor}</span>
@@ -1561,7 +1586,11 @@ function upsertDownloadRequest(order, fileMatch) {
 
 function assignResultToOrder(order, fileMatch) {
   order.result = fileMatch.file;
-  order.status = "Lista";
+  if (!order.countsForPartner) {
+    validateAttendedOrder(order.id, "Lista para descargar");
+  } else {
+    order.status = "Lista para descargar";
+  }
   upsertDownloadRequest(order, fileMatch);
 }
 
@@ -1886,12 +1915,15 @@ adminOrderTable?.addEventListener("change", (event) => {
     return;
   }
 
-  if (statusControl.value === "Atendida" && !order.countsForPartner) {
-    validateAttendedOrder(order.id);
+  if (statusControl.value === "Completa" || statusControl.value === "Lista para descargar") {
+    validateAttendedOrder(order.id, statusControl.value);
     return;
   }
 
   order.status = statusControl.value;
+  if (statusControl.value === "Agendada" && !order.scheduledAt) {
+    order.scheduledAt = todayISO();
+  }
   renderAdmin();
   renderDoctorOrders();
   renderResults(resultsSearch.value);

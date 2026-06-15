@@ -25,6 +25,8 @@ No usar ni subir llaves privadas/service role al hosting.
 - `20260613232912_harden_role_helper_functions`
 - `20260613232941_revoke_public_execute_role_helpers`
 - `20260615174535_add_attended_validation_control`
+- `20260615180425_simplify_order_status_workflow`
+- `20260615180513_enable_realtime_operational_tables`
 
 ## Tablas creadas
 
@@ -102,6 +104,9 @@ Campos agregados a `orders`:
 - `patient_attended_at`
 - `validated_by`
 - `partner_points_awarded_at`
+- `scheduled_at`
+- `scheduled_by`
+- `completed_at`
 
 Tabla agregada:
 
@@ -110,7 +115,24 @@ Tabla agregada:
 Regla:
 
 ```text
-Orden creada -> no suma puntos
-Admin valida paciente atendido -> suma 100 puntos una sola vez
-No asistió / cancelada -> no suma puntos
+Orden creada -> status Recibida -> no suma puntos
+Admin agenda por WhatsApp -> status Agendada -> visible para el doctor
+Admin confirma paciente atendido -> status Completa -> suma 100 puntos una sola vez
+Admin libera resultados -> status Lista para descargar -> doctor puede descargar
+Cancelada -> no suma puntos
 ```
+
+## Realtime
+
+Tablas habilitadas en `supabase_realtime`:
+
+- `orders`
+- `order_status_events`
+- `result_files`
+- `download_requests`
+
+Uso previsto:
+
+- Doctor escucha cambios de sus órdenes por `doctor_id`.
+- Admin escucha cambios globales de operación.
+- Cuando Radio Imagen actualiza estatus, el doctor puede ver el cambio sin recargar manualmente.

@@ -88,13 +88,11 @@ flowchart TD
 
 | Estado | Responsable | Descripción |
 | --- | --- | --- |
-| recibida | Sistema / Radio Imagen | Orden creada por el doctor y visible para operación |
-| en_revision | Radio Imagen | Datos revisados antes de contactar/agendar |
-| agendada | Radio Imagen | Paciente ya tiene cita |
-| en_proceso | Radio Imagen | Estudio realizado o en preparación de resultado |
-| lista | Radio Imagen | Resultado disponible |
-| entregada | Sistema / Doctor | Resultado descargado o consultado |
-| cancelada | Radio Imagen | Orden no continúa |
+| Recibida | Sistema / Radio Imagen | Orden creada por el doctor y visible para operación |
+| Agendada | Radio Imagen | Paciente ya tiene cita, capturada después de outreach por WhatsApp |
+| Completa | Radio Imagen | Paciente acudió y se realizó el estudio; aquí se validan puntos |
+| Lista para descargar | Radio Imagen | Resultado disponible para el doctor |
+| Cancelada | Radio Imagen | Orden no continúa y no suma puntos |
 
 ### Reglas del producto
 
@@ -226,7 +224,7 @@ Administrador puede:
 5. Doctor selecciona estudios.
 6. Sistema crea `order`.
 7. Sistema crea registros en `order_studies`.
-8. Sistema crea primer evento en `order_status_events` con estado `recibida`.
+8. Sistema crea primer evento en `order_status_events` con estado `Recibida`.
 9. Radio Imagen ve la orden en bandeja de seguimiento.
 
 ### Flujo de seguimiento por Radiodiagnóstico
@@ -235,16 +233,15 @@ Administrador puede:
 2. Filtra órdenes nuevas o pendientes.
 3. Revisa información del paciente.
 4. Cambia estado según avance:
-   - `recibida`
-   - `en_revision`
-   - `agendada`
-   - `en_proceso`
-   - `lista`
-   - `entregada`
-   - `cancelada`
+   - `Recibida`
+   - `Agendada`
+   - `Completa`
+   - `Lista para descargar`
+   - `Cancelada`
 5. Cada cambio crea un evento histórico.
-6. Si el resultado está listo, se crea un registro en `results`.
-7. El doctor ve la orden como lista y puede descargar resultado.
+6. Si el paciente acudió, `Completa` valida asistencia y puntos.
+7. Si el resultado está listo, se crea un registro en `results`.
+8. El doctor ve la orden como `Lista para descargar` y puede descargar resultado.
 
 ## 4. Estructura de base de datos
 
@@ -345,9 +342,11 @@ Orden digital referida a Radio Imagen.
 | doctor_id | uuid | FK doctors.id |
 | patient_id | uuid | FK patients.id |
 | referral_date | date | Autollenada con fecha del día |
-| status | text | recibida, en_revision, agendada, en_proceso, lista, entregada, cancelada |
+| status | text | Recibida, Agendada, Completa, Lista para descargar, Cancelada |
 | clinical_notes | text | Indicaciones del doctor |
 | internal_notes | text | Notas visibles solo para Radio Imagen |
+| scheduled_at | timestamp | Fecha/hora de cita capturada por Radio Imagen |
+| completed_at | timestamp | Fecha/hora en que se confirmó que el paciente acudió |
 | created_at | timestamp | Fecha real de creación |
 | updated_at | timestamp | Última modificación |
 
@@ -454,7 +453,7 @@ Historial auditable de puntos.
 - Ingreso estimado por estudio y doctor.
 - Descargas pendientes de resultados.
 - Órdenes por estado para seguimiento interno.
-- Tiempo promedio entre `recibida` y `lista`.
+- Tiempo promedio entre `Recibida` y `Lista para descargar`.
 - Puntos acumulados por doctor.
 - Nivel actual dentro de Socios Radio Imagen.
 - Pacientes faltantes para el siguiente nivel.
@@ -465,7 +464,7 @@ Ejemplo:
 SELECT COUNT(*)
 FROM orders
 WHERE doctor_id = :doctor_id
-AND status IN ('recibida', 'en_revision', 'agendada', 'en_proceso');
+AND status IN ('Recibida', 'Agendada', 'Completa');
 ```
 
 ## 6. Recomendación para Replit

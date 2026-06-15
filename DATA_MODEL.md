@@ -124,9 +124,12 @@ Orden digital referida a Radio Imagen.
 | doctor_id | uuid | FK doctors.id |
 | patient_id | uuid | FK patients.id |
 | referral_date | date | Autollenada con fecha del día |
-| status | text | recibida, agendada, proceso, no_asistio, atendida, lista, enviada, cancelada |
+| status | text | Recibida, Agendada, Completa, Lista para descargar, Cancelada |
 | clinical_notes | text | Indicaciones del doctor |
 | internal_notes | text | Notas visibles solo para Radio Imagen |
+| scheduled_at | timestamp | Fecha/hora de cita capturada por Radio Imagen |
+| scheduled_by | uuid | Admin que capturó la cita |
+| completed_at | timestamp | Fecha/hora en que se confirmó que el paciente acudió |
 | counts_for_partner | boolean | `true` sólo cuando Radio Imagen valida que el paciente fue atendido |
 | patient_attended_at | timestamp | Fecha/hora en que admin validó la asistencia |
 | validated_by | uuid | Admin que validó la asistencia |
@@ -278,7 +281,7 @@ Finanzas futuras del doctor.
 - Cancelaciones/no-shows cuando exista agenda.
 - Descargas pendientes de resultados.
 - Órdenes por estado para seguimiento interno.
-- Tiempo promedio entre `recibida` y `lista`.
+- Tiempo promedio entre `Recibida` y `Lista para descargar`.
 
 ## Recomendación para Replit
 

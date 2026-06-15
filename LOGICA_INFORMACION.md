@@ -179,7 +179,7 @@ Puede:
 7. Sistema crea `order`.
 8. Sistema crea registros en `order_studies`.
 9. Sistema guarda configuraciones especiales en `order_studies.configuration`.
-10. Sistema crea primer evento en `order_status_events` con estado `recibida`.
+10. Sistema crea primer evento en `order_status_events` con estado `Recibida`.
 11. Radio Imagen ve la orden en bandeja de seguimiento.
 
 ## Flujo de seguimiento por Radiodiagnóstico
@@ -188,16 +188,15 @@ Puede:
 2. Filtra órdenes nuevas o pendientes.
 3. Revisa información del paciente.
 4. Cambia estado según avance:
-   - `recibida`
-   - `en_revision`
-   - `agendada`
-   - `en_proceso`
-   - `lista`
-   - `entregada`
-   - `cancelada`
+   - `Recibida`
+   - `Agendada`
+   - `Completa`
+   - `Lista para descargar`
+   - `Cancelada`
 5. Cada cambio crea un evento histórico.
-6. Si el resultado está listo, se crea un registro en `results`.
-7. El doctor ve la orden como lista y puede descargar resultado.
+6. Si el paciente acudió, `Completa` valida asistencia y puntos.
+7. Si el resultado está listo, se crea un registro en `results`.
+8. El doctor ve la orden como `Lista para descargar` y puede descargar resultado.
 
 ## Lógica de métricas
 
@@ -210,7 +209,7 @@ Ejemplos:
 SELECT COUNT(*)
 FROM orders
 WHERE doctor_id = :doctor_id
-AND status IN ('recibida', 'en_revision', 'agendada', 'en_proceso');
+AND status IN ('Recibida', 'Agendada', 'Completa');
 ```
 
 ```sql
@@ -227,7 +226,7 @@ ORDER BY total DESC;
 ```sql
 -- Conversión de órdenes a resultados listos
 SELECT
-  COUNT(*) FILTER (WHERE status IN ('lista', 'entregada'))::decimal
+  COUNT(*) FILTER (WHERE status IN ('Completa', 'Lista para descargar'))::decimal
   / NULLIF(COUNT(*), 0) AS conversion
 FROM orders
 WHERE doctor_id = :doctor_id;

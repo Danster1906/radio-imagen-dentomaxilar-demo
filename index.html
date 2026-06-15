@@ -4,8 +4,8 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Radio Imagen | Órdenes Digitales</title>
-    <link rel="stylesheet" href="styles.css?v=period-metrics-2" />
-    <link rel="stylesheet" href="admin.css?v=doctor-create-1" />
+    <link rel="stylesheet" href="styles.css?v=supabase-flow-1" />
+    <link rel="stylesheet" href="admin.css?v=supabase-flow-1" />
   </head>
   <body>
     <section class="login-screen" id="login-screen">
@@ -520,7 +520,7 @@
             <article>
               <span>Resultados listos</span>
               <strong data-admin-metric="readyResults">--</strong>
-              <small>Esperando descarga</small>
+              <small>Para descargar</small>
             </article>
             <article>
               <span>Solicitudes descarga</span>
@@ -545,11 +545,9 @@
                   <option value="all">Todos</option>
                   <option value="Recibida">Recibida</option>
                   <option value="Agendada">Agendada</option>
-                  <option value="Proceso">Proceso</option>
-                  <option value="No asistió">No asistió</option>
-                  <option value="Atendida">Atendida</option>
-                  <option value="Lista">Lista</option>
-                  <option value="Enviada">Enviada</option>
+                  <option value="Completa">Completa</option>
+                  <option value="Lista para descargar">Lista para descargar</option>
+                  <option value="Cancelada">Cancelada</option>
                 </select>
               </div>
               <div class="admin-table" id="admin-order-table"></div>
@@ -730,6 +728,6 @@
     </div>
 
     <div class="toast" id="toast" role="status" aria-live="polite"></div>
-    <script src="app.js?v=doctor-create-1"></script>
+    <script src="app.js?v=supabase-flow-1"></script>
   </body>
 </html>
