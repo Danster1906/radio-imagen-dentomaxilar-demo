@@ -4,8 +4,8 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Radio Imagen | Órdenes Digitales</title>
-    <link rel="stylesheet" href="styles.css?v=admin-sections-1" />
-    <link rel="stylesheet" href="admin.css?v=admin-sections-1" />
+    <link rel="stylesheet" href="styles.css?v=manual-upload-1" />
+    <link rel="stylesheet" href="admin.css?v=manual-upload-1" />
   </head>
   <body>
     <section class="login-screen" id="login-screen">
@@ -611,6 +611,44 @@
           </div>
 
           <div class="admin-grid admin-section" data-admin-section-panel="results" hidden>
+            <section class="panel admin-panel wide manual-upload-panel">
+              <div class="panel-heading">
+                <div>
+                  <span class="eyebrow">Subida directa</span>
+                  <h2>Asignar resultado manual</h2>
+                </div>
+              </div>
+              <p class="admin-helper">
+                Úsalo cuando ya tienes el archivo final. La orden queda lista para el doctor sin esperar al agente ni a una solicitud de descarga.
+              </p>
+              <form class="manual-upload-form" id="manual-upload-form">
+                <label>
+                  Orden
+                  <select name="manualOrderId" id="manual-upload-order" required></select>
+                </label>
+                <label>
+                  Tipo de archivo
+                  <select name="manualFileType">
+                    <option value="Estudio completo">Estudio completo</option>
+                    <option value="Radiografía">Radiografía</option>
+                    <option value="DICOM">DICOM</option>
+                    <option value="Fotografías">Fotografías</option>
+                    <option value="Modelo 3D">Modelo 3D</option>
+                    <option value="Reporte">Reporte</option>
+                  </select>
+                </label>
+                <label class="manual-file-picker">
+                  Archivo
+                  <input name="manualResultFile" type="file" accept=".pdf,.zip,.dcm,.stl,.ply,.obj,image/png,image/jpeg" required />
+                </label>
+                <button class="primary-action" type="submit">Subir y liberar al doctor</button>
+              </form>
+              <div class="manual-upload-note">
+                <strong>Flujo recomendado</strong>
+                <span>Admin sube archivo → Supabase Storage privado → orden lista → doctor descarga directo.</span>
+              </div>
+            </section>
+
             <section class="panel admin-panel">
               <div class="panel-heading">
                 <div>
@@ -792,6 +830,6 @@
     </div>
 
     <div class="toast" id="toast" role="status" aria-live="polite"></div>
-    <script src="app.js?v=admin-sections-1"></script>
+    <script src="app.js?v=manual-upload-1"></script>
   </body>
 </html>

@@ -677,6 +677,39 @@ El panel admin se vuelve más fácil de operar diariamente y reduce la sensació
 
 No cambia la estructura de datos. Sólo cambia navegación, agrupación visual y comportamiento de botones internos.
 
+## 2026-06-15 - Subida manual de resultados
+
+### Objetivo
+
+Permitir que Radio Imagen libere resultados al doctor sin depender del agente local ni de una solicitud manual de descarga por parte del doctor.
+
+### Cambios realizados
+
+- Se agregó una tarjeta `Asignar resultado manual` dentro del módulo `Resultados`.
+- El admin puede elegir una orden completa/lista, seleccionar tipo de archivo y cargar el archivo final.
+- La orden cambia a `Lista para descargar`.
+- El archivo queda registrado como paquete descargable para la vista del doctor.
+- La cola de descargas muestra el archivo como `Subido manual`.
+
+### Lógica operativa
+
+El flujo recomendado queda:
+
+1. Doctor genera orden.
+2. Radio Imagen contacta y agenda.
+3. Paciente asiste y admin marca `Completa`.
+4. Admin sube el archivo final manualmente o usa agente.
+5. Orden queda `Lista para descargar`.
+6. Doctor entra y descarga sin pedirlo.
+
+### Recomendación técnica para producción
+
+Usar Supabase Storage con bucket privado, RLS por doctor/orden y links firmados temporales. Para archivos pequeños se puede usar subida estándar; para archivos pesados como ZIP/DICOM conviene subida resumible. El servidor local puede quedar como respaldo operativo, no como dependencia central del flujo.
+
+### Impacto en datos
+
+En el prototipo, el archivo se simula usando el nombre del archivo seleccionado en navegador. En producción, ese valor debe ser la ruta real del objeto en Supabase Storage.
+
 ## Plantilla para próximos cambios
 
 ### YYYY-MM-DD - Nombre del cambio

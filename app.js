@@ -569,6 +569,8 @@ const adminSectionButtons = document.querySelectorAll("[data-admin-section]");
 const adminSectionPanels = document.querySelectorAll("[data-admin-section-panel]");
 const runAgentButton = document.querySelector("#run-agent-button");
 const sendStudiesButton = document.querySelector("#send-studies-button");
+const manualUploadForm = document.querySelector("#manual-upload-form");
+const manualUploadOrder = document.querySelector("#manual-upload-order");
 const agentLog = document.querySelector("#agent-log");
 const orderForm = document.querySelector("#order-form");
 const profileForm = document.querySelector("#profile-form");
@@ -1586,6 +1588,7 @@ function renderAdmin() {
   document.querySelector('[data-agent-metric="localFiles"]').textContent = localResultFiles.length;
   document.querySelector('[data-agent-metric="matches"]').textContent = agentState.matches.length;
   document.querySelector('[data-agent-metric="uploads"]').textContent = agentState.uploads;
+  renderManualUploadOptions();
 
   adminOrderTable.innerHTML = visibleOrders
     .map((order) => {
@@ -1661,6 +1664,27 @@ function renderAdmin() {
   renderAgentLog();
 }
 
+function renderManualUploadOptions() {
+  if (!manualUploadOrder) {
+    return;
+  }
+
+  const currentValue = manualUploadOrder.value;
+  const eligibleOrders = orders.filter((order) => ["Completa", "Lista para descargar"].includes(order.status));
+
+  if (eligibleOrders.length === 0) {
+    manualUploadOrder.innerHTML = '<option value="">Primero marca una orden como Completa</option>';
+    return;
+  }
+
+  manualUploadOrder.innerHTML = eligibleOrders
+    .map((order) => {
+      const label = `${order.patient} · ${order.doctor} · ${order.status}`;
+      return `<option value="${order.id}" ${order.id === currentValue ? "selected" : ""}>${label}</option>`;
+    })
+    .join("");
+}
+
 function renderAgentLog() {
   if (!agentLog) {
     return;
@@ -1689,16 +1713,16 @@ function renderAgentLog() {
     .join("");
 }
 
-function upsertDownloadRequest(order, fileMatch) {
+function upsertDownloadRequest(order, fileMatch, options = {}) {
   const existingRequest = adminDownloadRequests.find((request) => request.orderId === order.id);
   const payload = {
     orderId: order.id,
     patient: order.patient,
     doctor: order.doctor,
     file: fileMatch.file,
-    status: "Subida inmediata",
-    storage: "upload_requested",
-    expires: "Supabase temporal: 60 min al solicitar descarga",
+    status: options.status || "Subida inmediata",
+    storage: options.storage || "upload_requested",
+    expires: options.expires || "Supabase temporal: 60 min al solicitar descarga",
   };
 
   if (existingRequest) {
@@ -1709,14 +1733,80 @@ function upsertDownloadRequest(order, fileMatch) {
   adminDownloadRequests.unshift(payload);
 }
 
-function assignResultToOrder(order, fileMatch) {
+function assignResultToOrder(order, fileMatch, options = {}) {
   order.result = fileMatch.file;
   if (!order.countsForPartner) {
     validateAttendedOrder(order.id, "Lista para descargar");
   } else {
     order.status = "Lista para descargar";
   }
-  upsertDownloadRequest(order, fileMatch);
+  upsertDownloadRequest(order, fileMatch, options);
+}
+
+function upsertResultPackageFile(order, fileMatch) {
+  const fileType = fileMatch.type || "ZIP";
+  const fileLabel = fileMatch.label || "Archivo liberado por Radio Imagen";
+
+  if (!resultPackages[order.id]) {
+    resultPackages[order.id] = {
+      complete: fileMatch.file,
+      files: [],
+    };
+  }
+
+  if (fileLabel === "Estudio completo") {
+    resultPackages[order.id].complete = fileMatch.file;
+  }
+
+  const existingFile = resultPackages[order.id].files.find((file) => file.file === fileMatch.file);
+  if (!existingFile) {
+    resultPackages[order.id].files.unshift({
+      label: fileLabel,
+      type: fileType,
+      file: fileMatch.file,
+    });
+  }
+}
+
+function uploadManualResult(formData) {
+  const orderId = formData.get("manualOrderId");
+  const order = orders.find((currentOrder) => currentOrder.id === orderId);
+  const file = formData.get("manualResultFile");
+  const label = formData.get("manualFileType") || "Archivo";
+
+  if (!order) {
+    showToast("Selecciona una orden válida.");
+    return;
+  }
+
+  if (!file || !file.name) {
+    showToast("Selecciona el archivo del estudio.");
+    return;
+  }
+
+  const extension = file.name.includes(".") ? file.name.split(".").pop().toUpperCase() : "ARCHIVO";
+  const fileMatch = {
+    file: file.name,
+    patient: order.patient,
+    modality: label,
+    status: "cloud_ready",
+    confidence: 100,
+    label,
+    type: extension,
+  };
+
+  upsertResultPackageFile(order, fileMatch);
+  assignResultToOrder(order, fileMatch, {
+    status: "Subido manual",
+    storage: "supabase_ready_demo",
+    expires: "Disponible para doctor · vigencia 90 días",
+  });
+  agentState.uploads = adminDownloadRequests.filter((request) => request.storage === "upload_requested").length;
+  manualUploadForm.reset();
+  renderAdmin();
+  renderDoctorOrders();
+  renderResults(resultsSearch.value);
+  showToast(`${file.name} liberado para ${order.patient}.`);
 }
 
 function matchLocalFileToOrder(order) {
@@ -2062,6 +2152,11 @@ focusNewDoctorButton?.addEventListener("click", () => {
 
 adminSectionButtons.forEach((button) => {
   button.addEventListener("click", () => setAdminSection(button.dataset.adminSection));
+});
+
+manualUploadForm?.addEventListener("submit", (event) => {
+  event.preventDefault();
+  uploadManualResult(new FormData(manualUploadForm));
 });
 
 adminDoctorForm?.addEventListener("submit", (event) => {

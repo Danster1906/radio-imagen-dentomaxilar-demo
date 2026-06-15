@@ -172,6 +172,64 @@
   font-weight: 800;
 }
 
+.manual-upload-panel {
+  border-color: #fecaca;
+  background: linear-gradient(135deg, #ffffff 0%, #fff7f7 100%);
+}
+
+.manual-upload-form {
+  display: grid;
+  grid-template-columns: minmax(220px, 1fr) minmax(180px, 0.7fr) minmax(220px, 1fr) auto;
+  gap: 10px;
+  align-items: end;
+  margin-top: 14px;
+}
+
+.manual-upload-form label {
+  display: grid;
+  gap: 6px;
+  color: var(--muted);
+  font-size: 0.74rem;
+  font-weight: 900;
+  text-transform: uppercase;
+}
+
+.manual-upload-form input,
+.manual-upload-form select {
+  min-height: 44px;
+  padding: 10px 12px;
+  color: var(--ink);
+  background: #ffffff;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  font: inherit;
+  font-weight: 800;
+  text-transform: none;
+}
+
+.manual-file-picker input {
+  padding-top: 9px;
+}
+
+.manual-upload-note {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  flex-wrap: wrap;
+  margin-top: 12px;
+  padding: 10px 12px;
+  color: var(--muted);
+  background: #ffffff;
+  border: 1px dashed #fecaca;
+  border-radius: 8px;
+  font-size: 0.82rem;
+  font-weight: 800;
+}
+
+.manual-upload-note strong {
+  color: var(--brand-dark);
+}
+
 .admin-grid {
   display: grid;
   grid-template-columns: 1fr;
@@ -520,7 +578,8 @@
   .admin-grid,
   .admin-form-grid,
   .agent-summary,
-  .admin-dashboard-grid {
+  .admin-dashboard-grid,
+  .manual-upload-form {
     grid-template-columns: 1fr;
   }
 
