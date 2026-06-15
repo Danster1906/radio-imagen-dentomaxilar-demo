@@ -41,7 +41,31 @@ No debe ir:
 - Rutas locales de la computadora de Radio Imagen visibles al usuario.
 - El agente local con acceso al disco de Radio Imagen.
 
-## Pasos para desplegar el frontend
+## Estado actual del proyecto
+
+El proyecto ya incluye configuracion para que Replit pueda correrlo como app Node estatica:
+
+```text
+package.json
+server.js
+.replit
+```
+
+Comando de ejecucion:
+
+```bash
+npm start
+```
+
+Puerto interno:
+
+```text
+8003
+```
+
+En Replit tambien puede usar `PORT` automaticamente cuando publique la app.
+
+## Pasos para desplegar el frontend en Replit
 
 1. Abrir Replit.
 2. Importar desde GitHub:
@@ -50,16 +74,43 @@ No debe ir:
 https://github.com/Danster1906/radio-imagen-dentomaxilar-demo
 ```
 
-3. Confirmar que carguen:
+3. Si Replit pregunta como correr la app, usar:
+
+```text
+npm start
+```
+
+4. Confirmar que carguen:
 
 ```text
 index.html
+portal.html
 styles.css
 app.js
+server.js
 ```
 
-4. Probar el portal en Replit.
-5. Crear un Static Deployment.
+5. Presionar `Run` y abrir el preview.
+6. Entrar a `portal.html` desde el boton `Portal doctores`.
+7. Crear deployment.
+
+### Tipo de deployment recomendado
+
+Para probar y operar con el frontend actual:
+
+```text
+Autoscale Deployment
+```
+
+Motivo: permite usar el servidor `server.js`, mantener una configuracion parecida a produccion y migrar mas facil a endpoints propios si despues agregamos backend.
+
+Para un sitio puramente estatico sin backend:
+
+```text
+Static Deployment
+```
+
+Tambien funciona, pero no ejecuta `server.js`.
 
 ## Pasos para conectar Supabase
 

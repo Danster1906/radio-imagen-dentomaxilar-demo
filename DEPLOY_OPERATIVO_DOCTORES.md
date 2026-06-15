@@ -83,10 +83,33 @@ Pasos:
 https://github.com/Danster1906/radio-imagen-dentomaxilar-demo
 ```
 
-2. Confirmar que Replit abra `index.html`.
-3. Probar login demo.
-4. Crear Static Deployment.
-5. Conectar el dominio o subdominio desde Neubox si se quiere usar dominio propio.
+2. Confirmar que Replit detecte Node.
+3. Si solicita comando de ejecucion, usar:
+
+```text
+npm start
+```
+
+4. Presionar `Run`.
+5. Abrir el preview y probar:
+
+```text
+/index.html
+/portal.html
+```
+
+6. Crear `Autoscale Deployment`.
+7. Copiar el URL publicado de Replit.
+8. En Supabase, configurar ese URL en `Authentication > URL Configuration`.
+9. Conectar el dominio o subdominio desde Neubox si se quiere usar dominio propio.
+
+Archivos agregados para Replit:
+
+```text
+package.json
+server.js
+.replit
+```
 
 ## Supabase real
 

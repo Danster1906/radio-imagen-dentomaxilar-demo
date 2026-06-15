@@ -2,6 +2,36 @@
 
 Este archivo documenta los cambios funcionales y de producto. Cada cambio futuro debe registrarse aquí con fecha, objetivo, alcance y efecto en datos.
 
+## 2026-06-15 - Preparación para deployment en Replit
+
+### Objetivo
+
+Dejar el proyecto listo para importarse desde GitHub en Replit, ejecutarse con `Run` y publicarse sin depender del servidor local de la computadora.
+
+### Cambios realizados
+
+- Se agregó `package.json` con scripts `start` y `dev`.
+- Se agregó `server.js` como servidor estático Node sin dependencias externas.
+- Se agregó `.replit` con módulo Node 22, comando `npm start`, deployment `cloudrun` y puerto interno `8003`.
+- Se actualizó `REPLIT_DEPLOYMENT.md` con pasos específicos para importar, correr y publicar.
+- Se actualizó `DEPLOY_OPERATIVO_DOCTORES.md` con la ruta operativa recomendada para Replit.
+
+### Razón del cambio
+
+Replit necesita una forma clara de ejecutar el proyecto al importarlo desde GitHub. Aunque la app es HTML/CSS/JS, usar un servidor estático Node facilita el preview, el deployment y la futura migración a endpoints propios.
+
+### Impacto en producto
+
+- El portal puede abrirse con `npm start`.
+- La app puede publicarse en Replit y obtener un URL real para configurar Supabase Auth.
+- Se conserva el flujo visual actual sin modificar la experiencia del doctor ni del admin.
+
+### Impacto en datos
+
+- No cambia la base de datos.
+- No cambia RLS ni Storage.
+- Queda pendiente conectar el frontend real a Supabase Auth, órdenes y resultados.
+
 ## 2026-06-06 - Documentación funcional y lógica operativa
 
 ### Objetivo

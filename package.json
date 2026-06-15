@@ -1,0 +1,14 @@
+{
+  "name": "radio-imagen-dentomaxilar-portal",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Portal web para ordenes digitales y seguimiento de Radio Imagen Dentomaxilar.",
+  "type": "module",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node server.js"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}
