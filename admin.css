@@ -64,17 +64,17 @@
 
 .admin-metrics {
   display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: 8px;
-  margin-bottom: 14px;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 10px;
+  margin-bottom: 16px;
 }
 
 .admin-metrics article {
   display: grid;
   gap: 4px;
-  min-height: 78px;
+  min-height: 92px;
   align-content: center;
-  padding: 12px;
+  padding: 14px;
   background: #ffffff;
   border: 1px solid #fee2e2;
   border-radius: 8px;
@@ -90,17 +90,17 @@
 }
 
 .admin-metrics strong {
-  font-size: 1.35rem;
+  font-size: 1.55rem;
 }
 
 .admin-grid {
   display: grid;
-  grid-template-columns: minmax(0, 1.4fr) minmax(320px, 0.8fr);
+  grid-template-columns: 1fr;
   gap: 16px;
 }
 
 .admin-panel.wide {
-  grid-column: span 1;
+  grid-column: 1 / -1;
 }
 
 .admin-table,
@@ -112,10 +112,10 @@
 
 .admin-row {
   display: grid;
-  grid-template-columns: minmax(150px, 1fr) minmax(130px, 0.7fr) minmax(150px, 0.7fr) auto;
-  align-items: center;
-  gap: 10px;
-  padding: 10px;
+  grid-template-columns: minmax(220px, 1fr) minmax(150px, 0.55fr) minmax(190px, 0.62fr) minmax(190px, 0.62fr) auto;
+  align-items: stretch;
+  gap: 12px;
+  padding: 12px;
   background: #fafafa;
   border: 1px solid var(--line);
   border-radius: 8px;
@@ -136,6 +136,20 @@
   text-transform: uppercase;
 }
 
+.admin-next-step {
+  display: grid;
+  gap: 4px;
+  color: var(--muted);
+  font-size: 0.72rem;
+  font-weight: 800;
+}
+
+.admin-next-step strong {
+  color: var(--ink);
+  font-size: 0.9rem;
+  white-space: normal;
+}
+
 .admin-status-control select,
 .admin-panel select {
   min-height: 38px;
@@ -154,6 +168,12 @@
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+.admin-next-step strong {
+  overflow: visible;
+  text-overflow: clip;
+  white-space: normal;
 }
 
 .admin-row span,
@@ -179,6 +199,10 @@
   gap: 8px;
   flex-wrap: wrap;
   justify-content: flex-end;
+}
+
+.admin-row-actions .small-action {
+  white-space: nowrap;
 }
 
 .validate-action {
@@ -369,8 +393,13 @@
   cursor: not-allowed;
 }
 
+@media (max-width: 1280px) {
+  .admin-metrics {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
 @media (max-width: 1100px) {
-  .admin-metrics,
   .admin-grid,
   .admin-form-grid,
   .agent-summary {
@@ -397,6 +426,12 @@
 
   .primary-download,
   .download-file-card {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 760px) {
+  .admin-metrics {
     grid-template-columns: 1fr;
   }
 }

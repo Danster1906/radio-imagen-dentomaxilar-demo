@@ -591,6 +591,35 @@ El doctor sólo entra con credenciales asignadas por Radio Imagen. La vista de p
 
 En producción, estas credenciales deben vivir en Supabase Auth. El demo mantiene contraseñas locales sólo para simular el flujo.
 
+## 2026-06-15 - Logos nuevos y admin simplificado
+
+### Objetivo
+
+Mejorar la presencia de marca y reducir la confusión en la vista de administrador.
+
+### Cambios realizados
+
+- Se agregaron los logos nuevos en `img/brand/`.
+- El login usa el logo rojo/dorado.
+- El sidebar y pantalla de carga usan el logo blanco para fondos oscuros.
+- Se retiró la caja blanca detrás del logo del sidebar.
+- La vista admin ahora muestra primero el flujo operativo por estado: recibidas, agendadas, completas, listas y descargas.
+- La bandeja principal de órdenes muestra paciente, doctor, estatus, siguiente paso y una acción recomendada.
+- Se eliminó de cada fila la combinación confusa de varios botones simultáneos.
+- El layout admin ahora prioriza una columna principal en lugar de competir con varios módulos laterales.
+
+### Razón del cambio
+
+Admin necesita entender rápidamente qué está pasando con cada orden y cuál es la siguiente acción operativa.
+
+### Impacto en producto
+
+Radio Imagen puede usar el panel como bandeja de trabajo: contactar, agendar, completar, asignar resultado y liberar descarga.
+
+### Impacto en datos
+
+No cambia la estructura de datos. Sólo cambia presentación y flujo de acciones en el prototipo.
+
 ## Plantilla para próximos cambios
 
 ### YYYY-MM-DD - Nombre del cambio

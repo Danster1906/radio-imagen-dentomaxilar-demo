@@ -4,14 +4,14 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Radio Imagen | Órdenes Digitales</title>
-    <link rel="stylesheet" href="styles.css?v=private-login-3" />
-    <link rel="stylesheet" href="admin.css?v=private-login-3" />
+    <link rel="stylesheet" href="styles.css?v=admin-simple-1" />
+    <link rel="stylesheet" href="admin.css?v=admin-simple-1" />
   </head>
   <body>
     <section class="login-screen" id="login-screen">
       <div class="login-panel">
         <div class="brand login-brand">
-          <img class="brand-logo" src="logo-4k.png" alt="Radio Imagen Dentomaxilar" />
+          <img class="brand-logo" src="img/brand/radio-imagen-logo.png" alt="Radio Imagen Dentomaxilar" />
           <span class="brand-subtitle">Portal privado para dentistas</span>
         </div>
 
@@ -73,7 +73,7 @@
       </div>
       <div class="loading-card" role="status" aria-live="polite">
         <div class="brand login-brand">
-          <img class="brand-logo" src="logo-4k.png" alt="Radio Imagen Dentomaxilar" />
+          <img class="brand-logo" src="img/brand/radio-imagen-logo-white.png" alt="Radio Imagen Dentomaxilar" />
           <div>
             <strong>Cargando portal</strong>
             <span id="loading-handle">@doctor</span>
@@ -96,7 +96,7 @@
     <div class="app-shell authenticated" id="app-shell" hidden>
       <aside class="sidebar" aria-label="Navegación principal">
         <div class="brand">
-          <img class="brand-logo sidebar-logo" src="logo-4k.png" alt="Radio Imagen Dentomaxilar" />
+          <img class="brand-logo sidebar-logo" src="img/brand/radio-imagen-logo-white.png" alt="Radio Imagen Dentomaxilar" />
         </div>
 
         <nav class="nav-stack">
@@ -498,7 +498,7 @@
             <div>
               <span class="eyebrow">Operación interna</span>
               <h2>Admin Radio Imagen</h2>
-              <p>Flujo visible para doctores: Recibida, Agendada, Completa y Lista para descargar.</p>
+              <p>Una bandeja para saber qué orden llegó, cuál ya fue agendada, cuál se completó y qué resultado falta enviar.</p>
             </div>
             <div class="admin-hero-actions">
               <button class="primary-action" id="send-studies-button" type="button">Mandar estudios</button>
@@ -506,26 +506,31 @@
             </div>
           </section>
 
-          <section class="admin-metrics" aria-label="Resumen operativo">
+          <section class="admin-metrics" aria-label="Flujo operativo de órdenes">
             <article>
-              <span>Órdenes nuevas</span>
+              <span>Recibidas</span>
               <strong data-admin-metric="newOrders">--</strong>
-              <small>Por revisar</small>
+              <small>Contactar por WhatsApp</small>
             </article>
             <article>
-              <span>Resultados listos</span>
+              <span>Agendadas</span>
+              <strong data-admin-metric="scheduledOrders">--</strong>
+              <small>Esperando paciente</small>
+            </article>
+            <article>
+              <span>Completas</span>
+              <strong data-admin-metric="completedOrders">--</strong>
+              <small>Asignar resultado</small>
+            </article>
+            <article>
+              <span>Listas</span>
               <strong data-admin-metric="readyResults">--</strong>
               <small>Para descargar</small>
             </article>
             <article>
-              <span>Solicitudes descarga</span>
+              <span>Descargas</span>
               <strong data-admin-metric="downloadRequests">--</strong>
-              <small>Agente local</small>
-            </article>
-            <article>
-              <span>Socios activos</span>
-              <strong data-admin-metric="activePartners">--</strong>
-              <small>Con referidos</small>
+              <small>Solicitudes activas</small>
             </article>
           </section>
 
@@ -533,8 +538,8 @@
             <section class="panel admin-panel wide">
               <div class="panel-heading">
                 <div>
-                  <span class="eyebrow">Seguimiento radiodiagnóstico</span>
-                  <h2>Órdenes recibidas</h2>
+                  <span class="eyebrow">Bandeja principal</span>
+                  <h2>Seguimiento de órdenes</h2>
                 </div>
                 <select id="admin-status-filter" aria-label="Filtrar órdenes por estado">
                   <option value="all">Todos</option>
@@ -551,8 +556,8 @@
             <section class="panel admin-panel">
               <div class="panel-heading">
                 <div>
-                  <span class="eyebrow">Agente local</span>
-                  <h2>Asignación automática</h2>
+                  <span class="eyebrow">Resultados</span>
+                  <h2>Asignación local</h2>
                 </div>
                 <button class="small-action" id="run-agent-button" type="button">Correr agente</button>
               </div>
@@ -723,6 +728,6 @@
     </div>
 
     <div class="toast" id="toast" role="status" aria-live="polite"></div>
-    <script src="app.js?v=private-login-3"></script>
+    <script src="app.js?v=admin-simple-1"></script>
   </body>
 </html>

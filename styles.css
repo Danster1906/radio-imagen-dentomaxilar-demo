@@ -381,19 +381,19 @@ button {
 
 .brand-logo {
   display: block;
-  width: 176px;
-  height: 84px;
+  width: 190px;
+  height: 96px;
   border-radius: 4px;
   object-fit: contain;
 }
 
 .sidebar-logo {
-  width: 176px;
-  height: 84px;
-  padding: 10px;
-  background: #ffffff;
-  border-radius: 8px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.18);
+  width: 208px;
+  height: 116px;
+  padding: 0;
+  background: transparent;
+  border-radius: 0;
+  box-shadow: none;
 }
 
 .brand-subtitle {
@@ -406,8 +406,8 @@ button {
 }
 
 .login-brand .brand-logo {
-  width: 184px;
-  height: 92px;
+  width: 226px;
+  height: 118px;
 }
 
 .login-brand {

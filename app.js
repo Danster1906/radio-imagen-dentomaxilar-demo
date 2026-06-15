@@ -951,6 +951,76 @@ function getOrderOperationalCopy(order) {
   return "Pendiente de validar asistencia";
 }
 
+function getAdminNextStep(order) {
+  if (order.status === "Recibida") {
+    return {
+      label: "Contactar y agendar",
+      action: "Marcar agendada",
+    };
+  }
+
+  if (order.status === "Agendada") {
+    return {
+      label: "Esperar asistencia",
+      action: "Marcar completa",
+    };
+  }
+
+  if (order.status === "Completa") {
+    return {
+      label: "Asignar archivos del estudio",
+      action: "Asignar resultado",
+    };
+  }
+
+  if (order.status === "Lista para descargar") {
+    return {
+      label: "Resultado visible para el doctor",
+      action: "Lista",
+    };
+  }
+
+  return {
+    label: "Orden cerrada",
+    action: "Sin acción",
+  };
+}
+
+function runAdminNextStep(orderId) {
+  const order = orders.find((currentOrder) => currentOrder.id === orderId);
+
+  if (!order) {
+    return;
+  }
+
+  if (order.status === "Recibida") {
+    order.status = "Agendada";
+    order.scheduledAt = todayISO();
+    renderAdmin();
+    renderDoctorOrders();
+    renderResults(resultsSearch.value);
+    showToast(`${order.patient} marcado como Agendada.`);
+    return;
+  }
+
+  if (order.status === "Agendada") {
+    validateAttendedOrder(order.id, "Completa");
+    return;
+  }
+
+  if (order.status === "Completa") {
+    runAgent(order.id);
+    return;
+  }
+
+  if (order.status === "Lista para descargar") {
+    showToast(`${order.patient} ya está listo para descargar.`);
+    return;
+  }
+
+  showToast(`${order.patient} no tiene acción pendiente.`);
+}
+
 function validateAttendedOrder(orderId, nextStatus = "Completa") {
   const order = orders.find((currentOrder) => currentOrder.id === orderId);
 
@@ -1488,21 +1558,24 @@ function renderAdmin() {
   const allDoctors = Object.values(doctorDirectory);
   const visibleOrders = orders.filter((order) => selectedStatus === "all" || order.status === selectedStatus);
   const newOrders = orders.filter((order) => order.status === "Recibida").length;
+  const scheduledOrders = orders.filter((order) => order.status === "Agendada").length;
+  const completedOrders = orders.filter((order) => order.status === "Completa").length;
   const readyResults = orders.filter((order) => order.status === "Lista para descargar").length;
 
   document.querySelector('[data-admin-metric="newOrders"]').textContent = newOrders;
+  document.querySelector('[data-admin-metric="scheduledOrders"]').textContent = scheduledOrders;
+  document.querySelector('[data-admin-metric="completedOrders"]').textContent = completedOrders;
   document.querySelector('[data-admin-metric="readyResults"]').textContent = readyResults;
   document.querySelector('[data-admin-metric="downloadRequests"]').textContent = adminDownloadRequests.length;
-  document.querySelector('[data-admin-metric="activePartners"]').textContent = allDoctors.filter(
-    (doctor) => doctor.partner.referredPatients > 0,
-  ).length;
   document.querySelector('[data-agent-metric="localFiles"]').textContent = localResultFiles.length;
   document.querySelector('[data-agent-metric="matches"]').textContent = agentState.matches.length;
   document.querySelector('[data-agent-metric="uploads"]').textContent = agentState.uploads;
 
   adminOrderTable.innerHTML = visibleOrders
-    .map(
-      (order) => `
+    .map((order) => {
+      const nextStep = getAdminNextStep(order);
+
+      return `
         <article class="admin-row" data-admin-order="${order.id}">
           <div>
             <strong>${order.patient}</strong>
@@ -1520,15 +1593,18 @@ function renderAdmin() {
                 .join("")}
             </select>
           </label>
+          <div class="admin-next-step">
+            <span>Siguiente paso</span>
+            <strong>${nextStep.label}</strong>
+          </div>
           <div class="admin-row-actions">
-            <button class="small-action validate-action ${order.countsForPartner ? "validated" : ""}" data-validate-order="${order.id}" type="button" ${order.countsForPartner ? "disabled" : ""}>
-              ${order.countsForPartner ? "Validado" : "Validar atendido"}
+            <button class="small-action validate-action ${order.status === "Lista para descargar" || order.status === "Cancelada" ? "validated" : ""}" data-admin-next-order="${order.id}" type="button" ${order.status === "Cancelada" ? "disabled" : ""}>
+              ${nextStep.action}
             </button>
-            <button class="small-action" data-agent-order="${order.id}" type="button">Asignar y subir</button>
           </div>
         </article>
-      `,
-    )
+      `;
+    })
     .join("");
 
   adminDoctorList.innerHTML = allDoctors
@@ -1990,6 +2066,7 @@ document.addEventListener("click", (event) => {
   const orderButton = event.target.closest("[data-order-patient]");
   const agentOrderButton = event.target.closest("[data-agent-order]");
   const validateOrderButton = event.target.closest("[data-validate-order]");
+  const adminNextButton = event.target.closest("[data-admin-next-order]");
 
   if (downloadOrderButton) {
     const order = orders.find(
@@ -2027,6 +2104,10 @@ document.addEventListener("click", (event) => {
 
   if (validateOrderButton) {
     validateAttendedOrder(validateOrderButton.dataset.validateOrder);
+  }
+
+  if (adminNextButton) {
+    runAdminNextStep(adminNextButton.dataset.adminNextOrder);
   }
 });
 
