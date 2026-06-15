@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Radio Imagen | Órdenes Digitales</title>
     <link rel="stylesheet" href="styles.css?v=period-metrics-2" />
-    <link rel="stylesheet" href="admin.css?v=validated-referrals-1" />
+    <link rel="stylesheet" href="admin.css?v=doctor-create-1" />
   </head>
   <body>
     <section class="login-screen" id="login-screen">
@@ -507,7 +507,7 @@
             </div>
             <div class="admin-hero-actions">
               <button class="primary-action" id="send-studies-button" type="button">Mandar estudios</button>
-              <button class="secondary-action" type="button">Alta doctor</button>
+              <button class="secondary-action" id="focus-new-doctor" type="button">Alta doctor</button>
             </div>
           </section>
 
@@ -610,25 +610,37 @@
                   <h2>Registro rápido</h2>
                 </div>
               </div>
-              <div class="admin-form-grid">
+              <form class="admin-form-grid" id="admin-doctor-form">
                 <label>
                   Nombre
-                  <input value="Dra. Natalia Rivas" />
+                  <input name="doctorName" value="Dra. Natalia Rivas" required />
                 </label>
                 <label>
                   Correo
-                  <input value="natalia.rivas@consulta.mx" />
+                  <input name="doctorEmail" type="email" value="natalia.rivas@consulta.mx" required />
                 </label>
                 <label>
                   Especialidad
-                  <input value="Ortodoncia" />
+                  <input name="doctorSpecialty" value="Ortodoncia" />
                 </label>
                 <label>
-                  Pacientes históricos
-                  <input value="12" />
+                  Clínica
+                  <input name="doctorClinic" value="Clínica Rivas Ortodoncia" />
                 </label>
-                <button class="primary-action" type="button">Crear doctor y asignar puntos</button>
-              </div>
+                <label>
+                  Teléfono
+                  <input name="doctorPhone" value="55 0000 0000" />
+                </label>
+                <label>
+                  Ciudad
+                  <input name="doctorCity" value="Ciudad de México" />
+                </label>
+                <label>
+                  Pacientes validados
+                  <input name="validatedPatients" min="0" type="number" value="12" />
+                </label>
+                <button class="primary-action" type="submit">Crear doctor y asignar puntos</button>
+              </form>
             </section>
           </div>
         </section>
@@ -718,6 +730,6 @@
     </div>
 
     <div class="toast" id="toast" role="status" aria-live="polite"></div>
-    <script src="app.js?v=validated-referrals-1"></script>
+    <script src="app.js?v=doctor-create-1"></script>
   </body>
 </html>

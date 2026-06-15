@@ -503,6 +503,32 @@ No asistió / cancelada -> no suma puntos
 - Registrar `partner_point_events` desde una acción transaccional segura.
 - Mover helpers RLS a un esquema privado antes de producción.
 
+## 2026-06-15 - Alta de doctor desde admin
+
+### Objetivo
+
+Hacer funcional la opción de alta de doctores dentro del panel admin.
+
+### Cambios realizados
+
+- El botón `Alta doctor` lleva al formulario de registro rápido.
+- El formulario ahora captura nombre, correo, especialidad, clínica, teléfono, ciudad y pacientes validados históricos.
+- Al crear doctor, se genera un código `DR-000X`.
+- Se calcula el puntaje inicial con pacientes validados x 100 puntos.
+- Se calcula automáticamente el tier según pacientes validados.
+- El nuevo doctor aparece inmediatamente en la lista de `Alta y socios`.
+- El correo creado puede usarse en demo para simular login de ese doctor.
+
+### Lógica de producción
+
+En Supabase, el alta real debe crear:
+
+- Usuario en Supabase Auth.
+- Registro en `profiles`.
+- Registro en `doctor_profiles`.
+- Registro en `doctor_partner_status`.
+- Eventos históricos en `partner_point_events` si se cargan pacientes validados previos.
+
 ## Plantilla para próximos cambios
 
 ### YYYY-MM-DD - Nombre del cambio

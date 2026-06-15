@@ -549,6 +549,8 @@ const adminStatusFilter = document.querySelector("#admin-status-filter");
 const adminOrderTable = document.querySelector("#admin-order-table");
 const adminDoctorList = document.querySelector("#admin-doctor-list");
 const adminDownloadQueue = document.querySelector("#admin-download-queue");
+const adminDoctorForm = document.querySelector("#admin-doctor-form");
+const focusNewDoctorButton = document.querySelector("#focus-new-doctor");
 const runAgentButton = document.querySelector("#run-agent-button");
 const sendStudiesButton = document.querySelector("#send-studies-button");
 const agentLog = document.querySelector("#agent-log");
@@ -659,6 +661,63 @@ function statusClass(status) {
 
 function getDoctorById(doctorId) {
   return Object.values(doctorDirectory).find((doctor) => doctor.id === doctorId);
+}
+
+function getNextDoctorCode() {
+  const nextNumber =
+    Object.values(doctorDirectory).reduce((maxCode, doctor) => {
+      const codeNumber = Number(doctor.id.replace("DR-", ""));
+      return Number.isFinite(codeNumber) ? Math.max(maxCode, codeNumber) : maxCode;
+    }, 0) + 1;
+
+  return `DR-${String(nextNumber).padStart(4, "0")}`;
+}
+
+function slugifyDoctorName(name) {
+  return `@${normalizeName(name).replace(/\s+/g, "-") || "doctor"}`;
+}
+
+function buildDefaultMetrics(validatedPatients) {
+  const activeOrders = Math.max(Math.round(validatedPatients * 0.45), 0);
+  const readyResults = Math.max(Math.round(validatedPatients * 0.2), 0);
+  const pendingAppointments = Math.max(Math.round(validatedPatients * 0.12), 0);
+  const conversion = validatedPatients > 0 ? "78%" : "0%";
+
+  return {
+    activeOrders: String(activeOrders),
+    readyResults: `${readyResults} listas`,
+    monthlyPatients: String(validatedPatients),
+    growth: validatedPatients > 0 ? "Histórico cargado" : "Sin histórico",
+    pendingAppointments: String(pendingAppointments),
+    topStudy: "OPG",
+    topStudyDetail: "Ortopantomografía",
+    conversion,
+  };
+}
+
+function buildMetricsByPeriod(validatedPatients) {
+  return {
+    today: {
+      ...buildDefaultMetrics(Math.min(validatedPatients, 3)),
+      patientsLabel: "Pacientes hoy",
+      growth: validatedPatients > 0 ? "Alta inicial" : "Sin actividad",
+    },
+    week: {
+      ...buildDefaultMetrics(Math.min(validatedPatients, 8)),
+      patientsLabel: "Pacientes semana",
+      growth: "Base inicial",
+    },
+    month: {
+      ...buildDefaultMetrics(validatedPatients),
+      patientsLabel: "Pacientes mes",
+      growth: "Base histórica",
+    },
+    year: {
+      ...buildDefaultMetrics(validatedPatients),
+      patientsLabel: "Pacientes año",
+      growth: "Histórico cargado",
+    },
+  };
 }
 
 function normalizeName(value) {
@@ -887,6 +946,49 @@ function validateAttendedOrder(orderId) {
   renderDoctorOrders();
   renderResults(resultsSearch.value);
   showToast(`Paciente atendido validado: ${order.patient}. Se sumaron ${POINTS_PER_REFERRED_PATIENT} pts.`);
+}
+
+function createDoctorFromAdmin(formData) {
+  const email = formData.get("doctorEmail").trim().toLowerCase();
+  const name = formData.get("doctorName").trim();
+  const validatedPatients = Math.max(Number(formData.get("validatedPatients")) || 0, 0);
+
+  if (!email || !name) {
+    showToast("Nombre y correo del doctor son obligatorios.");
+    return;
+  }
+
+  if (doctorDirectory[email]) {
+    showToast("Ese correo ya existe en el directorio de doctores.");
+    return;
+  }
+
+  const doctorCode = getNextDoctorCode();
+  const metrics = buildDefaultMetrics(validatedPatients);
+
+  doctorDirectory[email] = {
+    id: doctorCode,
+    handle: slugifyDoctorName(name),
+    name,
+    specialty: formData.get("doctorSpecialty").trim() || "Especialidad por definir",
+    clinic: formData.get("doctorClinic").trim() || "Consultorio independiente",
+    contactPhone: formData.get("doctorPhone").trim(),
+    email,
+    city: formData.get("doctorCity").trim() || "Ciudad por definir",
+    metrics,
+    metricsByPeriod: buildMetricsByPeriod(validatedPatients),
+    partner: {
+      referredPatients: validatedPatients,
+      points: validatedPatients * POINTS_PER_REFERRED_PATIENT,
+    },
+  };
+
+  renderAdmin();
+  adminDoctorForm.reset();
+  adminDoctorForm.querySelectorAll("input").forEach((input) => {
+    input.value = input.name === "validatedPatients" ? "0" : "";
+  });
+  showToast(`${name} creado como ${doctorCode} con ${validatedPatients} pacientes validados.`);
 }
 
 function renderDoctorScopedData() {
@@ -1799,6 +1901,16 @@ adminOrderTable?.addEventListener("change", (event) => {
 runAgentButton?.addEventListener("click", () => runAgent());
 
 sendStudiesButton?.addEventListener("click", sendReadyStudies);
+
+focusNewDoctorButton?.addEventListener("click", () => {
+  adminDoctorForm?.scrollIntoView({ behavior: "smooth", block: "center" });
+  adminDoctorForm?.querySelector('input[name="doctorName"]')?.focus();
+});
+
+adminDoctorForm?.addEventListener("submit", (event) => {
+  event.preventDefault();
+  createDoctorFromAdmin(new FormData(adminDoctorForm));
+});
 
 studyGrid.addEventListener("change", (event) => {
   if (
