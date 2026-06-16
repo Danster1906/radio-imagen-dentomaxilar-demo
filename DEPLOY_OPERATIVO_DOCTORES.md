@@ -133,7 +133,64 @@ service_role
 secret key
 ```
 
-## Alta manual inicial de usuarios
+## Estado operativo actual
+
+El portal ya esta conectado a Supabase para la primera operacion real:
+
+- Login con Supabase Auth.
+- Rol desde `profiles`.
+- Perfil doctor desde `doctor_profiles`.
+- Ordenes reales desde `orders`.
+- Estudios solicitados desde `order_studies`.
+- Cambio de estatus desde admin en `orders`.
+- Historial en `order_status_events`.
+- Puntos de socio en `doctor_partner_status` y `partner_point_events`.
+- Alta segura de doctores con Edge Function:
+
+```text
+create-doctor
+```
+
+La funcion esta versionada localmente en:
+
+```text
+supabase/functions/create-doctor/index.ts
+```
+
+Esta funcion usa `SUPABASE_SERVICE_ROLE_KEY` dentro de Supabase Edge Functions y exige que la sesion sea de un usuario con `role = admin`.
+
+## Alta de usuarios
+
+### Alta desde el panel admin
+
+El flujo recomendado ahora es:
+
+1. Iniciar sesion como admin.
+2. Abrir `Admin Radio Imagen`.
+3. Entrar a `Doctores`.
+4. Llenar:
+
+```text
+Nombre
+Correo
+Contraseña inicial
+Especialidad
+Clínica
+Teléfono
+Ciudad
+Pacientes validados iniciales
+```
+
+5. Presionar `Crear doctor y asignar puntos`.
+
+El sistema crea:
+
+- Usuario en Supabase Auth.
+- Registro en `profiles`.
+- Registro en `doctor_profiles`.
+- Registro en `doctor_partner_status`.
+
+### Alta manual inicial de usuarios
 
 En Supabase Dashboard:
 

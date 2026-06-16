@@ -114,23 +114,34 @@ Tambien funciona, pero no ejecuta `server.js`.
 
 ## Pasos para conectar Supabase
 
-1. Crear proyecto Supabase.
-2. Crear bucket privado:
+El proyecto ya esta conectado al proyecto Supabase:
+
+```text
+https://wwrfuwtvllgecjmfjfwf.supabase.co
+```
+
+La clave publica esta en `app.js` y puede vivir en frontend. No es la llave privada.
+
+La operacion actual ya incluye:
+
+- Login real con Supabase Auth.
+- Lectura de perfiles y roles.
+- Creacion real de ordenes.
+- Cambio real de estados desde admin.
+- Edge Function `create-doctor` para alta segura de doctores.
+
+Pendiente para resultados:
+
+1. Crear o confirmar bucket privado:
 
 ```text
 result-temp
 ```
 
-3. Crear tablas:
+2. Conectar subida manual a Storage.
+3. Generar signed URLs para descargas.
 
-```text
-result_files
-download_requests
-```
-
-4. Crear políticas de seguridad.
-5. Crear endpoint seguro para que el doctor solicite descarga.
-6. Configurar el agente local con `.env`.
+Las tablas de operacion ya existen en Supabase.
 
 ## Flujo de descarga con Replit
 

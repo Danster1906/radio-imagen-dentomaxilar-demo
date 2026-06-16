@@ -2,6 +2,58 @@
 
 Este archivo documenta los cambios funcionales y de producto. Cada cambio futuro debe registrarse aquí con fecha, objetivo, alcance y efecto en datos.
 
+## 2026-06-15 - Conversión del portal a operación real con Supabase
+
+### Objetivo
+
+Pasar el portal de una experiencia demo a una herramienta operativa inicial: login real, perfiles reales, órdenes reales, estados administrables y alta segura de doctores.
+
+### Cambios realizados
+
+- Se conectó `portal.html` con Supabase JS v2.
+- Se configuró el cliente público de Supabase en `app.js`.
+- El login ahora usa `Supabase Auth` cuando el SDK está disponible.
+- La app carga el rol real desde `profiles`.
+- El doctor carga su perfil desde `doctor_profiles`.
+- Las órdenes se leen desde `orders` y `order_studies`.
+- Nueva orden guarda registros reales en `orders` y `order_studies`.
+- El admin puede cambiar estatus y el cambio se persiste en `orders`.
+- Los cambios de estatus se registran en `order_status_events`.
+- Cuando una orden pasa a `Completa` o `Lista para descargar`, se valida para puntos si aún no contaba.
+- Se actualiza `doctor_partner_status` e inserta evento en `partner_point_events`.
+- El perfil del doctor guarda cambios en Supabase.
+- Se desplegó Edge Function `create-doctor` para que el admin cree doctores reales sin exponer `service_role` en el frontend.
+- Se versionó la función en `supabase/functions/create-doctor/index.ts`.
+
+### Razón del cambio
+
+El portal necesitaba dejar de depender de datos locales del navegador. Para operar con doctores reales, cada cuenta debe autenticarse, ver sólo su información y generar órdenes que Radio Imagen pueda recibir desde el panel admin.
+
+### Impacto en producto
+
+- Doctores reales pueden iniciar sesión con correo y contraseña de Supabase.
+- Cada doctor ve sus órdenes reales.
+- Radio Imagen puede ver la bandeja de órdenes y moverlas por flujo operativo.
+- El alta de doctor desde admin crea usuario Auth, perfil, ficha de doctor y estado de socio.
+- El flujo de puntos empieza a depender de pacientes validados, no sólo enviados.
+
+### Impacto en datos
+
+- Se escriben registros reales en `orders`.
+- Se escriben estudios solicitados en `order_studies`.
+- Se actualizan estados operativos en `orders`.
+- Se registran cambios en `order_status_events`.
+- Se acumulan puntos en `doctor_partner_status`.
+- Se registran eventos en `partner_point_events`.
+
+### Pendiente
+
+- Probar flujo completo en el URL publicado de Replit.
+- Configurar `Site URL` y `Redirect URLs` de Supabase con el dominio final.
+- Conectar subida manual de archivos a Storage real.
+- Generar signed URLs para descarga real de resultados.
+- Diseñar recuperación/cambio de contraseña para doctores.
+
 ## 2026-06-15 - Preparación para deployment en Replit
 
 ### Objetivo

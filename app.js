@@ -393,6 +393,14 @@ const metricPeriods = {
 
 const adminOrderStatuses = ["Recibida", "Agendada", "Completa", "Lista para descargar", "Cancelada"];
 
+const SUPABASE_URL = "https://wwrfuwtvllgecjmfjfwf.supabase.co";
+const SUPABASE_PUBLISHABLE_KEY = "sb_publishable_9-mqQEWpDWG4UL_rL6dxsw_uJSfXK7P";
+const supabaseClient = window.supabase?.createClient
+  ? window.supabase.createClient(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY)
+  : null;
+let currentAuthUser = null;
+let currentProfile = null;
+
 const doctorDirectory = {
   "sofia.herrera@consulta.mx": {
     id: "DR-0001",
@@ -681,6 +689,240 @@ function getDoctorById(doctorId) {
   return Object.values(doctorDirectory).find((doctor) => doctor.id === doctorId);
 }
 
+function setOrders(nextOrders) {
+  orders.splice(0, orders.length, ...nextOrders);
+}
+
+function getStudyBySelection(selection) {
+  const normalizedSelection = selection.toLowerCase();
+  return (
+    studies.find((study) => study.name === selection) ||
+    studies.find((study) => normalizedSelection.startsWith(study.name.toLowerCase())) ||
+    studies.find((study) => normalizedSelection.includes(study.name.toLowerCase()))
+  );
+}
+
+function mapDatabaseOrder(order) {
+  const studyRows = order.order_studies || [];
+  const doctorName = order.doctor_profiles?.display_name || order.doctor_name || "Doctor no asignado";
+  const resultFiles = order.result_files || [];
+  const hasResult = resultFiles.some((file) => ["cloud_ready", "ready", "uploaded"].includes(file.status));
+
+  return {
+    id: order.id,
+    folio: order.folio,
+    patient: order.patient_full_name,
+    doctor: doctorName,
+    owner: "supabase",
+    doctorId: order.doctor_id,
+    studies: studyRows.length ? studyRows.map((study) => study.study_name) : ["Estudio sin detalle"],
+    status: order.status,
+    date: order.referral_date,
+    result: hasResult ? resultFiles[0]?.display_name || "Resultado disponible" : "",
+    notes: order.clinical_notes || "",
+    countsForPartner: Boolean(order.counts_for_partner),
+    scheduledAt: order.scheduled_at?.slice(0, 10),
+    completedAt: order.completed_at?.slice(0, 10),
+    validatedAt: order.patient_attended_at?.slice(0, 10),
+    validatedBy: order.validated_by ? "Admin Radio Imagen" : "",
+    resultFiles,
+  };
+}
+
+function buildMetricsFromOrders(doctorId) {
+  const doctorOrders = orders.filter((order) => order.doctorId === doctorId);
+  const today = todayISO();
+  const activeOrders = doctorOrders.filter((order) => !["Cancelada", "Lista para descargar"].includes(order.status)).length;
+  const readyResults = doctorOrders.filter((order) => order.status === "Lista para descargar").length;
+  const pendingAppointments = doctorOrders.filter((order) => order.status === "Recibida").length;
+  const completedOrders = doctorOrders.filter((order) => ["Completa", "Lista para descargar"].includes(order.status)).length;
+  const topStudy = doctorOrders.flatMap((order) => order.studies).reduce((counts, study) => {
+    counts[study] = (counts[study] || 0) + 1;
+    return counts;
+  }, {});
+  const topStudyName = Object.entries(topStudy).sort((a, b) => b[1] - a[1])[0]?.[0] || "OPG";
+  const conversion = doctorOrders.length ? `${Math.round((completedOrders / doctorOrders.length) * 100)}%` : "0%";
+  const base = {
+    activeOrders: String(activeOrders),
+    readyResults: `${readyResults} listas`,
+    patientsLabel: "Pacientes",
+    monthlyPatients: String(doctorOrders.length),
+    growth: "Datos reales",
+    pendingAppointments: String(pendingAppointments),
+    topStudy: topStudyName.length > 16 ? getStudyAbbreviation(topStudyName) : topStudyName,
+    topStudyDetail: topStudyName,
+    conversion,
+  };
+
+  return {
+    metrics: base,
+    metricsByPeriod: {
+      today: {
+        ...base,
+        patientsLabel: "Pacientes hoy",
+        monthlyPatients: String(doctorOrders.filter((order) => order.date === today).length),
+      },
+      week: {
+        ...base,
+        patientsLabel: "Pacientes semana",
+      },
+      month: {
+        ...base,
+        patientsLabel: "Pacientes mes",
+      },
+      year: {
+        ...base,
+        patientsLabel: "Pacientes año",
+      },
+    },
+  };
+}
+
+function getStudyAbbreviation(studyName) {
+  if (studyName.toLowerCase().includes("ortopantom")) {
+    return "OPG";
+  }
+
+  if (studyName.toLowerCase().includes("tomograf")) {
+    return "CBCT";
+  }
+
+  if (studyName.toLowerCase().includes("ortod")) {
+    return "EOC";
+  }
+
+  return studyName
+    .split(/\s+/)
+    .map((word) => word[0])
+    .join("")
+    .slice(0, 5)
+    .toUpperCase();
+}
+
+function mapDatabaseDoctor(doctor, profile, partnerStatus) {
+  const partner = {
+    referredPatients: partnerStatus?.referred_patients || 0,
+    points: partnerStatus?.points || 0,
+  };
+  const metricsData = buildMetricsFromOrders(doctor.id);
+
+  return {
+    id: doctor.id,
+    doctorCode: doctor.doctor_code,
+    handle: slugifyDoctorName(doctor.display_name),
+    name: doctor.display_name,
+    specialty: doctor.specialty || "Especialidad por definir",
+    clinic: doctor.clinic || "Consultorio independiente",
+    contactPhone: doctor.contact_phone || profile?.phone || "",
+    email: profile?.email || "",
+    city: doctor.city || "Ciudad por definir",
+    photo: doctor.profile_image_url || "",
+    photoZoom: 1,
+    photoX: 0,
+    photoY: 0,
+    partner,
+    ...metricsData,
+  };
+}
+
+async function loadOrdersFromSupabase(role) {
+  if (!supabaseClient) {
+    return;
+  }
+
+  let query = supabaseClient
+    .from("orders")
+    .select(
+      "*, doctor_profiles(display_name, doctor_code, profile_id), order_studies(study_id, study_name, study_category, details), result_files(display_name, file_type, original_file_name, storage_path, status)",
+    )
+    .order("created_at", { ascending: false });
+
+  if (role === "doctor" && doctorProfile.id) {
+    query = query.eq("doctor_id", doctorProfile.id);
+  }
+
+  const { data, error } = await query;
+
+  if (error) {
+    throw error;
+  }
+
+  setOrders((data || []).map(mapDatabaseOrder));
+}
+
+async function loadDoctorsFromSupabase() {
+  if (!supabaseClient) {
+    return;
+  }
+
+  const [{ data: doctors, error: doctorsError }, { data: profiles, error: profilesError }, { data: partnerStatuses, error: partnerError }] =
+    await Promise.all([
+      supabaseClient.from("doctor_profiles").select("*").order("doctor_code"),
+      supabaseClient.from("profiles").select("*").eq("role", "doctor"),
+      supabaseClient.from("doctor_partner_status").select("*"),
+    ]);
+
+  if (doctorsError || profilesError || partnerError) {
+    throw doctorsError || profilesError || partnerError;
+  }
+
+  Object.keys(doctorDirectory).forEach((email) => delete doctorDirectory[email]);
+  (doctors || []).forEach((doctor) => {
+    const profile = (profiles || []).find((item) => item.id === doctor.profile_id);
+    const partnerStatus = (partnerStatuses || []).find((item) => item.doctor_id === doctor.id);
+    const mappedDoctor = mapDatabaseDoctor(doctor, profile, partnerStatus);
+    doctorDirectory[mappedDoctor.email] = mappedDoctor;
+  });
+}
+
+async function loadAuthenticatedContext(user) {
+  currentAuthUser = user;
+  const { data: profile, error: profileError } = await supabaseClient
+    .from("profiles")
+    .select("*")
+    .eq("id", user.id)
+    .single();
+
+  if (profileError || !profile) {
+    throw profileError || new Error("Cuenta sin perfil operativo.");
+  }
+
+  currentProfile = profile;
+  currentRole = profile.role;
+
+  if (currentRole === "admin") {
+    adminProfile.id = profile.id;
+    adminProfile.name = profile.full_name;
+    adminProfile.email = profile.email;
+    await loadOrdersFromSupabase("admin");
+    await loadDoctorsFromSupabase();
+    return;
+  }
+
+  const { data: doctor, error: doctorError } = await supabaseClient
+    .from("doctor_profiles")
+    .select("*")
+    .eq("profile_id", user.id)
+    .single();
+
+  if (doctorError || !doctor) {
+    throw doctorError || new Error("Cuenta sin perfil de doctor.");
+  }
+
+  doctorProfile.id = doctor.id;
+  doctorProfile.doctorCode = doctor.doctor_code;
+  await loadOrdersFromSupabase("doctor");
+
+  const { data: partnerStatus } = await supabaseClient
+    .from("doctor_partner_status")
+    .select("*")
+    .eq("doctor_id", doctor.id)
+    .maybeSingle();
+  const mappedDoctor = mapDatabaseDoctor(doctor, profile, partnerStatus);
+  doctorDirectory[mappedDoctor.email] = mappedDoctor;
+  applyDoctorProfile(mappedDoctor);
+}
+
 function getNextDoctorCode() {
   const nextNumber =
     Object.values(doctorDirectory).reduce((maxCode, doctor) => {
@@ -821,6 +1063,7 @@ function configureShellForRole(role) {
 
 function applyDoctorProfile(profile) {
   doctorProfile.id = profile.id;
+  doctorProfile.doctorCode = profile.doctorCode || profile.id;
   doctorProfile.handle = profile.handle;
   doctorProfile.name = profile.name;
   doctorProfile.specialty = profile.specialty;
@@ -828,6 +1071,10 @@ function applyDoctorProfile(profile) {
   doctorProfile.contactPhone = profile.contactPhone;
   doctorProfile.email = profile.email;
   doctorProfile.city = profile.city;
+  doctorProfile.photo = profile.photo || doctorProfile.photo || "";
+  doctorProfile.photoZoom = profile.photoZoom || doctorProfile.photoZoom || 1;
+  doctorProfile.photoX = profile.photoX || doctorProfile.photoX || 0;
+  doctorProfile.photoY = profile.photoY || doctorProfile.photoY || 0;
   doctorProfile.metrics = profile.metrics;
   doctorProfile.metricsByPeriod = profile.metricsByPeriod;
   doctorProfile.partner = { ...profile.partner };
@@ -1003,7 +1250,86 @@ function getAdminNextStep(order) {
   };
 }
 
-function runAdminNextStep(orderId) {
+async function updateOrderStatusInSupabase(order, nextStatus) {
+  const now = new Date().toISOString();
+  const payload = {
+    status: nextStatus,
+    updated_at: now,
+  };
+
+  if (nextStatus === "Agendada") {
+    payload.scheduled_at = order.scheduledAt ? undefined : now;
+    payload.scheduled_by = currentAuthUser?.id || null;
+  }
+
+  if (nextStatus === "Completa" || nextStatus === "Lista para descargar") {
+    payload.completed_at = order.completedAt ? undefined : now;
+    payload.patient_attended_at = order.validatedAt ? undefined : now;
+    payload.validated_by = currentAuthUser?.id || null;
+    payload.counts_for_partner = true;
+  }
+
+  if (nextStatus === "Lista para descargar") {
+    payload.result_ready_at = now;
+  }
+
+  Object.keys(payload).forEach((key) => {
+    if (payload[key] === undefined) {
+      delete payload[key];
+    }
+  });
+
+  const { error } = await supabaseClient.from("orders").update(payload).eq("id", order.id);
+
+  if (error) {
+    throw error;
+  }
+
+  await supabaseClient.from("order_status_events").insert({
+    order_id: order.id,
+    previous_status: order.status,
+    new_status: nextStatus,
+    changed_by: currentAuthUser?.id || null,
+    notes: "Cambio desde panel admin",
+  });
+
+  if ((nextStatus === "Completa" || nextStatus === "Lista para descargar") && !order.countsForPartner) {
+    const { data: partnerStatus } = await supabaseClient
+      .from("doctor_partner_status")
+      .select("*")
+      .eq("doctor_id", order.doctorId)
+      .maybeSingle();
+    const nextReferrals = (partnerStatus?.referred_patients || 0) + 1;
+    const nextPoints = (partnerStatus?.points || 0) + POINTS_PER_REFERRED_PATIENT;
+    const nextTier = getPartnerTier(nextReferrals);
+
+    await supabaseClient
+      .from("doctor_partner_status")
+      .update({
+        referred_patients: nextReferrals,
+        points: nextPoints,
+        current_tier_id: nextTier.shortName === "Inicio" ? null : nextTier.shortName.toLowerCase(),
+        updated_at: now,
+      })
+      .eq("doctor_id", order.doctorId);
+
+    await supabaseClient.from("partner_point_events").insert({
+      doctor_id: order.doctorId,
+      order_id: order.id,
+      event_type: "paciente_validado",
+      points: POINTS_PER_REFERRED_PATIENT,
+      notes: `Paciente validado desde admin: ${order.patient}`,
+    });
+  }
+
+  await loadOrdersFromSupabase(currentRole);
+
+  if (currentRole === "admin") {
+    await loadDoctorsFromSupabase();
+  }
+}
+
+async function runAdminNextStep(orderId) {
   const order = orders.find((currentOrder) => currentOrder.id === orderId);
 
   if (!order) {
@@ -1011,8 +1337,12 @@ function runAdminNextStep(orderId) {
   }
 
   if (order.status === "Recibida") {
-    order.status = "Agendada";
-    order.scheduledAt = todayISO();
+    if (supabaseClient && currentAuthUser) {
+      await updateOrderStatusInSupabase(order, "Agendada");
+    } else {
+      order.status = "Agendada";
+      order.scheduledAt = todayISO();
+    }
     renderAdmin();
     renderDoctorOrders();
     renderResults(resultsSearch.value);
@@ -1021,7 +1351,7 @@ function runAdminNextStep(orderId) {
   }
 
   if (order.status === "Agendada") {
-    validateAttendedOrder(order.id, "Completa");
+    await validateAttendedOrder(order.id, "Completa");
     return;
   }
 
@@ -1038,11 +1368,27 @@ function runAdminNextStep(orderId) {
   showToast(`${order.patient} no tiene acción pendiente.`);
 }
 
-function validateAttendedOrder(orderId, nextStatus = "Completa") {
+async function validateAttendedOrder(orderId, nextStatus = "Completa") {
   const order = orders.find((currentOrder) => currentOrder.id === orderId);
 
   if (!order) {
     return;
+  }
+
+  if (supabaseClient && currentAuthUser) {
+    try {
+      await updateOrderStatusInSupabase(order, nextStatus);
+      renderAdmin();
+      renderPartnerProgram();
+      renderDoctorOrders();
+      renderResults(resultsSearch.value);
+      showToast(`Paciente actualizado: ${order.patient} · ${nextStatus}.`);
+      return;
+    } catch (error) {
+      console.error(error);
+      showToast("No se pudo actualizar la orden en Supabase.");
+      return;
+    }
   }
 
   if (order.countsForPartner) {
@@ -1078,7 +1424,7 @@ function validateAttendedOrder(orderId, nextStatus = "Completa") {
   showToast(`Paciente completado: ${order.patient}. Se sumaron ${POINTS_PER_REFERRED_PATIENT} pts.`);
 }
 
-function createDoctorFromAdmin(formData) {
+async function createDoctorFromAdmin(formData) {
   const email = formData.get("doctorEmail").trim().toLowerCase();
   const name = formData.get("doctorName").trim();
   const password = formData.get("doctorPassword").trim();
@@ -1087,6 +1433,41 @@ function createDoctorFromAdmin(formData) {
   if (!email || !name || !password) {
     showToast("Nombre, correo y contraseña son obligatorios.");
     return;
+  }
+
+  if (supabaseClient && currentAuthUser) {
+    try {
+      const { data, error } = await supabaseClient.functions.invoke("create-doctor", {
+        body: {
+          email,
+          name,
+          password,
+          specialty: formData.get("doctorSpecialty").trim(),
+          clinic: formData.get("doctorClinic").trim(),
+          phone: formData.get("doctorPhone").trim(),
+          city: formData.get("doctorCity").trim(),
+          validatedPatients,
+        },
+      });
+
+      if (error || data?.error) {
+        throw error || new Error(data.error);
+      }
+
+      await loadOrdersFromSupabase("admin");
+      await loadDoctorsFromSupabase();
+      renderAdmin();
+      adminDoctorForm.reset();
+      adminDoctorForm.querySelectorAll("input").forEach((input) => {
+        input.value = input.name === "validatedPatients" ? "0" : "";
+      });
+      showToast(`${name} creado como ${data.doctorCode}. Contraseña inicial asignada.`);
+      return;
+    } catch (error) {
+      console.error(error);
+      showToast("No se pudo crear el doctor real. Revisa si el correo ya existe o si tu sesión es admin.");
+      return;
+    }
   }
 
   if (doctorDirectory[email]) {
@@ -1167,8 +1548,43 @@ function showLogin() {
   loginScreen.hidden = false;
 }
 
-function loginAccount(email, password) {
+async function loginAccount(email, password) {
   const normalizedEmail = email.toLowerCase();
+
+  if (supabaseClient) {
+    try {
+      const { data, error } = await supabaseClient.auth.signInWithPassword({
+        email: normalizedEmail,
+        password,
+      });
+
+      if (error) {
+        showToast("No se pudo iniciar sesión. Revisa correo y contraseña.");
+        return;
+      }
+
+      await loadAuthenticatedContext(data.user);
+      localStorage.setItem(
+        SESSION_KEY,
+        JSON.stringify({
+          email: normalizedEmail,
+          provider: "supabase",
+          role: currentRole,
+          accountId: currentRole === "admin" ? adminProfile.id : doctorProfile.id,
+          handle: currentRole === "admin" ? adminProfile.handle : doctorProfile.handle,
+          signedInAt: new Date().toISOString(),
+        }),
+      );
+      showApp(true, currentRole === "admin" ? "admin" : "dashboard");
+      showToast(currentRole === "admin" ? "Sesión admin iniciada." : "Sesión iniciada.");
+      return;
+    } catch (error) {
+      console.error(error);
+      showToast("La cuenta existe en Auth, pero falta completar su perfil operativo.");
+      return;
+    }
+  }
+
   const account = authorizedAccounts[normalizedEmail];
 
   if (!account) {
@@ -1894,7 +2310,7 @@ function renderProfile() {
   document.querySelectorAll("[data-profile-handle]").forEach((node) => {
     node.textContent = doctorProfile.handle;
   });
-  doctorIdLabel.textContent = doctorProfile.id;
+  doctorIdLabel.textContent = doctorProfile.doctorCode || doctorProfile.id;
   document.querySelector("[data-profile-contact]").textContent = doctorProfile.contactPhone;
   document.querySelector("[data-profile-city]").textContent = doctorProfile.city;
   profileInitials.textContent = initials;
@@ -1994,19 +2410,66 @@ periodButtons.forEach((button) => {
   button.addEventListener("click", () => setMetricsPeriod(button.dataset.period));
 });
 
-loginForm.addEventListener("submit", (event) => {
+loginForm.addEventListener("submit", async (event) => {
   event.preventDefault();
   const formData = new FormData(loginForm);
-  loginAccount(formData.get("loginEmail").trim(), formData.get("loginPassword"));
+  await loginAccount(formData.get("loginEmail").trim(), formData.get("loginPassword"));
 });
 
-logoutButton.addEventListener("click", () => {
+logoutButton.addEventListener("click", async () => {
+  if (supabaseClient) {
+    await supabaseClient.auth.signOut();
+  }
   localStorage.removeItem(SESSION_KEY);
+  currentAuthUser = null;
+  currentProfile = null;
   showLogin();
   showToast("Sesión cerrada.");
 });
 
-orderForm.addEventListener("submit", (event) => {
+async function createOrderInSupabase(formData, selectedStudies) {
+  const folio = `ORD-${new Date().getFullYear()}-${String(Date.now()).slice(-6)}`;
+  const { data: order, error: orderError } = await supabaseClient
+    .from("orders")
+    .insert({
+      folio,
+      doctor_id: doctorProfile.id,
+      patient_full_name: formData.get("patientName").trim(),
+      patient_birth_date: formData.get("birthDate"),
+      patient_phone: formData.get("phone").trim() || null,
+      referral_date: formData.get("referralDate") || todayISO(),
+      clinical_notes: formData.get("notes").trim() || null,
+      status: "Recibida",
+    })
+    .select()
+    .single();
+
+  if (orderError) {
+    throw orderError;
+  }
+
+  const studyRows = selectedStudies.map((selection) => {
+    const study = getStudyBySelection(selection);
+
+    return {
+      order_id: order.id,
+      study_id: study?.id || null,
+      study_name: selection,
+      study_category: study?.category || "Estudio solicitado",
+      details: {},
+    };
+  });
+
+  const { error: studiesError } = await supabaseClient.from("order_studies").insert(studyRows);
+
+  if (studiesError) {
+    throw studiesError;
+  }
+
+  await loadOrdersFromSupabase(currentRole);
+}
+
+orderForm.addEventListener("submit", async (event) => {
   event.preventDefault();
   const formData = new FormData(orderForm);
   const selectedStudies = getSelectedStudiesWithDetails(formData);
@@ -2020,19 +2483,29 @@ orderForm.addEventListener("submit", (event) => {
     return;
   }
 
-  orders.unshift({
-    id: `ORD-${new Date().getFullYear()}-${String(orders.length + 1).padStart(4, "0")}`,
-    patient: formData.get("patientName"),
-    doctor: doctorProfile.name,
-    owner: "current-doctor",
-    doctorId: doctorProfile.id,
-    studies: selectedStudies,
-    status: "Recibida",
-    date: formData.get("referralDate") || todayISO(),
-    result: "",
-    notes: formData.get("notes").trim(),
-    countsForPartner: false,
-  });
+  if (supabaseClient && currentAuthUser) {
+    try {
+      await createOrderInSupabase(formData, selectedStudies);
+    } catch (error) {
+      console.error(error);
+      showToast("No se pudo guardar la orden en Supabase. Revisa permisos o conexión.");
+      return;
+    }
+  } else {
+    orders.unshift({
+      id: `ORD-${new Date().getFullYear()}-${String(orders.length + 1).padStart(4, "0")}`,
+      patient: formData.get("patientName"),
+      doctor: doctorProfile.name,
+      owner: "current-doctor",
+      doctorId: doctorProfile.id,
+      studies: selectedStudies,
+      status: "Recibida",
+      date: formData.get("referralDate") || todayISO(),
+      result: "",
+      notes: formData.get("notes").trim(),
+      countsForPartner: false,
+    });
+  }
 
   orderForm.reset();
   setDefaultReferralDate();
@@ -2042,10 +2515,10 @@ orderForm.addEventListener("submit", (event) => {
   renderDoctorOrders();
   renderResults(resultsSearch.value);
   setView("dashboard");
-  showToast("Orden enviada. Sumará puntos cuando Radio Imagen valide que el paciente fue atendido.");
+  showToast("Orden enviada a Radio Imagen. Sumará puntos cuando el paciente sea atendido.");
 });
 
-profileForm.addEventListener("submit", (event) => {
+profileForm.addEventListener("submit", async (event) => {
   event.preventDefault();
   const formData = new FormData(profileForm);
 
@@ -2055,6 +2528,40 @@ profileForm.addEventListener("submit", (event) => {
   doctorProfile.contactPhone = formData.get("contactPhone").trim();
   doctorProfile.email = formData.get("email").trim();
   doctorProfile.city = formData.get("city").trim();
+
+  if (supabaseClient && currentAuthUser) {
+    try {
+      const [{ error: doctorError }, { error: profileError }] = await Promise.all([
+        supabaseClient
+          .from("doctor_profiles")
+          .update({
+            display_name: doctorProfile.name,
+            specialty: doctorProfile.specialty || null,
+            clinic: doctorProfile.clinic || null,
+            contact_phone: doctorProfile.contactPhone || null,
+            city: doctorProfile.city || null,
+            updated_at: new Date().toISOString(),
+          })
+          .eq("id", doctorProfile.id),
+        supabaseClient
+          .from("profiles")
+          .update({
+            full_name: doctorProfile.name,
+            phone: doctorProfile.contactPhone || null,
+            updated_at: new Date().toISOString(),
+          })
+          .eq("id", currentAuthUser.id),
+      ]);
+
+      if (doctorError || profileError) {
+        throw doctorError || profileError;
+      }
+    } catch (error) {
+      console.error(error);
+      showToast("No se pudo guardar el perfil en Supabase.");
+      return;
+    }
+  }
 
   renderProfile();
   renderDoctorOrders();
@@ -2110,7 +2617,7 @@ resultsSearch.addEventListener("input", () => renderResults(resultsSearch.value)
 
 adminStatusFilter?.addEventListener("change", renderAdmin);
 
-adminOrderTable?.addEventListener("change", (event) => {
+adminOrderTable?.addEventListener("change", async (event) => {
   const statusControl = event.target.closest("[data-admin-status]");
 
   if (!statusControl) {
@@ -2124,13 +2631,24 @@ adminOrderTable?.addEventListener("change", (event) => {
   }
 
   if (statusControl.value === "Completa" || statusControl.value === "Lista para descargar") {
-    validateAttendedOrder(order.id, statusControl.value);
+    await validateAttendedOrder(order.id, statusControl.value);
     return;
   }
 
-  order.status = statusControl.value;
-  if (statusControl.value === "Agendada" && !order.scheduledAt) {
-    order.scheduledAt = todayISO();
+  if (supabaseClient && currentAuthUser) {
+    try {
+      await updateOrderStatusInSupabase(order, statusControl.value);
+    } catch (error) {
+      console.error(error);
+      showToast("No se pudo actualizar la orden en Supabase.");
+      renderAdmin();
+      return;
+    }
+  } else {
+    order.status = statusControl.value;
+    if (statusControl.value === "Agendada" && !order.scheduledAt) {
+      order.scheduledAt = todayISO();
+    }
   }
   renderAdmin();
   renderDoctorOrders();
@@ -2160,9 +2678,9 @@ manualUploadForm?.addEventListener("submit", (event) => {
   uploadManualResult(new FormData(manualUploadForm));
 });
 
-adminDoctorForm?.addEventListener("submit", (event) => {
+adminDoctorForm?.addEventListener("submit", async (event) => {
   event.preventDefault();
-  createDoctorFromAdmin(new FormData(adminDoctorForm));
+  await createDoctorFromAdmin(new FormData(adminDoctorForm));
 });
 
 studyGrid.addEventListener("change", (event) => {
@@ -2182,7 +2700,7 @@ studyGrid.addEventListener("change", (event) => {
   }
 });
 
-document.addEventListener("click", (event) => {
+document.addEventListener("click", async (event) => {
   const downloadOrderButton = event.target.closest("[data-download-order]");
   const downloadFileButton = event.target.closest("[data-download-file]");
   const orderButton = event.target.closest("[data-order-patient]");
@@ -2225,11 +2743,11 @@ document.addEventListener("click", (event) => {
   }
 
   if (validateOrderButton) {
-    validateAttendedOrder(validateOrderButton.dataset.validateOrder);
+    await validateAttendedOrder(validateOrderButton.dataset.validateOrder);
   }
 
   if (adminNextButton) {
-    runAdminNextStep(adminNextButton.dataset.adminNextOrder);
+    await runAdminNextStep(adminNextButton.dataset.adminNextOrder);
   }
 });
 
@@ -2268,16 +2786,41 @@ setDefaultReferralDate();
 renderDoctorOrders();
 renderResults();
 
-const savedSession = localStorage.getItem(SESSION_KEY);
-if (savedSession) {
-  const session = JSON.parse(savedSession);
-  currentRole = session.role || getAccountRole(session.email);
+async function initializePortal() {
+  if (supabaseClient) {
+    const { data } = await supabaseClient.auth.getSession();
 
-  if (currentRole === "doctor") {
-    applyDoctorProfile(findDoctorByEmail(session.email));
+    if (data.session?.user) {
+      try {
+        await loadAuthenticatedContext(data.session.user);
+        showApp(false, currentRole === "admin" ? "admin" : "dashboard");
+        return;
+      } catch (error) {
+        console.error(error);
+        await supabaseClient.auth.signOut();
+        localStorage.removeItem(SESSION_KEY);
+        showToast("La sesión no tiene perfil operativo. Inicia sesión de nuevo.");
+      }
+    }
+
+    localStorage.removeItem(SESSION_KEY);
+    showLogin();
+    return;
   }
 
-  showApp(false, currentRole === "admin" ? "admin" : "dashboard");
-} else {
-  showLogin();
+  const savedSession = localStorage.getItem(SESSION_KEY);
+  if (savedSession) {
+    const session = JSON.parse(savedSession);
+    currentRole = session.role || getAccountRole(session.email);
+
+    if (currentRole === "doctor") {
+      applyDoctorProfile(findDoctorByEmail(session.email));
+    }
+
+    showApp(false, currentRole === "admin" ? "admin" : "dashboard");
+  } else {
+    showLogin();
+  }
 }
+
+initializePortal();
