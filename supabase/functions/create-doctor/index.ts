@@ -109,8 +109,20 @@ Deno.serve(async (req) => {
     return jsonResponse({ error: insertProfileError.message }, 400);
   }
 
-  const { count } = await adminClient.from("doctor_profiles").select("id", { count: "exact", head: true });
-  const doctorCode = `DR-${String((count || 0) + 1).padStart(4, "0")}`;
+  const { data: existingDoctors, error: codesError } = await adminClient
+    .from("doctor_profiles")
+    .select("doctor_code");
+
+  if (codesError) {
+    return jsonResponse({ error: codesError.message }, 400);
+  }
+
+  const nextCodeNumber =
+    (existingDoctors || []).reduce((maxCode, doctor) => {
+      const match = String(doctor.doctor_code || "").match(/DR-(\d+)/i);
+      return match ? Math.max(maxCode, Number(match[1])) : maxCode;
+    }, 0) + 1;
+  const doctorCode = `DR-${String(nextCodeNumber).padStart(4, "0")}`;
 
   const { data: doctorProfile, error: doctorError } = await adminClient
     .from("doctor_profiles")

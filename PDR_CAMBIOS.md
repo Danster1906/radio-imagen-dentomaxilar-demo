@@ -54,6 +54,34 @@ El portal necesitaba dejar de depender de datos locales del navegador. Para oper
 - Generar signed URLs para descarga real de resultados.
 - Diseñar recuperación/cambio de contraseña para doctores.
 
+## 2026-06-15 - Corrección de alta real de doctores
+
+### Objetivo
+
+Evitar que el alta de doctores falle por códigos duplicados y reparar un registro que quedó creado parcialmente.
+
+### Cambios realizados
+
+- Se corrigió la Edge Function `create-doctor`.
+- El código `DR-000X` ahora se calcula usando el máximo `doctor_code` existente, no el conteo de registros.
+- Se redeployó `create-doctor` como versión 2 en Supabase.
+- Se completó el perfil operativo faltante para `joseantonio@gmail.com`.
+
+### Razón del cambio
+
+El conteo de doctores no era suficiente para generar el siguiente código porque ya existía `DR-0002`; al contar un solo doctor, la función intentaba reutilizar `DR-0002` y fallaba.
+
+### Impacto en producto
+
+- El panel admin puede seguir creando doctores reales sin hacerlo manualmente desde Supabase.
+- Si un usuario Auth se creó antes del error, ya no queda sin ficha de doctor.
+
+### Impacto en datos
+
+- Se creó `doctor_profiles` para el usuario parcial.
+- Se creó `doctor_partner_status` inicial en cero puntos y cero pacientes.
+- No se modificaron órdenes ni resultados.
+
 ## 2026-06-15 - Preparación para deployment en Replit
 
 ### Objetivo
