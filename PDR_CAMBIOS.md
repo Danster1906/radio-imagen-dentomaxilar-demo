@@ -892,6 +892,31 @@ Dejar Supabase preparado para operación real con doctores autenticados, RLS, St
 
 Supabase Auth debe crear los usuarios reales desde Dashboard o con una llave secreta en backend. No se debe exponer `service_role` en el frontend.
 
+## 2026-06-15 - Ajuste de logo público
+
+### Objetivo
+
+Corregir la forma en que se muestra el logo en la página pública dentro de Replit.
+
+### Cambios realizados
+
+- Se redujo el tamaño base del logo horizontal.
+- Se fijó una altura controlada para el encabezado público.
+- Se agregó fondo transparente y `object-fit: contain` para evitar recortes visuales.
+- Se actualizó la versión del CSS en `index.html` y `portal.html` para evitar caché vieja.
+
+### Razón del cambio
+
+El logo se estaba viendo demasiado grande y mal encuadrado en la barra superior pública.
+
+### Impacto en producto
+
+La página pública debe mostrar la marca de Radio Imagen completa, limpia y proporcionada.
+
+### Impacto en datos
+
+No cambia la estructura de datos.
+
 ## Plantilla para próximos cambios
 
 ### YYYY-MM-DD - Nombre del cambio

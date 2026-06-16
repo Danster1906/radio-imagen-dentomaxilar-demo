@@ -377,15 +377,17 @@ button {
   display: flex;
   align-items: center;
   gap: 12px;
+  line-height: 0;
 }
 
 .brand-logo {
   display: block;
-  width: 210px;
+  width: 190px;
   height: auto;
-  max-height: 76px;
+  max-height: 72px;
   border-radius: 0;
   object-fit: contain;
+  background: transparent;
 }
 
 .sidebar-logo {
@@ -1779,19 +1781,23 @@ textarea:focus {
   align-items: center;
   justify-content: space-between;
   gap: 18px;
-  padding: 14px clamp(18px, 4vw, 54px);
+  min-height: 92px;
+  padding: 10px clamp(18px, 4vw, 54px);
   background: rgba(255, 255, 255, 0.92);
   border-bottom: 1px solid var(--line);
   backdrop-filter: blur(18px);
 }
 
 .public-nav .brand {
+  flex: 0 0 auto;
   text-decoration: none;
 }
 
 .public-nav .brand-logo {
-  width: 220px;
-  max-height: 78px;
+  width: 188px;
+  height: 74px;
+  max-height: 74px;
+  object-fit: contain;
 }
 
 .public-nav nav {
