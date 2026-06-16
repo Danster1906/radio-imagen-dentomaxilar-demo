@@ -943,6 +943,37 @@ La página pública muestra una navegación más limpia, profesional y consisten
 
 No cambia la estructura de datos.
 
+## 2026-06-16 - Consolidación de landing móvil y contactos por sucursal
+
+### Objetivo
+
+Consolidar en GitHub los cambios realizados en Replit para la landing pública, cuidando que la versión principal y la copia de deployment estático queden sincronizadas.
+
+### Cambios realizados
+
+- Se reemplazó el botón único de WhatsApp del hero por contactos separados para Lázaro Cárdenas y Colima.
+- Se agregó una sección móvil `mobile-branch-shortcuts` con acciones rápidas por sucursal: llamar, WhatsApp y mapa.
+- Se agregaron estilos `whatsapp-action`, `whatsapp-symbol` y `whatsapp-icon-only`.
+- Se corrigieron horarios y teléfonos visibles de sucursales.
+- Se agregó el teléfono fijo de Colima `312 316 7760`.
+- Se agregó el enlace de ubicación de Colima.
+- Se retiraron clases accidentales tipo Tailwind del HTML público.
+- Se ajustó el responsive móvil del header, hero, métricas, secciones, sucursales y accesos rápidos.
+- Se sincronizaron `index.html` y `styles.css` con `deploy/neubox-radio-imagen/`.
+- Se agregó Playwright como dependencia de desarrollo para futuras pruebas visuales.
+
+### Razón del cambio
+
+Replit tenía cambios útiles de contenido y UX móvil, pero estaban parcialmente aplicados y podían perderse en un deployment nuevo si no quedaban consolidados en GitHub.
+
+### Impacto en producto
+
+La landing pública queda más útil en celular, con contactos claros por sucursal y una ruta rápida para llamar, escribir por WhatsApp o abrir mapa.
+
+### Impacto en datos
+
+No cambia la estructura de datos ni la configuración de Supabase.
+
 ## Plantilla para próximos cambios
 
 ### YYYY-MM-DD - Nombre del cambio
