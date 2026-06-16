@@ -381,9 +381,10 @@ button {
 
 .brand-logo {
   display: block;
-  width: 190px;
-  height: 96px;
-  border-radius: 4px;
+  width: 210px;
+  height: auto;
+  max-height: 76px;
+  border-radius: 0;
   object-fit: contain;
 }
 
@@ -406,8 +407,9 @@ button {
 }
 
 .login-brand .brand-logo {
-  width: 226px;
-  height: 118px;
+  width: 250px;
+  height: auto;
+  max-height: 110px;
 }
 
 .login-brand {
@@ -1787,6 +1789,11 @@ textarea:focus {
   text-decoration: none;
 }
 
+.public-nav .brand-logo {
+  width: 220px;
+  max-height: 78px;
+}
+
 .public-nav nav {
   display: flex;
   flex-wrap: wrap;
@@ -2106,10 +2113,8 @@ textarea:focus {
 }
 
 .footer-brand .brand-logo {
-  height: 48px;
-  background: rgba(255, 255, 255, 0.06);
-  border-radius: 8px;
-  padding: 6px 10px;
+  width: 220px;
+  max-height: 78px;
 }
 
 .footer-cols {
