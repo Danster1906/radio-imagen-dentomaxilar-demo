@@ -974,6 +974,32 @@ La landing pública queda más útil en celular, con contactos claros por sucurs
 
 No cambia la estructura de datos ni la configuración de Supabase.
 
+## 2026-06-16 - Corrección de marca en login del portal
+
+### Objetivo
+
+Corregir el logo del login de doctores para que no se vea aplastado, recortado o poco profesional.
+
+### Cambios realizados
+
+- Se reemplazó el PNG completo del login por un lockup compuesto: símbolo radiográfico + texto HTML/CSS.
+- Se reutilizó `img/brand/radio-imagen-symbol.png` para evitar texto duplicado dentro del símbolo.
+- Se agregó estilo específico para `login-brand-lockup`.
+- Se corrigió el `line-height` del subtítulo para que no colapse por estilos globales de `.brand`.
+- Se sincronizó la copia de deployment en `deploy/neubox-radio-imagen/`.
+
+### Razón del cambio
+
+El logo completo se veía de baja calidad visual en la pantalla de acceso, especialmente en celular.
+
+### Impacto en producto
+
+El acceso privado de doctores muestra una marca más limpia y consistente con la página pública.
+
+### Impacto en datos
+
+No cambia la estructura de datos ni la configuración de Supabase.
+
 ## Plantilla para próximos cambios
 
 ### YYYY-MM-DD - Nombre del cambio
