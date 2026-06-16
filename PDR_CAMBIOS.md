@@ -917,6 +917,32 @@ La página pública debe mostrar la marca de Radio Imagen completa, limpia y pro
 
 No cambia la estructura de datos.
 
+## 2026-06-15 - Lockup de marca en navegación pública
+
+### Objetivo
+
+Evitar que el logo se vea como una imagen grande, recortada o poco profesional en la barra superior pública.
+
+### Cambios realizados
+
+- Se reemplazó el uso del PNG completo en el header por un lockup compacto.
+- Se creó `img/brand/radio-imagen-symbol.png` con sólo el símbolo radiográfico.
+- Se renderizó el texto de la marca como tipografía HTML/CSS para mejorar nitidez.
+- Se eliminó la clase accidental agregada por Replit Agent al `<img>` del logo.
+- Se actualizó la versión del CSS a `brand-lockup-1`.
+
+### Razón del cambio
+
+El logo completo dentro del header seguía viéndose demasiado tosco y con mala proporción.
+
+### Impacto en producto
+
+La página pública muestra una navegación más limpia, profesional y consistente con una marca médica/premium.
+
+### Impacto en datos
+
+No cambia la estructura de datos.
+
 ## Plantilla para próximos cambios
 
 ### YYYY-MM-DD - Nombre del cambio

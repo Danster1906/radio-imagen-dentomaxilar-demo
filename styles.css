@@ -1790,6 +1790,10 @@ textarea:focus {
 
 .public-nav .brand {
   flex: 0 0 auto;
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
   text-decoration: none;
 }
 
@@ -1798,6 +1802,52 @@ textarea:focus {
   height: 74px;
   max-height: 74px;
   object-fit: contain;
+}
+
+.public-nav .brand-seal {
+  position: relative;
+  display: inline-flex;
+  flex: 0 0 auto;
+  align-items: center;
+  justify-content: center;
+  width: 52px;
+  height: 52px;
+  overflow: hidden;
+  background: #13090c;
+  border: 1px solid rgba(153, 27, 27, 0.2);
+  border-radius: 14px;
+  box-shadow: 0 10px 26px rgba(15, 23, 42, 0.12);
+}
+
+.public-nav .brand-seal img {
+  display: block;
+  width: 44px;
+  height: 50px;
+  max-width: none;
+  object-fit: contain;
+  object-position: center;
+}
+
+.public-nav .brand-type {
+  display: grid;
+  gap: 1px;
+  line-height: 1;
+  text-transform: uppercase;
+}
+
+.public-nav .brand-type strong {
+  color: #cd2327;
+  font-size: 1.08rem;
+  font-weight: 900;
+  letter-spacing: 0;
+}
+
+.public-nav .brand-type small {
+  color: #a67c52;
+  font-size: 0.82rem;
+  font-style: italic;
+  font-weight: 800;
+  letter-spacing: 0;
 }
 
 .public-nav nav {
