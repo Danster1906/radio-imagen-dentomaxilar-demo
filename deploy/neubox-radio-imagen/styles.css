@@ -407,12 +407,15 @@ button {
 }
 
 .sidebar-logo {
-  width: 208px;
-  height: 116px;
+  width: 220px;
+  height: auto;
+  max-height: 86px;
   padding: 0;
   background: transparent;
   border-radius: 0;
   box-shadow: none;
+  object-fit: contain;
+  object-position: left center;
 }
 
 .brand-subtitle {
@@ -1873,7 +1876,7 @@ textarea:focus {
   align-items: center;
   justify-content: space-between;
   gap: 16px;
-  min-height: 76px;
+  min-height: 94px;
   padding: 8px clamp(18px, 3vw, 42px);
   background: rgba(255, 255, 255, 0.92);
   border-bottom: 1px solid var(--line);
@@ -1891,9 +1894,9 @@ textarea:focus {
 
 .public-nav .brand-logo {
   display: block;
-  width: clamp(180px, 16vw, 250px);
-  height: 64px;
-  max-height: 64px;
+  width: clamp(250px, 20vw, 340px);
+  height: 82px;
+  max-height: 82px;
   object-fit: contain;
   object-position: left center;
 }
@@ -2507,9 +2510,9 @@ textarea:focus {
   }
 
   .public-nav .brand-logo {
-    width: min(260px, 74vw);
-    height: 72px;
-    max-height: 72px;
+    width: min(320px, 84vw);
+    height: 86px;
+    max-height: 86px;
     object-position: center;
   }
 

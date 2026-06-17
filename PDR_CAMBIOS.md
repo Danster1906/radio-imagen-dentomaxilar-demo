@@ -2,6 +2,35 @@
 
 Este archivo documenta los cambios funcionales y de producto. Cada cambio futuro debe registrarse aquí con fecha, objetivo, alcance y efecto en datos.
 
+## 2026-06-16 - Corrección de favicon y tamaños de logo
+
+### Objetivo
+
+Evitar que el logo se vea aplastado o ilegible en la barra superior del navegador, navbar público y portal interno.
+
+### Cambios realizados
+
+- Se reemplazó `img/favicon.png` por el símbolo radiográfico transparente.
+- Se sincronizó el favicon en `deploy/neubox-radio-imagen`.
+- Se aumentó el tamaño del logo completo en el navbar público sin volver al bloque negro.
+- Se ajustó el logo del sidebar/portal para que no se deforme ni se vea miniatura.
+- Se conservaron los logos completos en login y footer.
+
+### Razón del cambio
+
+El favicon anterior era el logo completo sobre fondo negro. Al reducirse a tamaño de barra/título se veía como una mancha. Además, algunos contenedores del portal usaban dimensiones que no respetaban la proporción del asset.
+
+### Impacto en producto
+
+- El navegador/Replit muestra un ícono más limpio.
+- El navbar público respeta mejor la marca.
+- El portal interno mantiene proporción correcta del logo.
+
+### Impacto en datos
+
+- No cambia Supabase.
+- No cambia Auth, órdenes, doctores, resultados ni Storage.
+
 ## 2026-06-16 - Sincronización de marca entre GitHub, Replit y deploy
 
 ### Objetivo
