@@ -2,6 +2,40 @@
 
 Este archivo documenta los cambios funcionales y de producto. Cada cambio futuro debe registrarse aquí con fecha, objetivo, alcance y efecto en datos.
 
+## 2026-06-16 - Corrección de escala visual en landing pública
+
+### Objetivo
+
+Corregir la página pública después de la consolidación con Replit para que se vea proporcional en escritorio y no parezca un demo sobredimensionado.
+
+### Cambios realizados
+
+- Se redujo la altura del header público.
+- Se compactó el lockup de marca del header sin volver al logo con fondo negro.
+- Se bajó el tamaño máximo del titular principal del hero.
+- Se redujo la altura visual del hero en escritorio.
+- Se compactaron las métricas superiores.
+- Se cambió la métrica de horario de `Lunes a Sábados` a `6 días` para que no rompa la tarjeta.
+- Se corrigió el texto `Laterál de craneo` a `lateral de cráneo`.
+- Se ajustaron tamaños de texto, filas y botones en las tarjetas de sucursales.
+- Se sincronizó la copia de despliegue en `deploy/neubox-radio-imagen`.
+
+### Razón del cambio
+
+Los cambios importados desde Replit dejaron tamaños útiles para una presentación, pero demasiado grandes para operación real en escritorio. La landing necesitaba jerarquía y densidad controlada.
+
+### Impacto en producto
+
+- La landing pública conserva los contactos por sucursal y accesos de WhatsApp.
+- La navegación queda más limpia.
+- Las tarjetas de métricas y sucursales son más legibles.
+- Se mantiene el acceso al portal de doctores.
+
+### Impacto en datos
+
+- No cambia Supabase.
+- No cambia Auth, órdenes, doctores, resultados ni Storage.
+
 ## 2026-06-15 - Conversión del portal a operación real con Supabase
 
 ### Objetivo

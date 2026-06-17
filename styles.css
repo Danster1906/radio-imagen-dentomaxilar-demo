@@ -1838,9 +1838,9 @@ textarea:focus {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 18px;
-  min-height: 92px;
-  padding: 10px clamp(18px, 4vw, 54px);
+  gap: 16px;
+  min-height: 76px;
+  padding: 8px clamp(18px, 3vw, 42px);
   background: rgba(255, 255, 255, 0.92);
   border-bottom: 1px solid var(--line);
   backdrop-filter: blur(18px);
@@ -1850,7 +1850,7 @@ textarea:focus {
   flex: 0 0 auto;
   display: inline-flex;
   align-items: center;
-  gap: 12px;
+  gap: 10px;
   min-width: 0;
   text-decoration: none;
 }
@@ -1868,19 +1868,19 @@ textarea:focus {
   flex: 0 0 auto;
   align-items: center;
   justify-content: center;
-  width: 52px;
-  height: 52px;
+  width: 44px;
+  height: 44px;
   overflow: hidden;
   background: #13090c;
   border: 1px solid rgba(153, 27, 27, 0.2);
-  border-radius: 14px;
-  box-shadow: 0 10px 26px rgba(15, 23, 42, 0.12);
+  border-radius: 12px;
+  box-shadow: 0 8px 20px rgba(15, 23, 42, 0.10);
 }
 
 .public-nav .brand-seal img {
   display: block;
-  width: 44px;
-  height: 50px;
+  width: 37px;
+  height: 42px;
   max-width: none;
   object-fit: contain;
   object-position: center;
@@ -1895,14 +1895,14 @@ textarea:focus {
 
 .public-nav .brand-type strong {
   color: #cd2327;
-  font-size: 1.08rem;
+  font-size: 0.92rem;
   font-weight: 900;
   letter-spacing: 0;
 }
 
 .public-nav .brand-type small {
   color: #a67c52;
-  font-size: 0.82rem;
+  font-size: 0.72rem;
   font-style: italic;
   font-weight: 800;
   letter-spacing: 0;
@@ -1915,10 +1915,10 @@ textarea:focus {
 }
 
 .public-nav nav a {
-  padding: 8px 10px;
+  padding: 7px 9px;
   color: var(--muted);
   border-radius: 8px;
-  font-size: 0.9rem;
+  font-size: 0.82rem;
   font-weight: 800;
   text-decoration: none;
 }
@@ -1938,15 +1938,30 @@ textarea:focus {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  min-height: 42px;
+  min-height: 40px;
   text-decoration: none;
+}
+
+.public-nav .primary-action {
+  flex: 0 0 auto;
+  padding: 0 14px;
+  font-size: 0.86rem;
+  font-weight: 800;
+}
+
+.public-hero-actions .primary-action,
+.public-hero-actions .ghost-action {
+  min-height: 44px;
+  padding: 0 16px;
+  font-size: 0.9rem;
+  font-weight: 800;
 }
 
 .public-hero {
   display: grid;
-  min-height: min(720px, calc(100vh - 72px));
+  min-height: min(620px, calc(100vh - 76px));
   align-items: end;
-  padding: clamp(42px, 7vw, 86px);
+  padding: clamp(36px, 5vw, 66px);
   color: #ffffff;
   background:
     linear-gradient(108deg, rgba(127, 29, 29, 0.90) 0%, rgba(15, 23, 42, 0.42) 58%, transparent 100%),
@@ -1957,8 +1972,8 @@ textarea:focus {
 
 .public-hero-content {
   display: grid;
-  gap: 18px;
-  max-width: 820px;
+  gap: 14px;
+  max-width: 760px;
 }
 
 .public-hero .eyebrow,
@@ -1968,17 +1983,17 @@ textarea:focus {
 }
 
 .public-hero h1 {
-  max-width: 13ch;
-  font-size: clamp(3rem, 7vw, 6.6rem);
+  max-width: 12.8ch;
+  font-size: clamp(3.35rem, 5.45vw, 5.35rem);
   font-weight: 800;
-  line-height: 0.92;
-  letter-spacing: -0.03em;
+  line-height: 0.96;
+  letter-spacing: 0;
 }
 
 .public-hero p {
-  max-width: 660px;
-  font-size: clamp(1rem, 1.6vw, 1.18rem);
-  line-height: 1.65;
+  max-width: 650px;
+  font-size: clamp(0.98rem, 1.18vw, 1.08rem);
+  line-height: 1.55;
 }
 
 .public-hero-actions,
@@ -2000,8 +2015,8 @@ textarea:focus {
   justify-content: center;
   gap: 8px;
   min-width: 42px;
-  min-height: 42px;
-  padding: 10px 14px;
+  min-height: 40px;
+  padding: 9px 13px;
   color: #ffffff;
   background: #25d366;
   border: 1px solid #25d366;
@@ -2062,13 +2077,13 @@ textarea:focus {
 .public-section,
 .public-split,
 .public-cta {
-  padding: clamp(36px, 6vw, 74px) clamp(18px, 4vw, 54px);
+  padding: clamp(30px, 5vw, 62px) clamp(18px, 4vw, 54px);
 }
 
 .public-metrics {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: 12px;
+  gap: 10px;
   background: #fff5f5;
   border-bottom: 1px solid #fee2e2;
 }
@@ -2096,19 +2111,22 @@ textarea:focus {
 }
 
 .public-metrics article {
-  min-height: 118px;
+  min-height: 102px;
   align-content: center;
-  padding: 18px;
+  padding: 16px;
 }
 
 .public-metrics span,
 .public-metrics small {
   color: var(--muted);
+  font-size: 0.84rem;
+  line-height: 1.25;
 }
 
 .public-metrics strong {
   color: var(--brand-dark);
-  font-size: 2rem;
+  font-size: clamp(1.55rem, 2.3vw, 2rem);
+  line-height: 1.05;
 }
 
 .section-heading {
@@ -2252,12 +2270,12 @@ textarea:focus {
 .branch-grid {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 14px;
+  gap: 16px;
 }
 
 .branch-grid-2 {
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  max-width: 860px;
+  max-width: 1120px;
 }
 
 .branch-actions {
@@ -2271,7 +2289,16 @@ textarea:focus {
   display: block;
   margin-top: 8px;
   color: var(--muted);
-  font-size: 0.78rem;
+  font-size: 0.76rem;
+}
+
+.branch-grid h3 {
+  font-size: 1.18rem;
+  line-height: 1.15;
+}
+
+.branch-grid p {
+  font-size: 0.9rem;
 }
 
 .public-cta p {
@@ -2348,32 +2375,47 @@ textarea:focus {
 
 .branch-grid dl {
   display: grid;
-  gap: 8px;
-  margin: 10px 0;
+  gap: 4px;
+  margin: 8px 0;
 }
 
 .branch-grid dl div {
   display: flex;
   justify-content: space-between;
-  gap: 10px;
-  padding: 10px 0;
+  gap: 14px;
+  padding: 8px 0;
   border-top: 1px solid var(--line);
 }
 
 .branch-grid dt {
   color: var(--muted);
+  font-size: 0.84rem;
   font-weight: 800;
 }
 
 .branch-grid dd {
   margin: 0;
+  font-size: 0.86rem;
   font-weight: 900;
+  text-align: right;
 }
 
 .branch-grid .ghost-action,
 .branch-grid .whatsapp-action,
 .public-cta .ghost-action {
   width: fit-content;
+}
+
+.branch-grid .ghost-action,
+.branch-grid .whatsapp-action {
+  min-height: 38px;
+  padding: 8px 12px;
+  font-size: 0.82rem;
+}
+
+.branch-grid .whatsapp-icon-only {
+  width: 38px;
+  padding: 0;
 }
 
 .public-cta {
