@@ -2,6 +2,37 @@
 
 Este archivo documenta los cambios funcionales y de producto. Cada cambio futuro debe registrarse aquí con fecha, objetivo, alcance y efecto en datos.
 
+## 2026-06-16 - Sincronización de marca entre GitHub, Replit y deploy
+
+### Objetivo
+
+Unificar el uso del logo oficial transparente y evitar que la página pública o el login reconstruyan la marca con piezas separadas.
+
+### Cambios realizados
+
+- El header público usa `img/brand/radio-imagen-logo.png` como logo completo.
+- El login del portal usa el mismo logo completo transparente.
+- Se reemplazó el lockup manual de símbolo + texto por el asset oficial.
+- Se actualizó la versión de CSS a `brand-sync-1` para evitar caché visual.
+- Se ajustó el icono de WhatsApp para que sea más legible y no parezca deformado.
+- Se sincronizó `deploy/neubox-radio-imagen` con los mismos HTML, CSS y logo oficial.
+- Se igualó el asset `deploy/neubox-radio-imagen/img/brand/radio-imagen-logo.png` con el de raíz.
+
+### Razón del cambio
+
+Replit y GitHub estaban mostrando una marca reconstruida diferente al logo aprobado. Además, la copia de deploy tenía un asset con dimensiones distintas, lo que podía provocar diferencias visuales entre entornos.
+
+### Impacto en producto
+
+- La marca se ve consistente en landing, portal y paquete de deploy.
+- El logo conserva transparencia y proporción.
+- Los botones de WhatsApp se leen mejor.
+
+### Impacto en datos
+
+- No cambia Supabase.
+- No cambia Auth, órdenes, doctores, resultados ni Storage.
+
 ## 2026-06-16 - Corrección de escala visual en landing pública
 
 ### Objetivo
