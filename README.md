@@ -1,13 +1,21 @@
-# Radio Imagen Dentomaxilar - Portal de doctores
+# Radio Imagen Dentomaxilar
 
-Interfaz inicial para que doctores generen órdenes digitales y Radio Imagen/Radiodiagnóstico pueda darles seguimiento operativo.
+Plataforma para digitalizar el flujo de órdenes radiológicas dentales de Radio Imagen Dentomaxilar.
+
+El proyecto se separa en dos superficies:
+
+- Sitio público: landing institucional premium para Neubox con servicios, sucursales, contacto y acceso al portal.
+- Portal privado: herramienta operativa para doctores y admin en Replit + Supabase.
+
+El portal usa acceso privado por correo y contraseña asignados por Radio Imagen. No usa Google login.
 
 - Panel del doctor.
 - Captura de orden digital.
 - Seleccion de estudios.
 - Consulta de resultados.
 - Perfil profesional del doctor.
-- Login con correo o Google simulado.
+- Login real con Supabase Auth.
+- Vista admin para alta de doctores, seguimiento de órdenes, validación de pacientes y resultados.
 - Vista futura para agenda, finanzas y KPIs como servicio aparte.
 
 ## Documentación
@@ -25,7 +33,16 @@ Interfaz inicial para que doctores generen órdenes digitales y Radio Imagen/Rad
 
 ## Uso local
 
-Abre `index.html` en el navegador.
+Ejecuta el servidor estático local:
+
+```bash
+npm start
+```
+
+Luego abre:
+
+- `http://localhost:8003/index.html` para el sitio público.
+- `http://localhost:8003/portal.html` para el portal operativo.
 
 ## Base de datos demo
 
@@ -45,4 +62,10 @@ sqlite3 database/radio_imagen_demo.sqlite < database/demo_queries.sql
 
 ## Uso en Replit
 
-Puedes subir estos archivos a un Repl estatico de HTML/CSS/JS. No requiere instalacion de dependencias ni backend para probar el flujo visual.
+Importa el repositorio desde GitHub y ejecuta:
+
+```bash
+npm start
+```
+
+Replit debe alojar el portal operativo conectado a Supabase. Las llaves privadas y archivos maestros de estudios no deben subirse a Replit ni a Neubox.

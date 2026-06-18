@@ -2,26 +2,27 @@
 
 ## Paquete listo
 
-Archivo generado:
+Carpeta actual para publicar sitio público:
 
 ```text
-deploy/radio-imagen-operativo-v1.zip
+deploy/neubox-radio-imagen/
 ```
 
 Incluye:
 
 - `index.html`
 - `styles.css`
-- `admin.css`
-- `app.js`
-- `img/clinic-scanner.png`
-- `img/doctor-xray.png`
+- `portal.html` como puente temporal si aún no se configura URL externa del portal
+- `admin.css` y `app.js` sólo por compatibilidad temporal
+- Imágenes públicas y assets de marca en `img/`
 - `img/brand/radio-imagen-logo.png`
 - `img/brand/radio-imagen-logo-white.png`
 
 ## Opción recomendada
 
-Subir este ZIP al hosting de Neubox usando cPanel y extraerlo en `public_html` o en la carpeta raíz del dominio/subdominio.
+Subir el contenido de `deploy/neubox-radio-imagen/` al hosting de Neubox usando cPanel.
+
+Neubox debe funcionar como sitio institucional público. El portal operativo real debe vivir en Replit + Supabase y el botón `Portal doctores` debe apuntar al URL publicado de Replit cuando esté definido.
 
 ## Pasos en cPanel
 
@@ -29,10 +30,9 @@ Subir este ZIP al hosting de Neubox usando cPanel y extraerlo en `public_html` o
 2. Abrir cPanel del hosting.
 3. Ir a `Administrador de archivos`.
 4. Entrar a `public_html` o a la carpeta del dominio.
-5. Subir `deploy/radio-imagen-operativo-v1.zip`.
-6. Seleccionar el ZIP y usar `Extraer`.
-7. Confirmar que `index.html` quede directamente dentro de `public_html`, no dentro de una carpeta anidada.
-8. Abrir el dominio en el navegador.
+5. Subir los archivos dentro de `deploy/neubox-radio-imagen/`.
+6. Confirmar que `index.html` quede directamente dentro de `public_html`, no dentro de una carpeta anidada.
+7. Abrir el dominio en el navegador.
 
 ## Si ya hay una página publicada
 
@@ -44,16 +44,7 @@ Antes de extraer:
 
 ## Con Supabase después
 
-Este deployment publica el frontend exacto del MVP actual.
-
-Para doctores reales, no basta con subir el HTML. Hay que conectar Supabase Auth, Postgres y Storage para que cada doctor tenga su cuenta y sus datos persistan.
-
-La conexión real a Supabase se puede hacer después sin cambiar el hosting:
-
-- Supabase Auth para login.
-- Supabase Postgres para doctores, órdenes, resultados y socios.
-- Supabase Storage privado para archivos temporales.
-- Subida manual de resultados o agente local como apoyo.
+Este deployment publica el sitio público. Para doctores reales, usar el portal operativo en Replit conectado a Supabase Auth, Postgres y Storage.
 
 La ruta operativa completa está en:
 
@@ -63,4 +54,4 @@ DEPLOY_OPERATIVO_DOCTORES.md
 
 ## Nota importante
 
-Neubox/cPanel puede publicar este MVP como sitio estático. El agente local y las llaves privadas de Supabase no deben subirse a `public_html`.
+Neubox/cPanel puede publicar el sitio público como estático. El agente local, llaves privadas de Supabase y archivos maestros de estudios no deben subirse a `public_html`.

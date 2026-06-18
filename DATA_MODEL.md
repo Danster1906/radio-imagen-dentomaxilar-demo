@@ -11,7 +11,7 @@ Usuarios que pueden iniciar sesión.
 | --- | --- | --- |
 | id | uuid | Primary key |
 | email | text | Único |
-| auth_provider | text | email, google |
+| auth_provider | text | email |
 | role | text | doctor, clinic_admin, radio_admin |
 | created_at | timestamp | Fecha de alta |
 | last_login_at | timestamp | Último acceso |
@@ -214,8 +214,8 @@ Estado acumulado del doctor dentro del programa.
 | id | uuid | Primary key |
 | doctor_id | uuid | FK doctors.id |
 | current_tier_id | uuid | FK partner_tiers.id |
-| total_points | integer | Puntos acumulados vigentes |
-| referred_patients_count | integer | Pacientes atendidos/validados acumulados |
+| points | integer | Puntos acumulados vigentes |
+| referred_patients | integer | Pacientes atendidos/validados acumulados |
 | updated_at | timestamp | Última actualización |
 
 ### partner_point_events
@@ -227,7 +227,8 @@ Historial auditable de puntos.
 | doctor_id | uuid | FK doctors.id |
 | order_id | uuid | FK orders.id, opcional |
 | points | integer | Puntos sumados o restados |
-| reason | text | referred_patient, adjustment, reward_redemption |
+| event_type | text | paciente_validado, ajuste_manual, reverso_cancelacion, canje_beneficio |
+| notes | text | Comentario operativo del evento |
 | created_at | timestamp | Fecha del evento |
 
 ### appointments
@@ -287,9 +288,9 @@ Finanzas futuras del doctor.
 
 Para una primera versión real:
 
-- Base de datos: PostgreSQL.
-- Auth: Google OAuth + correo mágico o passwordless.
-- Storage: bucket para PDF/resultados/fotos de perfil.
-- API: endpoints separados para `auth`, `orders`, `results`, `profile`, `metrics`.
+- Base de datos: Supabase Postgres.
+- Auth: Supabase Auth con correo y contraseña privados.
+- Storage: bucket privado `result-temp` para resultados temporales.
+- API: frontend actual + Edge Functions seguras para acciones administrativas.
 - Seguridad: cada doctor solo ve órdenes donde `orders.doctor_id = current_doctor.id`.
 - Seguridad interna: Radio Imagen ve todas las órdenes, pero los cambios de estado deben quedar auditados en `order_status_events`.

@@ -9,7 +9,7 @@ Radio Imagen Dentomaxilar será una plataforma donde los doctores generan órden
 La primera etapa está enfocada en:
 
 - Portal del doctor.
-- Login con correo o Google.
+- Login privado con correo y contraseña asignados por Radio Imagen.
 - Perfil profesional del doctor.
 - Captura de órdenes digitales.
 - Selección de estudios.
@@ -29,7 +29,7 @@ El producto reemplaza la dependencia de una orden física perdida o incompleta p
 
 Incluido:
 
-- Login del doctor con correo o Google.
+- Login del doctor con correo y contraseña.
 - Perfil profesional del doctor.
 - Imagen de perfil con ajuste de zoom y encuadre.
 - Panel del doctor.
@@ -103,8 +103,9 @@ flowchart TD
 - Una orden puede contener paquetes de estudios, como Estudio Ortodóntico Completo 2D o 3D.
 - El Estudio Ortodóntico Completo debe capturar análisis cefalométrico e indicaciones especiales cuando existan.
 - Al enviar su primer paciente, el doctor se convierte automáticamente en `Socio Radio Imagen Dentomaxilar`.
-- Cada paciente referido suma puntos y puede subir al doctor de nivel.
-- El nivel principal se calcula por pacientes referidos: 1, 5, 10, 25 y 50.
+- Cada paciente validado por admin suma puntos y puede subir al doctor de nivel.
+- El nivel principal se calcula por pacientes validados: 1, 15, 25 y 50.
+- Una orden enviada no suma puntos hasta que Radio Imagen confirma que el paciente asistió y se realizó el estudio.
 - Radio Imagen debe conservar historial de cambios de estado.
 - Los resultados pertenecen a una orden, no directamente al doctor.
 - La imagen del perfil debe guardar archivo y datos de encuadre.
@@ -240,7 +241,7 @@ Administrador puede:
    - `Cancelada`
 5. Cada cambio crea un evento histórico.
 6. Si el paciente acudió, `Completa` valida asistencia y puntos.
-7. Si el resultado está listo, se crea un registro en `results`.
+7. Si el resultado está listo, se crean registros en `result_packages` y/o `result_files`.
 8. El doctor ve la orden como `Lista para descargar` y puede descargar resultado.
 
 ## 4. Estructura de base de datos
@@ -253,7 +254,7 @@ Usuarios que pueden iniciar sesión.
 | --- | --- | --- |
 | id | uuid | Primary key |
 | email | text | Único |
-| auth_provider | text | email, google |
+| auth_provider | text | email |
 | role | text | doctor, clinic_admin, radio_admin |
 | created_at | timestamp | Fecha de alta |
 | last_login_at | timestamp | Último acceso |
@@ -346,7 +347,12 @@ Orden digital referida a Radio Imagen.
 | clinical_notes | text | Indicaciones del doctor |
 | internal_notes | text | Notas visibles solo para Radio Imagen |
 | scheduled_at | timestamp | Fecha/hora de cita capturada por Radio Imagen |
+| scheduled_by | uuid | Admin que capturó la cita |
 | completed_at | timestamp | Fecha/hora en que se confirmó que el paciente acudió |
+| counts_for_partner | boolean | `true` sólo cuando Radio Imagen valida que el paciente fue atendido |
+| patient_attended_at | timestamp | Fecha/hora en que admin validó la asistencia |
+| validated_by | uuid | Admin que validó la asistencia |
+| partner_points_awarded_at | timestamp | Fecha/hora en que se otorgaron puntos de socio |
 | created_at | timestamp | Fecha real de creación |
 | updated_at | timestamp | Última modificación |
 
@@ -389,7 +395,7 @@ Relación muchos-a-muchos entre órdenes y estudios.
 | notes | text | Detalle por estudio |
 | configuration | jsonb | FOV, zona, pieza, análisis cefalométrico, indicaciones especiales u otras especificaciones |
 
-### results
+### result_files
 
 Archivos o enlaces de resultado.
 
@@ -397,9 +403,10 @@ Archivos o enlaces de resultado.
 | --- | --- | --- |
 | id | uuid | Primary key |
 | order_id | uuid | FK orders.id |
-| file_name | text | Nombre visible |
-| file_url | text | Storage o link externo |
-| result_type | text | pdf, image, dicom_link, other |
+| display_name | text | Nombre visible |
+| storage_path | text | Ruta en Supabase Storage |
+| file_type | text | pdf, image, dicom_link, zip, other |
+| status | text | Estado operativo del archivo |
 | uploaded_at | timestamp | Cuando Radio Imagen lo sube |
 | downloaded_at | timestamp | Cuando el doctor lo descarga |
 
@@ -410,7 +417,7 @@ Catálogo de niveles del programa Socios Radio Imagen.
 | Campo | Tipo | Nota |
 | --- | --- | --- |
 | id | uuid | Primary key |
-| name | text | Socio Radio Imagen Dentomaxilar, Socio Activo, Socio Plata, Socio Oro, Socio Diamante |
+| name | text | Socio Activo, Socio Plata, Socio Oro, Socio Diamante |
 | min_points | integer | Puntos mínimos para entrar al nivel |
 | min_referrals | integer | Pacientes referidos mínimos para entrar al nivel |
 | reward_description | text | Beneficio visible para el doctor |
@@ -426,8 +433,8 @@ Estado acumulado del doctor dentro del programa.
 | id | uuid | Primary key |
 | doctor_id | uuid | FK doctors.id |
 | current_tier_id | uuid | FK partner_tiers.id |
-| total_points | integer | Puntos acumulados vigentes |
-| referred_patients_count | integer | Pacientes referidos acumulados |
+| points | integer | Puntos acumulados vigentes |
+| referred_patients | integer | Pacientes atendidos/validados acumulados |
 | updated_at | timestamp | Última actualización |
 
 ### partner_point_events
@@ -440,15 +447,16 @@ Historial auditable de puntos.
 | doctor_id | uuid | FK doctors.id |
 | order_id | uuid | FK orders.id, opcional |
 | points | integer | Puntos sumados o restados |
-| reason | text | referred_patient, adjustment, reward_redemption |
+| event_type | text | paciente_validado, ajuste_manual, reverso_cancelacion, canje_beneficio |
+| notes | text | Comentario operativo del evento |
 | created_at | timestamp | Fecha del evento |
 
 ## 5. KPIs calculables
 
 - Órdenes por periodo.
-- Pacientes referidos por doctor.
+- Pacientes validados por doctor.
 - Conversión: órdenes recibidas vs. estudios realizados.
-- Tiempo promedio de entrega: `results.uploaded_at - orders.created_at`.
+- Tiempo promedio de entrega: `result_files.uploaded_at - orders.created_at`.
 - Estudios más solicitados.
 - Ingreso estimado por estudio y doctor.
 - Descargas pendientes de resultados.
@@ -469,10 +477,10 @@ AND status IN ('Recibida', 'Agendada', 'Completa');
 
 ## 6. Recomendación para Replit
 
-- Base de datos: PostgreSQL.
-- Auth: Google OAuth + correo mágico o passwordless.
-- Storage: bucket para PDF/resultados/fotos de perfil.
-- API: endpoints separados para `auth`, `orders`, `results`, `profile`, `metrics`.
+- Base de datos: Supabase Postgres.
+- Auth: Supabase Auth con correo y contraseña privados.
+- Storage: bucket privado `result-temp` para resultados temporales.
+- API: frontend actual + Edge Functions seguras para acciones administrativas como alta de doctores.
 - Seguridad doctor: cada doctor solo ve órdenes donde `orders.doctor_id = current_doctor.id`.
 - Seguridad interna: Radio Imagen ve todas las órdenes, pero los cambios de estado deben quedar auditados en `order_status_events`.
 

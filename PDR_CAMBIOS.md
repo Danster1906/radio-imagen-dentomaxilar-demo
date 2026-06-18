@@ -2,6 +2,35 @@
 
 Este archivo documenta los cambios funcionales y de producto. Cada cambio futuro debe registrarse aquí con fecha, objetivo, alcance y efecto en datos.
 
+## 2026-06-18 - Alineación documental de arquitectura y puntos
+
+### Objetivo
+
+Dejar la documentación consistente con la separación actual del producto: Neubox como sitio público y Replit + Supabase como portal operativo privado.
+
+### Cambios realizados
+
+- Se actualizó `README.md` para quitar la referencia a login simulado con Google y explicar la separación Neubox/Replit/Supabase.
+- Se actualizó `DOCUMENTO_MAESTRO.md` para reflejar correo/contraseña, tiers 1/15/25/50 y puntos sólo por pacientes validados.
+- Se actualizó `DATA_MODEL.md` para recomendar Supabase Auth con correo/contraseña y Storage privado `result-temp`.
+- Se actualizó `LOGICA_PUNTOS_SOCIOS.md` para que una orden no sume puntos hasta que admin valide que el paciente asistió.
+- Se actualizó `DEPLOY_NEUBOX.md` para usar `deploy/neubox-radio-imagen/` como carpeta del sitio público y dejar Replit como destino del portal operativo.
+
+### Razón del cambio
+
+La documentación mantenía restos de la etapa demo: Google login, passwordless y puntos por orden creada. Eso podía provocar que Replit o futuras implementaciones regeneraran flujos incorrectos.
+
+### Impacto en producto
+
+- La guía de trabajo queda alineada con el flujo real de operación.
+- El portal privado queda descrito como correo/contraseña administrado por Radio Imagen.
+- El programa de socios queda ligado a pacientes atendidos y validados.
+
+### Impacto en datos
+
+- No cambia Supabase.
+- No cambia Auth, órdenes, doctores, resultados ni Storage.
+
 ## 2026-06-16 - Corrección de favicon y tamaños de logo
 
 ### Objetivo

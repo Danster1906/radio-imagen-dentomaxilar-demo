@@ -2,60 +2,64 @@
 
 ## Objetivo
 
-El programa de socios debe incentivar que los doctores usen la plataforma para referir pacientes a Radio Imagen Dentomaxilar.
+El programa de socios debe incentivar que los doctores refieran pacientes reales que sí acuden a Radio Imagen Dentomaxilar.
 
 La lógica separa dos conceptos:
 
-- **Nivel de socio:** se calcula por pacientes referidos.
+- **Nivel de socio:** se calcula por pacientes atendidos y validados.
 - **Puntos:** funcionan como saldo complementario para beneficios, bonos, ajustes y auditoría.
 
 ## Regla principal
 
-Cada paciente referido válido suma:
+Cada paciente atendido y validado suma:
 
 ```text
-1 paciente referido = 100 puntos
+1 paciente validado = 100 puntos
 ```
 
 El punto se atribuye al `doctor_id` que creó la orden digital.
 
 ## Cuándo se asignan puntos
 
-En el MVP, los puntos se asignan cuando:
+Los puntos se asignan sólo cuando Radio Imagen valida la atención del paciente:
 
 1. El doctor crea una orden digital.
-2. La orden queda en estado `recibida`.
-3. La orden tiene un paciente asociado.
-4. La orden no es una duplicación evidente ni una prueba interna.
+2. La orden queda en estado `Recibida`.
+3. Admin contacta al paciente y puede cambiarla a `Agendada`.
+4. El paciente acude y se realiza el estudio.
+5. Admin cambia la orden a `Completa` o `Lista para descargar`.
+6. La orden marca `counts_for_partner = true` y sólo entonces suma puntos.
 
 Evento creado:
 
 ```text
-partner_point_events.reason = referred_patient
+partner_point_events.event_type = paciente_validado
 partner_point_events.points = 100
 partner_point_events.doctor_id = doctor que refiere
-partner_point_events.order_id = orden generada
+partner_point_events.order_id = orden validada
 ```
+
+Una orden enviada no suma puntos por sí sola. Esto evita premiar órdenes canceladas, duplicadas, pruebas internas o pacientes que nunca asistieron.
 
 ## Por paciente, no por estudio
 
-La lógica base debe ser por paciente referido, no por cantidad de estudios.
+La lógica base debe ser por paciente atendido y validado, no por cantidad de estudios.
 
 Ejemplo:
 
-- Un doctor manda 1 paciente con ortopantomografía = 100 puntos.
-- Un doctor manda 1 paciente con CBCT + fotos + modelos = 100 puntos.
-- Un doctor manda 3 pacientes diferentes = 300 puntos.
+- Un doctor manda 1 paciente con ortopantomografía y admin valida asistencia = 100 puntos.
+- Un doctor manda 1 paciente con CBCT + fotos + modelos y admin valida asistencia = 100 puntos.
+- Un doctor manda 3 pacientes diferentes que sí acuden = 300 puntos.
 
 Razón:
 
-El objetivo del programa es premiar la referencia de pacientes, no inflar puntos por seleccionar varios estudios dentro de una misma orden.
+El objetivo del programa es premiar pacientes atendidos, no inflar puntos por seleccionar varios estudios dentro de una misma orden.
 
 ## Niveles
 
-El nivel principal se calcula por número de pacientes referidos acumulados.
+El nivel principal se calcula por número de pacientes atendidos y validados por admin.
 
-| Nivel | Pacientes referidos mínimos | Puntos base equivalentes |
+| Nivel | Pacientes validados mínimos | Puntos base equivalentes |
 | --- | ---: | ---: |
 | Socio Activo | 1 | 100 |
 | Socio Plata | 15 | 1,500 |
@@ -66,7 +70,7 @@ El nivel principal se calcula por número de pacientes referidos acumulados.
 
 ### Socio Activo
 
-Se desbloquea desde el primer paciente referido.
+Se desbloquea desde el primer paciente validado.
 
 Beneficios:
 
@@ -80,19 +84,19 @@ Beneficios:
 
 ### Socio Plata
 
-Se desbloquea desde 15 pacientes referidos.
+Se desbloquea desde 15 pacientes validados.
 
 Beneficios:
 
 - Consulta personalizada de redes sociales con implementación IA.
 - Cortesías mensuales para estudios seleccionados.
 - Kit de contenidos para explicar diagnósticos a pacientes.
-- Revisión mensual de pacientes referidos y conversión.
+- Revisión mensual de pacientes validados y conversión.
 - Plantillas personalizadas para solicitar estudios.
 
 ### Socio Oro
 
-Se desbloquea desde 25 pacientes referidos.
+Se desbloquea desde 25 pacientes validados.
 
 Beneficios:
 
@@ -104,7 +108,7 @@ Beneficios:
 
 ### Socio Diamante
 
-Se desbloquea desde 50 pacientes referidos.
+Se desbloquea desde 50 pacientes validados.
 
 Beneficios:
 
@@ -112,7 +116,7 @@ Beneficios:
 - Capacitaciones privadas para el equipo completo.
 - Eventos o webinars co-brandeados con Radio Imagen.
 - Atención prioritaria para casos especiales y coordinación clínica.
-- Reporte ejecutivo de retorno por pacientes referidos.
+- Reporte ejecutivo de retorno por pacientes validados.
 
 ## Eventos de puntos
 
@@ -124,37 +128,37 @@ Tabla:
 partner_point_events
 ```
 
-Razones permitidas:
+Tipos de evento permitidos:
 
-| reason | Uso |
+| event_type | Uso |
 | --- | --- |
-| referred_patient | Suma por paciente referido válido |
-| profile_completion_bonus | Bono por completar perfil |
-| training_attendance_bonus | Bono por asistir a capacitación |
-| manual_adjustment | Ajuste manual de Radio Imagen |
-| duplicate_reversal | Reverso por orden duplicada |
-| cancelled_order_reversal | Reverso por orden cancelada |
-| reward_redemption | Descuento o uso de puntos |
+| paciente_validado | Suma por paciente validado por admin |
+| bono_perfil_completo | Bono por completar perfil |
+| bono_capacitacion | Bono por asistir a capacitación |
+| ajuste_manual | Ajuste manual de Radio Imagen |
+| reverso_duplicado | Reverso por orden duplicada |
+| reverso_cancelacion | Reverso por orden cancelada |
+| canje_beneficio | Descuento o uso de puntos |
 
 ## Ejemplo de cálculo
 
 Doctora Sofía:
 
-- 18 pacientes referidos.
-- 18 eventos `referred_patient` x 100 puntos = 1,800 puntos.
+- 18 pacientes validados.
+- 18 eventos `paciente_validado` x 100 puntos = 1,800 puntos.
 - 1 bono de perfil completo = 50 puntos.
 - Total = 1,850 puntos.
-- Nivel por pacientes referidos = Socio Plata.
+- Nivel por pacientes validados = Socio Plata.
 - Siguiente nivel = Socio Oro.
 - Le faltan 7 pacientes para llegar a 25.
 
 Dr. Marco:
 
-- 8 pacientes referidos.
-- 8 eventos `referred_patient` x 100 puntos = 800 puntos.
+- 8 pacientes validados.
+- 8 eventos `paciente_validado` x 100 puntos = 800 puntos.
 - 1 bono de capacitación = 20 puntos.
 - Total = 820 puntos.
-- Nivel por pacientes referidos = Socio Activo.
+- Nivel por pacientes validados = Socio Activo.
 - Siguiente nivel = Socio Plata.
 - Le faltan 7 pacientes para llegar a 15.
 
@@ -190,8 +194,8 @@ Si una orden ya había generado puntos y luego se cancela, no se borra el evento
 Ejemplo:
 
 ```text
-referred_patient = +100
-cancelled_order_reversal = -100
+paciente_validado = +100
+reverso_cancelacion = -100
 ```
 
 Esto permite conservar auditoría.
@@ -204,7 +208,7 @@ Esto permite conservar auditoría.
 SELECT
   doctor_name,
   current_tier,
-  referred_patients_count,
+  referred_patients AS validated_patients_count,
   total_points,
   next_tier,
   referrals_to_next_tier
