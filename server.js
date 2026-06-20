@@ -22,7 +22,7 @@ const mimeTypes = {
 
 function resolveRequestPath(urlPath) {
   const cleanPath = normalize(decodeURIComponent(urlPath.split("?")[0])).replace(/^(\.\.[/\\])+/, "");
-  const requestedPath = cleanPath === "/" ? "/index.html" : cleanPath;
+  const requestedPath = cleanPath === "/" ? "/portal.html" : cleanPath;
   const absolutePath = resolve(join(rootDir, requestedPath));
 
   if (!absolutePath.startsWith(rootDir)) {
