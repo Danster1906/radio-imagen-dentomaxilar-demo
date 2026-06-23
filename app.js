@@ -393,13 +393,34 @@ const metricPeriods = {
 
 const adminOrderStatuses = ["Recibida", "Agendada", "Completa", "Lista para descargar", "Cancelada"];
 
-const SUPABASE_URL = "https://wwrfuwtvllgecjmfjfwf.supabase.co";
-const SUPABASE_PUBLISHABLE_KEY = "sb_publishable_9-mqQEWpDWG4UL_rL6dxsw_uJSfXK7P";
-const supabaseClient = window.supabase?.createClient
-  ? window.supabase.createClient(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY)
-  : null;
+const supabaseClient = null;
 let currentAuthUser = null;
 let currentProfile = null;
+
+async function apiLoadDoctors() {
+  try {
+    const res = await fetch("/api/doctors");
+    if (!res.ok) return;
+    const data = await res.json();
+    for (const [email, doc] of Object.entries(data.doctors || {})) {
+      doctorDirectory[email] = {
+        ...doctorDirectory[email],
+        ...doc,
+        metrics: doctorDirectory[email]?.metrics || {
+          activeOrders: "0", readyResults: "0 listas", monthlyPatients: "0",
+          growth: "0%", pendingAppointments: "0", topStudy: "OPG",
+          topStudyDetail: "Ortopantomografía", conversion: "0%",
+        },
+        metricsByPeriod: doctorDirectory[email]?.metricsByPeriod || {},
+      };
+      if (!authorizedAccounts[email]) {
+        authorizedAccounts[email] = { password: doc.password, role: "doctor" };
+      }
+    }
+  } catch (e) {
+    console.error("apiLoadDoctors:", e);
+  }
+}
 
 const doctorDirectory = {
   "sofia.herrera@consulta.mx": {
@@ -1435,76 +1456,60 @@ async function createDoctorFromAdmin(formData) {
     return;
   }
 
-  if (supabaseClient && currentAuthUser) {
-    try {
-      const { data, error } = await supabaseClient.functions.invoke("create-doctor", {
-        body: {
-          email,
-          name,
-          password,
-          specialty: formData.get("doctorSpecialty").trim(),
-          clinic: formData.get("doctorClinic").trim(),
-          phone: formData.get("doctorPhone").trim(),
-          city: formData.get("doctorCity").trim(),
-          validatedPatients,
-        },
-      });
+  try {
+    const res = await fetch("/api/doctors", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        email,
+        name,
+        password,
+        specialty: formData.get("doctorSpecialty").trim() || "Especialidad por definir",
+        clinic: formData.get("doctorClinic").trim() || "Consultorio independiente",
+        contactPhone: formData.get("doctorPhone").trim(),
+        city: formData.get("doctorCity").trim() || "Ciudad por definir",
+        validatedPatients,
+      }),
+    });
+    const data = await res.json();
 
-      if (error || data?.error) {
-        throw error || new Error(data.error);
-      }
-
-      await loadOrdersFromSupabase("admin");
-      await loadDoctorsFromSupabase();
-      renderAdmin();
-      adminDoctorForm.reset();
-      adminDoctorForm.querySelectorAll("input").forEach((input) => {
-        input.value = input.name === "validatedPatients" ? "0" : "";
-      });
-      showToast(`${name} creado como ${data.doctorCode}. Contraseña inicial asignada.`);
-      return;
-    } catch (error) {
-      console.error(error);
-      showToast("No se pudo crear el doctor real. Revisa si el correo ya existe o si tu sesión es admin.");
+    if (!res.ok) {
+      showToast(data.error || "No se pudo crear el doctor.");
       return;
     }
+
+    const doc = data.doctor;
+    doctorDirectory[email] = {
+      ...doc,
+      metrics: buildDefaultMetrics(validatedPatients),
+      metricsByPeriod: buildMetricsByPeriod(validatedPatients),
+    };
+    authorizedAccounts[email] = { password, role: "doctor" };
+
+    renderAdmin();
+    adminDoctorForm.reset();
+    adminDoctorForm.querySelectorAll("input").forEach((input) => {
+      input.value = input.name === "validatedPatients" ? "0" : "";
+    });
+    showToast(`${name} creado como ${doc.id}. Contraseña guardada.`);
+  } catch (e) {
+    console.error(e);
+    showToast("Error de conexión al crear doctor.");
   }
+}
 
-  if (doctorDirectory[email]) {
-    showToast("Ese correo ya existe en el directorio de doctores.");
-    return;
+async function deleteDoctorFromAdmin(email) {
+  if (!confirm(`¿Eliminar al doctor ${email}?`)) return;
+  try {
+    const res = await fetch(`/api/doctors/${encodeURIComponent(email)}`, { method: "DELETE" });
+    if (!res.ok) { showToast("No se pudo eliminar el doctor."); return; }
+    delete doctorDirectory[email];
+    delete authorizedAccounts[email];
+    renderAdmin();
+    showToast("Doctor eliminado.");
+  } catch (e) {
+    showToast("Error de conexión al eliminar doctor.");
   }
-
-  const doctorCode = getNextDoctorCode();
-  const metrics = buildDefaultMetrics(validatedPatients);
-
-  doctorDirectory[email] = {
-    id: doctorCode,
-    handle: slugifyDoctorName(name),
-    name,
-    specialty: formData.get("doctorSpecialty").trim() || "Especialidad por definir",
-    clinic: formData.get("doctorClinic").trim() || "Consultorio independiente",
-    contactPhone: formData.get("doctorPhone").trim(),
-    email,
-    city: formData.get("doctorCity").trim() || "Ciudad por definir",
-    metrics,
-    metricsByPeriod: buildMetricsByPeriod(validatedPatients),
-    partner: {
-      referredPatients: validatedPatients,
-      points: validatedPatients * POINTS_PER_REFERRED_PATIENT,
-    },
-  };
-  authorizedAccounts[email] = {
-    password,
-    role: "doctor",
-  };
-
-  renderAdmin();
-  adminDoctorForm.reset();
-  adminDoctorForm.querySelectorAll("input").forEach((input) => {
-    input.value = input.name === "validatedPatients" ? "0" : "";
-  });
-  showToast(`${name} creado como ${doctorCode}. Contraseña inicial guardada.`);
 }
 
 function renderDoctorScopedData() {
@@ -1551,73 +1556,53 @@ function showLogin() {
 async function loginAccount(email, password) {
   const normalizedEmail = email.toLowerCase();
 
-  if (supabaseClient) {
-    try {
-      const { data, error } = await supabaseClient.auth.signInWithPassword({
-        email: normalizedEmail,
-        password,
-      });
+  try {
+    const res = await fetch("/api/login", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ email: normalizedEmail, password }),
+    });
+    const data = await res.json();
 
-      if (error) {
-        showToast("No se pudo iniciar sesión. Revisa correo y contraseña.");
-        return;
-      }
-
-      await loadAuthenticatedContext(data.user);
-      localStorage.setItem(
-        SESSION_KEY,
-        JSON.stringify({
-          email: normalizedEmail,
-          provider: "supabase",
-          role: currentRole,
-          accountId: currentRole === "admin" ? adminProfile.id : doctorProfile.id,
-          handle: currentRole === "admin" ? adminProfile.handle : doctorProfile.handle,
-          signedInAt: new Date().toISOString(),
-        }),
-      );
-      showApp(true, currentRole === "admin" ? "admin" : "dashboard");
-      showToast(currentRole === "admin" ? "Sesión admin iniciada." : "Sesión iniciada.");
-      return;
-    } catch (error) {
-      console.error(error);
-      showToast("La cuenta existe en Auth, pero falta completar su perfil operativo.");
+    if (!res.ok) {
+      showToast(data.error || "Correo o contraseña incorrectos.");
       return;
     }
+
+    const role = data.role;
+    currentRole = role;
+
+    if (role === "doctor" && data.doctor) {
+      doctorDirectory[normalizedEmail] = {
+        ...doctorDirectory[normalizedEmail],
+        ...data.doctor,
+        metrics: doctorDirectory[normalizedEmail]?.metrics || {
+          activeOrders: "0", readyResults: "0 listas", monthlyPatients: "0",
+          growth: "0%", pendingAppointments: "0", topStudy: "OPG",
+          topStudyDetail: "Ortopantomografía", conversion: "0%",
+        },
+        metricsByPeriod: doctorDirectory[normalizedEmail]?.metricsByPeriod || {},
+      };
+      applyDoctorProfile(findDoctorByEmail(normalizedEmail));
+    }
+
+    localStorage.setItem(
+      SESSION_KEY,
+      JSON.stringify({
+        email: normalizedEmail,
+        provider: "local",
+        role,
+        accountId: role === "admin" ? adminProfile.id : doctorProfile.id,
+        handle: role === "admin" ? adminProfile.handle : doctorProfile.handle,
+        signedInAt: new Date().toISOString(),
+      }),
+    );
+    showApp(true, role === "admin" ? "admin" : "dashboard");
+    showToast(role === "admin" ? "Sesión admin iniciada." : "Sesión iniciada.");
+  } catch (e) {
+    console.error(e);
+    showToast("No se pudo conectar al servidor. Intenta de nuevo.");
   }
-
-  const account = authorizedAccounts[normalizedEmail];
-
-  if (!account) {
-    showToast("Correo no autorizado. Radio Imagen debe dar de alta la cuenta.");
-    return;
-  }
-
-  if (account.password !== password) {
-    showToast("Contraseña incorrecta.");
-    return;
-  }
-
-  const role = account.role || getAccountRole(normalizedEmail);
-  currentRole = role;
-
-  if (role === "doctor") {
-    const profile = findDoctorByEmail(normalizedEmail);
-    applyDoctorProfile(profile);
-  }
-
-  localStorage.setItem(
-    SESSION_KEY,
-    JSON.stringify({
-      email: normalizedEmail,
-      provider: "password",
-      role,
-      accountId: role === "admin" ? adminProfile.id : doctorProfile.id,
-      handle: role === "admin" ? adminProfile.handle : doctorProfile.handle,
-      signedInAt: new Date().toISOString(),
-    }),
-  );
-  showApp(true, role === "admin" ? "admin" : "dashboard");
-  showToast(role === "admin" ? "Sesión admin iniciada." : "Sesión iniciada.");
 }
 
 function renderStudies() {
@@ -2054,8 +2039,9 @@ function renderAdmin() {
           </header>
           <span>${doctor.specialty}</span>
           <small class="admin-credential-line">Correo: ${doctor.email}</small>
-          <small class="admin-credential-line">Contraseña: ${authorizedAccounts[doctor.email]?.password || "No asignada"}</small>
+          <small class="admin-credential-line">Contraseña: ${authorizedAccounts[doctor.email]?.password || doctor.password || "No asignada"}</small>
           <small>${doctor.partner.referredPatients} pacientes validados · ${doctor.partner.points.toLocaleString("es-MX")} pts</small>
+          <button class="ghost-action admin-delete-doctor" data-email="${doctor.email}" type="button" style="margin-top:8px;color:var(--brand);font-size:0.8rem;">Eliminar doctor</button>
         </article>
       `;
     })
@@ -2683,6 +2669,13 @@ adminDoctorForm?.addEventListener("submit", async (event) => {
   await createDoctorFromAdmin(new FormData(adminDoctorForm));
 });
 
+adminDoctorList?.addEventListener("click", async (event) => {
+  const btn = event.target.closest(".admin-delete-doctor");
+  if (btn) {
+    await deleteDoctorFromAdmin(btn.dataset.email);
+  }
+});
+
 studyGrid.addEventListener("change", (event) => {
   if (
     event.target.matches("[data-tomography-toggle]") ||
@@ -2787,37 +2780,21 @@ renderDoctorOrders();
 renderResults();
 
 async function initializePortal() {
-  if (supabaseClient) {
-    const { data } = await supabaseClient.auth.getSession();
-
-    if (data.session?.user) {
-      try {
-        await loadAuthenticatedContext(data.session.user);
-        showApp(false, currentRole === "admin" ? "admin" : "dashboard");
-        return;
-      } catch (error) {
-        console.error(error);
-        await supabaseClient.auth.signOut();
-        localStorage.removeItem(SESSION_KEY);
-        showToast("La sesión no tiene perfil operativo. Inicia sesión de nuevo.");
-      }
-    }
-
-    localStorage.removeItem(SESSION_KEY);
-    showLogin();
-    return;
-  }
+  await apiLoadDoctors();
 
   const savedSession = localStorage.getItem(SESSION_KEY);
   if (savedSession) {
-    const session = JSON.parse(savedSession);
-    currentRole = session.role || getAccountRole(session.email);
-
-    if (currentRole === "doctor") {
-      applyDoctorProfile(findDoctorByEmail(session.email));
+    try {
+      const session = JSON.parse(savedSession);
+      currentRole = session.role || getAccountRole(session.email);
+      if (currentRole === "doctor") {
+        applyDoctorProfile(findDoctorByEmail(session.email));
+      }
+      showApp(false, currentRole === "admin" ? "admin" : "dashboard");
+    } catch {
+      localStorage.removeItem(SESSION_KEY);
+      showLogin();
     }
-
-    showApp(false, currentRole === "admin" ? "admin" : "dashboard");
   } else {
     showLogin();
   }

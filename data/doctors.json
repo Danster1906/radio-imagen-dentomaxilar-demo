@@ -1,0 +1,38 @@
+{
+  "doctors": {
+    "sofia.herrera@consulta.mx": {
+      "id": "DR-0001",
+      "handle": "@sofia-herrera",
+      "name": "Dra. Sofia Herrera",
+      "specialty": "Ortodoncia y ATM",
+      "clinic": "Clínica Herrera Dental",
+      "contactPhone": "55 7123 8842",
+      "email": "sofia.herrera@consulta.mx",
+      "city": "Ciudad de México",
+      "password": "Dentista2026!",
+      "partner": {
+        "referredPatients": 18,
+        "points": 1850
+      }
+    },
+    "marco.padilla@consulta.mx": {
+      "id": "DR-0002",
+      "handle": "@marco-padilla",
+      "name": "Dr. Marco Padilla",
+      "specialty": "Cirugía maxilofacial",
+      "clinic": "Padilla Maxilofacial",
+      "contactPhone": "55 4400 9821",
+      "email": "marco.padilla@consulta.mx",
+      "city": "Ciudad de México",
+      "password": "Dentista2026!",
+      "partner": {
+        "referredPatients": 8,
+        "points": 820
+      }
+    }
+  },
+  "admin": {
+    "email": "admin@radioimagen.mx",
+    "password": "RadioImagen2026!"
+  }
+}
