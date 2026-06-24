@@ -358,6 +358,60 @@
   font-weight: 800;
 }
 
+.admin-patient-phone {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin: 4px 0 2px;
+  flex-wrap: wrap;
+}
+
+.phone-wa-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 3px 10px 3px 7px;
+  background: #e9faf0;
+  color: #1a7a3a;
+  border: 1px solid #b7e8cb;
+  border-radius: 20px;
+  font-size: 0.78rem;
+  font-weight: 700;
+  text-decoration: none;
+  transition: background 0.12s, border-color 0.12s;
+}
+
+.phone-wa-link:hover {
+  background: #d0f4e0;
+  border-color: #25d366;
+}
+
+.phone-call-link {
+  display: inline-flex;
+  align-items: center;
+  padding: 3px 10px;
+  background: #f0f4ff;
+  color: #2455b8;
+  border: 1px solid #c5d4f5;
+  border-radius: 20px;
+  font-size: 0.76rem;
+  font-weight: 700;
+  text-decoration: none;
+  transition: background 0.12s;
+}
+
+.phone-call-link:hover {
+  background: #dde8ff;
+}
+
+.no-phone-hint {
+  display: block;
+  margin: 3px 0 2px;
+  color: #b0b0b0 !important;
+  font-size: 0.75rem !important;
+  font-style: italic;
+}
+
 .admin-row-actions {
   display: flex;
   align-items: center;

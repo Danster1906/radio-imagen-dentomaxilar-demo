@@ -2,6 +2,7 @@
   {
     "id": "ORD-2026-0001",
     "patient": "Mariana Lopez Garcia",
+    "phone": "55 7890 1234",
     "doctor": "Dra. Sofia Herrera",
     "owner": "current-doctor",
     "doctorId": "DR-0001",
@@ -17,6 +18,7 @@
   {
     "id": "ORD-2026-0002",
     "patient": "Carlos Mendez Ruiz",
+    "phone": "55 4432 9911",
     "doctor": "Dra. Sofia Herrera",
     "owner": "current-doctor",
     "doctorId": "DR-0001",
@@ -30,6 +32,7 @@
   {
     "id": "ORD-2026-0003",
     "patient": "Valeria Torres Diaz",
+    "phone": "55 1199 4455",
     "doctor": "Dr. Marco Padilla",
     "owner": "external-doctor",
     "doctorId": "DR-0002",
@@ -43,6 +46,7 @@
   {
     "id": "ORD-2026-0004",
     "patient": "Roberto Salinas Vega",
+    "phone": "55 6677 2233",
     "doctor": "Dra. Sofia Herrera",
     "owner": "current-doctor",
     "doctorId": "DR-0001",
