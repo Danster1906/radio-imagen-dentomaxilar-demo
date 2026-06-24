@@ -10,6 +10,7 @@ const Busboy = require("busboy");
 const rootDir = resolve(".");
 const preferredPort = Number(process.env.PORT || 5000);
 const DB_PATH = resolve("data/doctors.json");
+const ORDERS_PATH = resolve("data/orders.json");
 const UPLOADS_DIR = resolve("data/uploads");
 
 mkdirSync(UPLOADS_DIR, { recursive: true });
@@ -122,6 +123,15 @@ function readFilesIndex() {
 
 function writeFilesIndex(data) {
   writeFileSync(resolve("data/files-index.json"), JSON.stringify(data, null, 2), "utf-8");
+}
+
+function readOrdersDB() {
+  try { return JSON.parse(readFileSync(ORDERS_PATH, "utf-8")); }
+  catch { return []; }
+}
+
+function writeOrdersDB(orders) {
+  writeFileSync(ORDERS_PATH, JSON.stringify(orders, null, 2), "utf-8");
 }
 
 function handleUpload(req, res) {
@@ -376,6 +386,50 @@ function createAppServer() {
         writeFilesIndex(index);
       }
       json(res, 200, { ok: true });
+      return;
+    }
+
+    // GET /api/orders
+    if (urlPath === "/api/orders" && req.method === "GET") {
+      const orders = readOrdersDB();
+      const doctorId = new URL(req.url, "http://localhost").searchParams.get("doctorId");
+      const result = doctorId ? orders.filter(o => o.doctorId === doctorId) : orders;
+      json(res, 200, { orders: result });
+      return;
+    }
+
+    // POST /api/orders
+    if (urlPath === "/api/orders" && req.method === "POST") {
+      try {
+        const body = await readBody(req);
+        if (!body.id || !body.patient || !body.doctorId) {
+          json(res, 400, { error: "id, patient y doctorId son obligatorios" });
+          return;
+        }
+        const orders = readOrdersDB();
+        if (orders.find(o => o.id === body.id)) {
+          json(res, 409, { error: "Ya existe una orden con ese id" });
+          return;
+        }
+        orders.unshift(body);
+        writeOrdersDB(orders);
+        json(res, 201, { order: body });
+      } catch (e) { json(res, 400, { error: e.message }); }
+      return;
+    }
+
+    // PUT /api/orders/:id
+    if (urlPath.match(/^\/api\/orders\/[^/]+$/) && req.method === "PUT") {
+      try {
+        const orderId = decodeURIComponent(urlPath.replace("/api/orders/", ""));
+        const body = await readBody(req);
+        const orders = readOrdersDB();
+        const idx = orders.findIndex(o => o.id === orderId);
+        if (idx === -1) { json(res, 404, { error: "Orden no encontrada" }); return; }
+        orders[idx] = { ...orders[idx], ...body };
+        writeOrdersDB(orders);
+        json(res, 200, { order: orders[idx] });
+      } catch (e) { json(res, 400, { error: e.message }); }
       return;
     }
 

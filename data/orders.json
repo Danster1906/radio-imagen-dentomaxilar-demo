@@ -1,0 +1,56 @@
+[
+  {
+    "id": "ORD-2026-0001",
+    "patient": "Mariana Lopez Garcia",
+    "doctor": "Dra. Sofia Herrera",
+    "owner": "current-doctor",
+    "doctorId": "DR-0001",
+    "studies": ["Ortopantomografía", "Lateral de Craneo"],
+    "status": "Lista para descargar",
+    "date": "2026-06-03",
+    "result": "Ortopantomografia_Mariana_Lopez.pdf",
+    "notes": "Planeación ortodóncica y registro fotográfico inicial.",
+    "countsForPartner": true,
+    "validatedAt": "2026-06-03",
+    "validatedBy": "Admin Radio Imagen"
+  },
+  {
+    "id": "ORD-2026-0002",
+    "patient": "Carlos Mendez Ruiz",
+    "doctor": "Dra. Sofia Herrera",
+    "owner": "current-doctor",
+    "doctorId": "DR-0001",
+    "studies": ["Ortopantomografía"],
+    "status": "Agendada",
+    "date": "2026-06-02",
+    "result": "",
+    "notes": "Valoración general para diagnóstico y plan de tratamiento.",
+    "countsForPartner": false
+  },
+  {
+    "id": "ORD-2026-0003",
+    "patient": "Valeria Torres Diaz",
+    "doctor": "Dr. Marco Padilla",
+    "owner": "external-doctor",
+    "doctorId": "DR-0002",
+    "studies": ["Lateral de Craneo", "PA De craneo"],
+    "status": "Completa",
+    "date": "2026-06-01",
+    "result": "",
+    "notes": "Cefalometría y fotografías para seguimiento.",
+    "countsForPartner": false
+  },
+  {
+    "id": "ORD-2026-0004",
+    "patient": "Roberto Salinas Vega",
+    "doctor": "Dra. Sofia Herrera",
+    "owner": "current-doctor",
+    "doctorId": "DR-0001",
+    "studies": ["ATM COMPARATIVA"],
+    "status": "Recibida",
+    "date": "2026-06-04",
+    "result": "",
+    "notes": "Evaluación de ATM y dolor articular referido.",
+    "countsForPartner": false
+  }
+]

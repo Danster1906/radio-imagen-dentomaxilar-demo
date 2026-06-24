@@ -411,6 +411,49 @@ const supabaseClient = null;
 let currentAuthUser = null;
 let currentProfile = null;
 
+async function apiLoadOrders() {
+  try {
+    const res = await fetch("/api/orders");
+    if (!res.ok) return;
+    const data = await res.json();
+    setOrders(data.orders || []);
+  } catch (e) {
+    console.error("apiLoadOrders:", e);
+  }
+}
+
+async function apiSaveOrder(order) {
+  try {
+    const res = await fetch("/api/orders", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(order)
+    });
+    if (!res.ok) {
+      const data = await res.json().catch(() => ({}));
+      throw new Error(data.error || "Error al guardar la orden");
+    }
+  } catch (e) {
+    throw e;
+  }
+}
+
+async function apiUpdateOrder(orderId, changes) {
+  try {
+    const res = await fetch(`/api/orders/${encodeURIComponent(orderId)}`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(changes)
+    });
+    if (!res.ok) {
+      const data = await res.json().catch(() => ({}));
+      throw new Error(data.error || "Error al actualizar la orden");
+    }
+  } catch (e) {
+    throw e;
+  }
+}
+
 async function apiLoadDoctors() {
   try {
     const res = await fetch("/api/doctors");
@@ -1379,6 +1422,7 @@ async function runAdminNextStep(orderId) {
     } else {
       order.status = "Agendada";
       order.scheduledAt = todayISO();
+      await apiUpdateOrder(order.id, { status: order.status, scheduledAt: order.scheduledAt });
     }
     renderAdmin();
     renderDoctorOrders();
@@ -1430,6 +1474,7 @@ async function validateAttendedOrder(orderId, nextStatus = "Completa") {
 
   if (order.countsForPartner) {
     order.status = nextStatus;
+    await apiUpdateOrder(order.id, { status: order.status });
     renderAdmin();
     renderDoctorOrders();
     renderResults(resultsSearch.value);
@@ -1453,6 +1498,15 @@ async function validateAttendedOrder(orderId, nextStatus = "Completa") {
       doctorProfile.partner = { ...doctor.partner };
     }
   }
+
+  await apiUpdateOrder(order.id, {
+    status: order.status,
+    result: order.result || undefined,
+    countsForPartner: order.countsForPartner,
+    validatedAt: order.validatedAt,
+    validatedBy: order.validatedBy,
+    completedAt: order.completedAt
+  });
 
   renderAdmin();
   renderPartnerProgram();
@@ -2239,12 +2293,13 @@ function upsertDownloadRequest(order, fileMatch, options = {}) {
   adminDownloadRequests.unshift(payload);
 }
 
-function assignResultToOrder(order, fileMatch, options = {}) {
+async function assignResultToOrder(order, fileMatch, options = {}) {
   order.result = fileMatch.file;
   if (!order.countsForPartner) {
-    validateAttendedOrder(order.id, "Lista para descargar");
+    await validateAttendedOrder(order.id, "Lista para descargar");
   } else {
     order.status = "Lista para descargar";
+    await apiUpdateOrder(order.id, { status: order.status, result: order.result });
   }
   upsertDownloadRequest(order, fileMatch, options);
 }
@@ -2304,7 +2359,7 @@ async function uploadManualResult(formData) {
       status: "local_ready", confidence: 100, label, type: extension,
     };
     upsertResultPackageFile(order, fileMatch);
-    assignResultToOrder(order, fileMatch, {
+    await assignResultToOrder(order, fileMatch, {
       status: "Subido",
       storage: "local_server",
       expires: "Disponible para doctor · sin vencimiento",
@@ -2331,18 +2386,18 @@ function matchLocalFileToOrder(order) {
   });
 }
 
-function runAgent(orderId = null, options = {}) {
+async function runAgent(orderId = null, options = {}) {
   const targetOrders = orders.filter((order) => !orderId || order.id === orderId);
   const matches = [];
 
-  targetOrders.forEach((order) => {
+  const promises = targetOrders.map(async (order) => {
     const fileMatch = matchLocalFileToOrder(order);
 
     if (!fileMatch) {
       return;
     }
 
-    assignResultToOrder(order, fileMatch);
+    await assignResultToOrder(order, fileMatch);
     matches.push({
       patient: order.patient,
       file: fileMatch.file,
@@ -2350,6 +2405,7 @@ function runAgent(orderId = null, options = {}) {
       action: "Resultado asignado y subida solicitada",
     });
   });
+  await Promise.all(promises);
 
   agentState.hasRun = true;
   agentState.matches = orderId ? [...matches, ...agentState.matches.filter((match) => match.patient !== targetOrders[0]?.patient)] : matches;
@@ -2587,7 +2643,7 @@ orderForm.addEventListener("submit", async (event) => {
       return;
     }
   } else {
-    orders.unshift({
+    const newOrder = {
       id: `ORD-${new Date().getFullYear()}-${String(orders.length + 1).padStart(4, "0")}`,
       patient: formData.get("patientName"),
       doctor: doctorProfile.name,
@@ -2599,7 +2655,14 @@ orderForm.addEventListener("submit", async (event) => {
       result: "",
       notes: formData.get("notes").trim(),
       countsForPartner: false,
-    });
+    };
+    try {
+      await apiSaveOrder(newOrder);
+      await apiLoadOrders();
+    } catch (e) {
+      orders.unshift(newOrder);
+      console.error("No se pudo persistir la orden:", e);
+    }
   }
 
   orderForm.reset();
@@ -2754,6 +2817,7 @@ adminOrderTable?.addEventListener("change", async (event) => {
     if (statusControl.value === "Agendada" && !order.scheduledAt) {
       order.scheduledAt = todayISO();
     }
+    await apiUpdateOrder(order.id, { status: order.status, scheduledAt: order.scheduledAt });
   }
   renderAdmin();
   renderDoctorOrders();
@@ -2940,6 +3004,7 @@ renderResults();
 
 async function initializePortal() {
   await apiLoadDoctors();
+  await apiLoadOrders();
 
   const savedSession = localStorage.getItem(SESSION_KEY);
   if (savedSession) {
