@@ -2756,9 +2756,54 @@ async function createOrderInSupabase(formData, selectedStudies) {
   await loadOrdersFromSupabase(currentRole);
 }
 
+function validateOrderForm(formData) {
+  const requiredFields = ["patientName", "birthDate", "phone", "referralDate"];
+  let valid = true;
+  requiredFields.forEach((name) => {
+    const val = (formData.get(name) || "").trim();
+    const errorEl = orderForm.querySelector(`[data-error="${name}"]`);
+    const inputEl = orderForm.querySelector(`[name="${name}"]`);
+    if (!val) {
+      valid = false;
+      if (errorEl) errorEl.classList.add("visible");
+      if (inputEl) inputEl.classList.add("field-invalid");
+    } else {
+      if (errorEl) errorEl.classList.remove("visible");
+      if (inputEl) inputEl.classList.remove("field-invalid");
+    }
+  });
+  return valid;
+}
+
+orderForm.querySelectorAll("[data-error]").forEach((errorEl) => {
+  const name = errorEl.dataset.error;
+  const inputEl = orderForm.querySelector(`[name="${name}"]`);
+  if (inputEl) {
+    inputEl.addEventListener("input", () => {
+      if (inputEl.value.trim()) {
+        errorEl.classList.remove("visible");
+        inputEl.classList.remove("field-invalid");
+      }
+    });
+    inputEl.addEventListener("change", () => {
+      if (inputEl.value.trim()) {
+        errorEl.classList.remove("visible");
+        inputEl.classList.remove("field-invalid");
+      }
+    });
+  }
+});
+
 orderForm.addEventListener("submit", async (event) => {
   event.preventDefault();
   const formData = new FormData(orderForm);
+
+  if (!validateOrderForm(formData)) {
+    const firstInvalid = orderForm.querySelector(".field-invalid");
+    if (firstInvalid) firstInvalid.focus();
+    return;
+  }
+
   const selectedStudies = getSelectedStudiesWithDetails(formData);
 
   if (!selectedStudies) {

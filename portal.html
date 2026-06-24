@@ -295,20 +295,24 @@
 
               <div class="form-grid">
                 <label>
-                  Nombre completo
-                  <input name="patientName" placeholder="Ej. Andrea Ruiz Martinez" required />
+                  Nombre completo <span class="required-star" aria-hidden="true">*</span>
+                  <input name="patientName" placeholder="Ej. Andrea Ruiz Martinez" required autocomplete="off" />
+                  <span class="field-error" data-error="patientName">Para poder dar seguimiento a tu paciente debes llenar este campo.</span>
                 </label>
                 <label>
-                  Fecha de nacimiento
+                  Fecha de nacimiento <span class="required-star" aria-hidden="true">*</span>
                   <input name="birthDate" type="date" required />
+                  <span class="field-error" data-error="birthDate">Para poder dar seguimiento a tu paciente debes llenar este campo.</span>
                 </label>
                 <label>
-                  Telefono
-                  <input name="phone" placeholder="Ej. 55 1234 5678" />
+                  Celular del paciente <span class="required-star" aria-hidden="true">*</span>
+                  <input name="phone" placeholder="Ej. 55 1234 5678" required autocomplete="off" />
+                  <span class="field-error" data-error="phone">Para poder dar seguimiento a tu paciente debes llenar este campo.</span>
                 </label>
                 <label>
-                  Fecha de remisión
-                  <input name="referralDate" type="date" />
+                  Fecha de remisión <span class="required-star" aria-hidden="true">*</span>
+                  <input name="referralDate" type="date" required />
+                  <span class="field-error" data-error="referralDate">Para poder dar seguimiento a tu paciente debes llenar este campo.</span>
                 </label>
                 <label class="full">
                   Indicaciones clínicas
