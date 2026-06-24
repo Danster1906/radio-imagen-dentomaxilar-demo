@@ -1529,7 +1529,7 @@ async function createDoctorFromAdmin(formData) {
   try {
     const res = await fetch("/api/doctors", {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: { "Content-Type": "application/json", "x-admin-token": getAdminToken() },
       body: JSON.stringify({
         email,
         name,
@@ -1571,7 +1571,7 @@ async function createDoctorFromAdmin(formData) {
 async function deleteDoctorFromAdmin(email) {
   if (!confirm(`¿Eliminar al doctor ${email}?`)) return;
   try {
-    const res = await fetch(`/api/doctors/${encodeURIComponent(email)}`, { method: "DELETE" });
+    const res = await fetch(`/api/doctors/${encodeURIComponent(email)}`, { method: "DELETE", headers: { "x-admin-token": getAdminToken() } });
     if (!res.ok) { showToast("No se pudo eliminar el doctor."); return; }
     delete doctorDirectory[email];
     delete authorizedAccounts[email];
@@ -1623,6 +1623,13 @@ function showLogin() {
   loginScreen.hidden = false;
 }
 
+function getAdminToken() {
+  try {
+    const session = JSON.parse(localStorage.getItem(SESSION_KEY) || "{}");
+    return session.adminToken || "";
+  } catch { return ""; }
+}
+
 async function loginAccount(email, password) {
   const normalizedEmail = email.toLowerCase();
 
@@ -1662,6 +1669,7 @@ async function loginAccount(email, password) {
         email: normalizedEmail,
         provider: "local",
         role,
+        adminToken: role === "admin" ? (data.adminToken || "") : undefined,
         accountId: role === "admin" ? adminProfile.id : doctorProfile.id,
         handle: role === "admin" ? adminProfile.handle : doctorProfile.handle,
         signedInAt: new Date().toISOString(),
@@ -2868,7 +2876,7 @@ adminDoctorList?.addEventListener("click", async (event) => {
     try {
       const res = await fetch(`/api/doctors/${encodeURIComponent(email)}/password`, {
         method: "PUT",
-        headers: { "Content-Type": "application/json" },
+        headers: { "Content-Type": "application/json", "x-admin-token": getAdminToken() },
         body: JSON.stringify({ password: newPassword }),
       });
       if (!res.ok) { const d = await res.json(); showToast(d.error || "Error al cambiar contraseña."); return; }
@@ -2889,7 +2897,7 @@ adminDoctorList?.addEventListener("change", async (event) => {
   try {
     const res = await fetch(`/api/doctors/${encodeURIComponent(email)}/notifications`, {
       method: "PUT",
-      headers: { "Content-Type": "application/json" },
+      headers: { "Content-Type": "application/json", "x-admin-token": getAdminToken() },
       body: JSON.stringify({ notifications: enabled }),
     });
     if (!res.ok) { showToast("Error al actualizar notificaciones."); toggle.checked = !enabled; return; }

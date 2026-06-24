@@ -2,6 +2,7 @@ import { createReadStream, existsSync, statSync, readFileSync, writeFileSync, mk
 import { createServer } from "node:http";
 import { extname, join, normalize, resolve } from "node:path";
 import { createRequire } from "node:module";
+import { randomBytes } from "node:crypto";
 import nodemailer from "nodemailer";
 
 const require = createRequire(import.meta.url);
@@ -10,6 +11,7 @@ const Busboy = require("busboy");
 const rootDir = resolve(".");
 const preferredPort = Number(process.env.PORT || 5000);
 const DB_PATH = resolve("data/doctors.json");
+const ADMIN_TOKEN = randomBytes(32).toString("hex");
 const ORDERS_PATH = resolve("data/orders.json");
 const UPLOADS_DIR = resolve("data/uploads");
 
@@ -134,6 +136,15 @@ function writeOrdersDB(orders) {
   writeFileSync(ORDERS_PATH, JSON.stringify(orders, null, 2), "utf-8");
 }
 
+function requireAdmin(req, res) {
+  const token = req.headers["x-admin-token"];
+  if (!token || token !== ADMIN_TOKEN) {
+    json(res, 401, { error: "No autorizado. Se requiere sesión de administrador." });
+    return false;
+  }
+  return true;
+}
+
 function handleUpload(req, res) {
   return new Promise((resolve) => {
     const bb = Busboy({ headers: req.headers, limits: { fileSize: 200 * 1024 * 1024 } });
@@ -221,7 +232,7 @@ function createAppServer() {
       res.writeHead(204, {
         "Access-Control-Allow-Origin": "*",
         "Access-Control-Allow-Methods": "GET,POST,PUT,DELETE",
-        "Access-Control-Allow-Headers": "Content-Type"
+        "Access-Control-Allow-Headers": "Content-Type,x-admin-token"
       });
       res.end();
       return;
@@ -240,6 +251,7 @@ function createAppServer() {
 
     // POST /api/doctors
     if (urlPath === "/api/doctors" && req.method === "POST") {
+      if (!requireAdmin(req, res)) return;
       try {
         const body = await readBody(req);
         const { email, name, password, specialty, clinic, contactPhone, city, validatedPatients } = body;
@@ -259,6 +271,7 @@ function createAppServer() {
 
     // PUT /api/doctors/:email/password
     if (urlPath.match(/^\/api\/doctors\/[^/]+\/password$/) && req.method === "PUT") {
+      if (!requireAdmin(req, res)) return;
       try {
         const email = decodeURIComponent(urlPath.replace("/api/doctors/", "").replace("/password", ""));
         const body = await readBody(req);
@@ -275,6 +288,7 @@ function createAppServer() {
 
     // PUT /api/doctors/:email/notifications
     if (urlPath.match(/^\/api\/doctors\/[^/]+\/notifications$/) && req.method === "PUT") {
+      if (!requireAdmin(req, res)) return;
       try {
         const email = decodeURIComponent(urlPath.replace("/api/doctors/", "").replace("/notifications", ""));
         const body = await readBody(req);
@@ -289,6 +303,7 @@ function createAppServer() {
 
     // DELETE /api/doctors/:email
     if (urlPath.startsWith("/api/doctors/") && req.method === "DELETE") {
+      if (!requireAdmin(req, res)) return;
       const email = decodeURIComponent(urlPath.replace("/api/doctors/", ""));
       const db = readDB();
       if (!db.doctors[email]) { json(res, 404, { error: "Doctor no encontrado" }); return; }
@@ -305,7 +320,7 @@ function createAppServer() {
         const db = readDB();
         const normalEmail = email.toLowerCase();
         if (normalEmail === db.admin.email && password === db.admin.password) {
-          json(res, 200, { role: "admin", email: normalEmail });
+          json(res, 200, { role: "admin", email: normalEmail, adminToken: ADMIN_TOKEN });
           return;
         }
         const doc = db.doctors[normalEmail];
