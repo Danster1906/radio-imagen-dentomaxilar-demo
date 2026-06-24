@@ -1449,6 +1449,33 @@ async function runAdminNextStep(orderId) {
   showToast(`${order.patient} no tiene acción pendiente.`);
 }
 
+async function reverseOrderValidation(order) {
+  const doctor = getDoctorById(order.doctorId);
+
+  order.countsForPartner = false;
+  order.validatedAt = null;
+  order.validatedBy = null;
+
+  if (doctor) {
+    doctor.partner.referredPatients = Math.max(0, doctor.partner.referredPatients - 1);
+    doctor.partner.points = Math.max(0, doctor.partner.points - POINTS_PER_REFERRED_PATIENT);
+
+    if (doctorProfile && doctorProfile.id === doctor.id) {
+      doctorProfile.partner = { ...doctor.partner };
+    }
+
+    try {
+      await fetch(`/api/doctors/${encodeURIComponent(doctor.email)}/partner`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json", "x-admin-token": getAdminToken() },
+        body: JSON.stringify({ referredPatients: doctor.partner.referredPatients, points: doctor.partner.points })
+      });
+    } catch (e) {
+      console.error("Error al revertir puntos del doctor:", e);
+    }
+  }
+}
+
 async function validateAttendedOrder(orderId, nextStatus = "Completa") {
   const order = orders.find((currentOrder) => currentOrder.id === orderId);
 
@@ -2831,13 +2858,28 @@ adminOrderTable?.addEventListener("change", async (event) => {
       return;
     }
   } else {
-    order.status = statusControl.value;
-    if (statusControl.value === "Agendada" && !order.scheduledAt) {
+    const wasValidated = order.countsForPartner;
+    const nextStatus = statusControl.value;
+    const isReversal = wasValidated && nextStatus !== "Completa" && nextStatus !== "Lista para descargar";
+
+    order.status = nextStatus;
+    if (nextStatus === "Agendada" && !order.scheduledAt) {
       order.scheduledAt = todayISO();
     }
-    await apiUpdateOrder(order.id, { status: order.status, scheduledAt: order.scheduledAt });
+
+    const orderChanges = { status: order.status, scheduledAt: order.scheduledAt };
+
+    if (isReversal) {
+      await reverseOrderValidation(order);
+      orderChanges.countsForPartner = false;
+      orderChanges.validatedAt = null;
+      orderChanges.validatedBy = null;
+    }
+
+    await apiUpdateOrder(order.id, orderChanges);
   }
   renderAdmin();
+  renderPartnerProgram();
   renderDoctorOrders();
   renderResults(resultsSearch.value);
   showToast(`Estatus actualizado: ${order.patient} · ${order.status}.`);
