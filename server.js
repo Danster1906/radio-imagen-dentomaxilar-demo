@@ -13,6 +13,7 @@ const preferredPort = Number(process.env.PORT || 5000);
 const DB_PATH = resolve("data/doctors.json");
 const ADMIN_TOKEN = randomBytes(32).toString("hex");
 const ORDERS_PATH = resolve("data/orders.json");
+const EVENTS_PATH = resolve("data/partner-events.json");
 const UPLOADS_DIR = resolve("data/uploads");
 
 mkdirSync(UPLOADS_DIR, { recursive: true });
@@ -134,6 +135,15 @@ function readOrdersDB() {
 
 function writeOrdersDB(orders) {
   writeFileSync(ORDERS_PATH, JSON.stringify(orders, null, 2), "utf-8");
+}
+
+function readEventsDB() {
+  try { return JSON.parse(readFileSync(EVENTS_PATH, "utf-8")); }
+  catch { return { events: [] }; }
+}
+
+function writeEventsDB(data) {
+  writeFileSync(EVENTS_PATH, JSON.stringify(data, null, 2), "utf-8");
 }
 
 function requireAdmin(req, res) {
@@ -417,6 +427,38 @@ function createAppServer() {
         writeFilesIndex(index);
       }
       json(res, 200, { ok: true });
+      return;
+    }
+
+    // GET /api/partner-events
+    if (urlPath === "/api/partner-events" && req.method === "GET") {
+      if (!requireAdmin(req, res)) return;
+      const db = readEventsDB();
+      json(res, 200, { events: db.events || [] });
+      return;
+    }
+
+    // POST /api/partner-events
+    if (urlPath === "/api/partner-events" && req.method === "POST") {
+      if (!requireAdmin(req, res)) return;
+      try {
+        const body = await readBody(req);
+        if (!body.email || typeof body.delta !== "number") {
+          json(res, 400, { error: "email y delta son obligatorios" });
+          return;
+        }
+        const db = readEventsDB();
+        const event = {
+          email: body.email,
+          orderId: body.orderId || null,
+          delta: body.delta,
+          timestamp: new Date().toISOString(),
+          reason: body.reason || "manual"
+        };
+        db.events.push(event);
+        writeEventsDB(db);
+        json(res, 201, { ok: true, event });
+      } catch (e) { json(res, 400, { error: e.message }); }
       return;
     }
 

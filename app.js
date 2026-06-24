@@ -410,6 +410,32 @@ const adminOrderStatuses = ["Recibida", "Agendada", "Completa", "Lista para desc
 const supabaseClient = null;
 let currentAuthUser = null;
 let currentProfile = null;
+let partnerEvents = [];
+
+async function apiLoadPartnerEvents() {
+  try {
+    const res = await fetch("/api/partner-events", { headers: { "x-admin-token": getAdminToken() } });
+    if (!res.ok) return;
+    const data = await res.json();
+    partnerEvents = data.events || [];
+  } catch (e) {
+    console.error("apiLoadPartnerEvents:", e);
+  }
+}
+
+async function apiLogPartnerEvent(email, orderId, delta, reason) {
+  try {
+    await fetch("/api/partner-events", {
+      method: "POST",
+      headers: { "Content-Type": "application/json", "x-admin-token": getAdminToken() },
+      body: JSON.stringify({ email, orderId, delta, reason })
+    });
+    const event = { email, orderId, delta, timestamp: new Date().toISOString(), reason };
+    partnerEvents.push(event);
+  } catch (e) {
+    console.error("apiLogPartnerEvent:", e);
+  }
+}
 
 async function apiLoadOrders() {
   try {
@@ -1494,6 +1520,7 @@ async function reverseOrderValidation(order) {
         headers: { "Content-Type": "application/json", "x-admin-token": getAdminToken() },
         body: JSON.stringify({ referredPatients: doctor.partner.referredPatients, points: doctor.partner.points })
       });
+      await apiLogPartnerEvent(doctor.email, order.id, -POINTS_PER_REFERRED_PATIENT, "reversal");
     } catch (e) {
       console.error("Error al revertir puntos del doctor:", e);
     }
@@ -1555,6 +1582,7 @@ async function validateAttendedOrder(orderId, nextStatus = "Completa") {
         headers: { "Content-Type": "application/json", "x-admin-token": getAdminToken() },
         body: JSON.stringify({ referredPatients: doctor.partner.referredPatients, points: doctor.partner.points })
       });
+      await apiLogPartnerEvent(doctor.email, order.id, POINTS_PER_REFERRED_PATIENT, "validation");
     } catch (e) {
       console.error("Error al persistir puntos del doctor:", e);
     }
@@ -1736,6 +1764,9 @@ async function loginAccount(email, password) {
         signedInAt: new Date().toISOString(),
       }),
     );
+    if (role === "admin") {
+      await apiLoadPartnerEvents();
+    }
     showApp(true, role === "admin" ? "admin" : "dashboard");
     showToast(role === "admin" ? "Sesión admin iniciada." : "Sesión iniciada.");
   } catch (e) {
@@ -2245,6 +2276,23 @@ function renderAdmin() {
       const tier = getPartnerTier(doctor.partner.referredPatients);
       const pw = authorizedAccounts[doctor.email]?.password || doctor.password || "";
       const notificationsOn = doctor.notifications !== false;
+      const doctorEvents = partnerEvents
+        .filter((e) => e.email === doctor.email)
+        .slice()
+        .reverse();
+      const historyId = `partner-history-${doctor.email.replace(/[^a-z0-9]/gi, "-")}`;
+      const historyRows = doctorEvents.length
+        ? doctorEvents.map((e) => {
+            const date = new Date(e.timestamp).toLocaleDateString("es-MX", { day: "2-digit", month: "short", year: "numeric" });
+            const time = new Date(e.timestamp).toLocaleTimeString("es-MX", { hour: "2-digit", minute: "2-digit" });
+            const sign = e.delta > 0 ? "+" : "";
+            const reasonLabel = e.reason === "validation" ? "Validación" : e.reason === "reversal" ? "Reversión" : e.reason;
+            return `<li style="display:flex;justify-content:space-between;align-items:center;padding:4px 0;border-bottom:1px solid #f0f0f0;font-size:0.78rem;">
+              <span style="color:#555;">${date} ${time} · ${reasonLabel}${e.orderId ? " · " + e.orderId : ""}</span>
+              <strong style="color:${e.delta > 0 ? "#1a7a3a" : "#c0392b"};">${sign}${e.delta} pts</strong>
+            </li>`;
+          }).join("")
+        : `<li style="font-size:0.78rem;color:#999;padding:4px 0;">Sin eventos registrados aún.</li>`;
 
       return `
         <article class="admin-doctor-card">
@@ -2267,6 +2315,12 @@ function renderAdmin() {
             </label>
           </div>
           <small style="margin-top:4px;display:block;">${doctor.partner.referredPatients} pacientes validados · ${doctor.partner.points.toLocaleString("es-MX")} pts</small>
+          <details style="margin-top:8px;">
+            <summary style="cursor:pointer;font-size:0.8rem;color:var(--brand);user-select:none;">Historial de puntos (${doctorEvents.length})</summary>
+            <ul id="${historyId}" style="list-style:none;margin:6px 0 0;padding:0;">
+              ${historyRows}
+            </ul>
+          </details>
           <button class="ghost-action admin-delete-doctor" data-email="${doctor.email}" type="button" style="margin-top:8px;color:var(--brand);font-size:0.8rem;">Eliminar doctor</button>
         </article>
       `;
@@ -3097,6 +3151,9 @@ async function initializePortal() {
       currentRole = session.role || getAccountRole(session.email);
       if (currentRole === "doctor") {
         applyDoctorProfile(findDoctorByEmail(session.email));
+      }
+      if (currentRole === "admin") {
+        await apiLoadPartnerEvents();
       }
       showApp(false, currentRole === "admin" ? "admin" : "dashboard");
     } catch {
