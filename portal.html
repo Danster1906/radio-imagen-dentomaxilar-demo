@@ -368,35 +368,43 @@
               </div>
 
               <form class="profile-form" id="profile-form">
-                <div class="profile-photo-editor">
-                  <div class="avatar editable-avatar">
-                    <img id="profile-photo-preview" alt="" hidden />
-                    <span id="profile-initials">SH</span>
-                  </div>
-                  <div class="photo-controls">
-                    <p class="photo-hint">Arrastra la imagen dentro del recuadro para ajustar el encuadre.</p>
-                    <label class="photo-upload">
-                      Imagen de perfil
-                      <input name="profilePhoto" type="file" accept="image/png,image/jpeg,image/webp" />
-                      <span>Puede ser foto del doctor, logo del consultorio o imagen profesional.</span>
-                    </label>
 
-                    <div class="crop-controls" aria-label="Ajustar encuadre de imagen de perfil">
-                      <label>
-                        Zoom
-                        <input name="photoZoom" type="range" min="1" max="2.4" step="0.05" value="1" />
+                <!-- Foto de perfil -->
+                <div class="profile-photo-section">
+                  <div class="profile-photo-hero">
+                    <div class="avatar editable-avatar">
+                      <img id="profile-photo-preview" alt="" hidden />
+                      <span id="profile-initials">SH</span>
+                    </div>
+                    <div class="photo-hero-text">
+                      <label class="photo-upload-pill">
+                        <svg width="14" height="14" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><path d="M14 10v2.667A1.333 1.333 0 0 1 12.667 14H3.333A1.333 1.333 0 0 1 2 12.667V10M10.667 5.333 8 2.667 5.333 5.333M8 2.667v8" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                        Cambiar foto
+                        <input name="profilePhoto" type="file" accept="image/png,image/jpeg,image/webp" />
                       </label>
-                      <label>
-                        Horizontal
-                        <input name="photoX" type="range" min="-40" max="40" step="1" value="0" />
-                      </label>
-                      <label>
-                        Vertical
-                        <input name="photoY" type="range" min="-40" max="40" step="1" value="0" />
-                      </label>
-                      <button class="ghost-action compact-action" id="center-photo" type="button">Centrar</button>
+                      <p class="photo-drag-hint">Foto del doctor, logo o imagen del consultorio.<br>Arrastra la imagen para reencuadrar.</p>
                     </div>
                   </div>
+                  <div class="crop-panel" aria-label="Ajustar encuadre de imagen de perfil">
+                    <label class="crop-item">
+                      <span>Zoom</span>
+                      <input name="photoZoom" type="range" min="1" max="2.4" step="0.05" value="1" />
+                    </label>
+                    <label class="crop-item">
+                      <span>Horizontal</span>
+                      <input name="photoX" type="range" min="-40" max="40" step="1" value="0" />
+                    </label>
+                    <label class="crop-item">
+                      <span>Vertical</span>
+                      <input name="photoY" type="range" min="-40" max="40" step="1" value="0" />
+                    </label>
+                    <button class="ghost-action crop-reset-btn" id="center-photo" type="button">Centrar</button>
+                  </div>
+                </div>
+
+                <!-- Datos del doctor -->
+                <div class="form-section-divider">
+                  <span>Información profesional</span>
                 </div>
 
                 <div class="form-grid">
@@ -406,7 +414,7 @@
                   </label>
                   <label>
                     Especialidad
-                    <input name="specialty" value="Ortodoncia y ATM" placeholder="Ej. Endodoncia, Ortodoncia, Cirugía maxilofacial" />
+                    <input name="specialty" value="Ortodoncia y ATM" placeholder="Ej. Endodoncia, Ortodoncia" />
                   </label>
                   <label>
                     Clínica o consultorio
@@ -417,7 +425,7 @@
                     <input name="contactPhone" value="55 7123 8842" />
                   </label>
                   <label>
-                    Correo
+                    Correo electrónico
                     <input name="email" type="email" value="sofia.herrera@consulta.mx" />
                   </label>
                   <label>
@@ -437,31 +445,38 @@
               </form>
             </section>
 
-            <section class="panel">
-              <span class="eyebrow">Vista rápida</span>
-              <div class="doctor-preview">
-                <div class="avatar">
-                  <img id="doctor-preview-photo" alt="" hidden />
-                  <span id="doctor-preview-initials">SH</span>
+            <!-- Vista rápida -->
+            <div class="profile-side">
+              <section class="panel preview-card">
+                <span class="eyebrow">Vista rápida</span>
+                <div class="doctor-preview">
+                  <div class="preview-avatar-wrap">
+                    <div class="avatar preview-avatar">
+                      <img id="doctor-preview-photo" alt="" hidden />
+                      <span id="doctor-preview-initials">SH</span>
+                    </div>
+                  </div>
+                  <div class="preview-identity">
+                    <h3 data-profile-name>Dra. Sofia Herrera</h3>
+                    <p data-profile-specialty>Ortodoncia y ATM</p>
+                  </div>
+                  <dl class="preview-details">
+                    <div>
+                      <dt>Consultorio</dt>
+                      <dd data-profile-clinic>Clínica Herrera Dental</dd>
+                    </div>
+                    <div>
+                      <dt>Contacto</dt>
+                      <dd data-profile-contact>55 7123 8842</dd>
+                    </div>
+                    <div>
+                      <dt>Ciudad</dt>
+                      <dd data-profile-city>Ciudad de México</dd>
+                    </div>
+                  </dl>
                 </div>
-                <h2 data-profile-name>Dra. Sofia Herrera</h2>
-                <p data-profile-specialty>Ortodoncia y ATM</p>
-                <dl>
-                  <div>
-                    <dt>Consultorio</dt>
-                    <dd data-profile-clinic>Clínica Herrera Dental</dd>
-                  </div>
-                  <div>
-                    <dt>Contacto</dt>
-                    <dd data-profile-contact>55 7123 8842</dd>
-                  </div>
-                  <div>
-                    <dt>Ciudad</dt>
-                    <dd data-profile-city>Ciudad de México</dd>
-                  </div>
-                </dl>
-              </div>
-            </section>
+              </section>
+            </div>
           </div>
         </section>
 
