@@ -4,6 +4,7 @@ entrypoint = "server.js"
 
 [nix]
 channel = "stable-24_11"
+packages = ["np"]
 
 [deployment]
 run = ["npm", "start"]
