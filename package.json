@@ -15,6 +15,7 @@
     "playwright": "^1.61.0"
   },
   "dependencies": {
-    "busboy": "^1.6.0"
+    "busboy": "^1.6.0",
+    "nodemailer": "^9.0.1"
   }
 }

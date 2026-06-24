@@ -2,6 +2,7 @@ import { createReadStream, existsSync, statSync, readFileSync, writeFileSync, mk
 import { createServer } from "node:http";
 import { extname, join, normalize, resolve } from "node:path";
 import { createRequire } from "node:module";
+import nodemailer from "nodemailer";
 
 const require = createRequire(import.meta.url);
 const Busboy = require("busboy");
@@ -27,6 +28,65 @@ const mimeTypes = {
   ".zip": "application/zip",
   ".pdf": "application/pdf"
 };
+
+function createMailTransport() {
+  const host = process.env.SMTP_HOST;
+  const user = process.env.SMTP_USER;
+  const pass = process.env.SMTP_PASS;
+  if (!host || !user || !pass) return null;
+  return nodemailer.createTransport({
+    host,
+    port: 587,
+    secure: false,
+    auth: { user, pass }
+  });
+}
+
+async function sendNotificationEmail({ doctorEmail, doctorName, patientName, studyType }) {
+  const transport = createMailTransport();
+  if (!transport) {
+    console.warn("SMTP no configurado — correo de notificación omitido.");
+    return;
+  }
+  const devDomain = process.env.REPLIT_DEV_DOMAIN;
+  const portalUrl = process.env.PORTAL_URL ||
+    (devDomain ? `https://${devDomain}` : "http://localhost:5000");
+  const subject = `Resultados listos: ${patientName}`;
+  const html = `
+    <div style="font-family:sans-serif;max-width:520px;margin:0 auto;">
+      <h2 style="color:#1a1a2e;">Radio Imagen Dentomaxilar</h2>
+      <p>Hola <strong>${doctorName}</strong>,</p>
+      <p>Los resultados de tu paciente están disponibles para descarga en el portal:</p>
+      <table style="border-collapse:collapse;width:100%;margin:16px 0;">
+        <tr>
+          <td style="padding:8px;background:#f5f5f5;font-weight:bold;width:40%;">Paciente</td>
+          <td style="padding:8px;">${patientName}</td>
+        </tr>
+        <tr>
+          <td style="padding:8px;background:#f5f5f5;font-weight:bold;">Tipo de estudio</td>
+          <td style="padding:8px;">${studyType}</td>
+        </tr>
+      </table>
+      <a href="${portalUrl}" style="display:inline-block;background:#1a1a2e;color:#fff;padding:12px 24px;border-radius:8px;text-decoration:none;font-weight:bold;">
+        Ir al portal →
+      </a>
+      <p style="margin-top:24px;color:#888;font-size:0.85em;">
+        Radio Imagen Dentomaxilar · Portal privado para doctores
+      </p>
+    </div>
+  `;
+  try {
+    await transport.sendMail({
+      from: `"Radio Imagen Dentomaxilar" <${process.env.SMTP_USER}>`,
+      to: doctorEmail,
+      subject,
+      html
+    });
+    console.log(`Correo enviado a ${doctorEmail} — paciente: ${patientName}`);
+  } catch (err) {
+    console.error(`Error al enviar correo a ${doctorEmail}:`, err.message);
+  }
+}
 
 function readDB() {
   try { return JSON.parse(readFileSync(DB_PATH, "utf-8")); }
@@ -70,12 +130,16 @@ function handleUpload(req, res) {
     let orderId = "";
     let doctorId = "";
     let fileLabel = "";
+    let patientName = "";
+    let studyType = "";
     let savedFile = null;
 
     bb.on("field", (name, val) => {
       if (name === "orderId") orderId = val;
       if (name === "doctorId") doctorId = val;
       if (name === "fileLabel") fileLabel = val;
+      if (name === "patientName") patientName = val;
+      if (name === "studyType") studyType = val;
     });
 
     bb.on("file", (name, stream, info) => {
@@ -93,7 +157,7 @@ function handleUpload(req, res) {
       });
     });
 
-    bb.on("finish", () => {
+    bb.on("finish", async () => {
       if (!savedFile || !orderId) {
         json(res, 400, { error: "Falta orderId o archivo" });
         resolve();
@@ -105,6 +169,23 @@ function handleUpload(req, res) {
       if (!exists) index[orderId].files.push({ ...savedFile, uploadedAt: new Date().toISOString() });
       writeFilesIndex(index);
       json(res, 201, { ok: true, file: savedFile });
+
+      // Send email notification if doctor has notifications enabled
+      try {
+        const db = readDB();
+        const doctorEntry = Object.values(db.doctors).find(d => d.id === doctorId || d.email === doctorId);
+        if (doctorEntry && doctorEntry.notifications !== false && doctorEntry.email) {
+          await sendNotificationEmail({
+            doctorEmail: doctorEntry.email,
+            doctorName: doctorEntry.name,
+            patientName: patientName || orderId,
+            studyType: studyType || fileLabel || "Estudio"
+          });
+        }
+      } catch (err) {
+        console.error("Error al intentar enviar notificación:", err.message);
+      }
+
       resolve();
     });
 
@@ -159,7 +240,7 @@ function createAppServer() {
         const id = `DR-${String(count).padStart(4, "0")}`;
         const handle = "@" + name.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
         const pts = (validatedPatients || 0) * 100;
-        db.doctors[email] = { id, handle, name, specialty: specialty || "", clinic: clinic || "", contactPhone: contactPhone || "", email, city: city || "", password, partner: { referredPatients: validatedPatients || 0, points: pts } };
+        db.doctors[email] = { id, handle, name, specialty: specialty || "", clinic: clinic || "", contactPhone: contactPhone || "", email, city: city || "", password, notifications: true, partner: { referredPatients: validatedPatients || 0, points: pts } };
         writeDB(db);
         json(res, 201, { doctor: db.doctors[email] });
       } catch (e) { json(res, 400, { error: e.message }); }
@@ -178,6 +259,20 @@ function createAppServer() {
         db.doctors[email].password = password;
         writeDB(db);
         json(res, 200, { ok: true });
+      } catch (e) { json(res, 400, { error: e.message }); }
+      return;
+    }
+
+    // PUT /api/doctors/:email/notifications
+    if (urlPath.match(/^\/api\/doctors\/[^/]+\/notifications$/) && req.method === "PUT") {
+      try {
+        const email = decodeURIComponent(urlPath.replace("/api/doctors/", "").replace("/notifications", ""));
+        const body = await readBody(req);
+        const db = readDB();
+        if (!db.doctors[email]) { json(res, 404, { error: "Doctor no encontrado" }); return; }
+        db.doctors[email].notifications = body.notifications !== false;
+        writeDB(db);
+        json(res, 200, { ok: true, notifications: db.doctors[email].notifications });
       } catch (e) { json(res, 400, { error: e.message }); }
       return;
     }

@@ -2121,6 +2121,7 @@ function renderAdmin() {
     .map((doctor) => {
       const tier = getPartnerTier(doctor.partner.referredPatients);
       const pw = authorizedAccounts[doctor.email]?.password || doctor.password || "";
+      const notificationsOn = doctor.notifications !== false;
 
       return `
         <article class="admin-doctor-card">
@@ -2135,6 +2136,12 @@ function renderAdmin() {
             <input class="admin-pw-input" type="text" placeholder="Nueva contraseña" data-pw-email="${doctor.email}"
               style="flex:1;font-size:0.8rem;padding:4px 8px;border:1px solid #ccc;border-radius:6px;" />
             <button class="small-action admin-reset-password" data-email="${doctor.email}" type="button">Cambiar</button>
+          </div>
+          <div class="admin-notif-row" style="display:flex;align-items:center;gap:8px;margin-top:10px;">
+            <label class="admin-notif-label" style="display:flex;align-items:center;gap:6px;font-size:0.8rem;cursor:pointer;">
+              <input type="checkbox" class="admin-notif-toggle" data-email="${doctor.email}" ${notificationsOn ? "checked" : ""} style="width:16px;height:16px;cursor:pointer;" />
+              Notificar por correo al subir resultados
+            </label>
           </div>
           <small style="margin-top:4px;display:block;">${doctor.partner.referredPatients} pacientes validados · ${doctor.partner.points.toLocaleString("es-MX")} pts</small>
           <button class="ghost-action admin-delete-doctor" data-email="${doctor.email}" type="button" style="margin-top:8px;color:var(--brand);font-size:0.8rem;">Eliminar doctor</button>
@@ -2283,6 +2290,8 @@ async function uploadManualResult(formData) {
     uploadData.append("orderId", orderId);
     uploadData.append("doctorId", order.doctorId || "");
     uploadData.append("fileLabel", label);
+    uploadData.append("patientName", order.patient || "");
+    uploadData.append("studyType", order.studies ? order.studies.join(", ") : label);
     uploadData.append("file", file);
 
     const res = await fetch("/api/upload", { method: "POST", body: uploadData });
@@ -2806,6 +2815,24 @@ adminDoctorList?.addEventListener("click", async (event) => {
     } catch { showToast("Error de conexión."); }
     return;
   }
+});
+
+adminDoctorList?.addEventListener("change", async (event) => {
+  const toggle = event.target.closest(".admin-notif-toggle");
+  if (!toggle) return;
+  const email = toggle.dataset.email;
+  const enabled = toggle.checked;
+  try {
+    const res = await fetch(`/api/doctors/${encodeURIComponent(email)}/notifications`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ notifications: enabled }),
+    });
+    if (!res.ok) { showToast("Error al actualizar notificaciones."); toggle.checked = !enabled; return; }
+    if (authorizedAccounts[email]) authorizedAccounts[email].notifications = enabled;
+    if (doctorDirectory[email]) doctorDirectory[email].notifications = enabled;
+    showToast(enabled ? `✓ Notificaciones activadas para ${email}.` : `Notificaciones desactivadas para ${email}.`);
+  } catch { showToast("Error de conexión."); toggle.checked = !enabled; }
 });
 
 studyGrid.addEventListener("change", (event) => {

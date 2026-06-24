@@ -10,6 +10,7 @@
       "email": "sofia.herrera@consulta.mx",
       "city": "Ciudad de México",
       "password": "Dentista2026!",
+      "notifications": true,
       "partner": {
         "referredPatients": 18,
         "points": 1850
@@ -25,6 +26,7 @@
       "email": "marco.padilla@consulta.mx",
       "city": "Ciudad de México",
       "password": "Dentista2026!",
+      "notifications": true,
       "partner": {
         "referredPatients": 8,
         "points": 820
