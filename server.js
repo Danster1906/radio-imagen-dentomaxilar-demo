@@ -1,10 +1,17 @@
-import { createReadStream, existsSync, statSync, readFileSync, writeFileSync } from "node:fs";
+import { createReadStream, existsSync, statSync, readFileSync, writeFileSync, mkdirSync } from "node:fs";
 import { createServer } from "node:http";
 import { extname, join, normalize, resolve } from "node:path";
+import { createRequire } from "node:module";
+
+const require = createRequire(import.meta.url);
+const Busboy = require("busboy");
 
 const rootDir = resolve(".");
 const preferredPort = Number(process.env.PORT || 5000);
 const DB_PATH = resolve("data/doctors.json");
+const UPLOADS_DIR = resolve("data/uploads");
+
+mkdirSync(UPLOADS_DIR, { recursive: true });
 
 const mimeTypes = {
   ".html": "text/html; charset=utf-8",
@@ -22,11 +29,8 @@ const mimeTypes = {
 };
 
 function readDB() {
-  try {
-    return JSON.parse(readFileSync(DB_PATH, "utf-8"));
-  } catch {
-    return { doctors: {}, admin: { email: "admin@radioimagen.mx", password: "RadioImagen2026!" } };
-  }
+  try { return JSON.parse(readFileSync(DB_PATH, "utf-8")); }
+  catch { return { doctors: {}, admin: { email: "admin@radioimagen.mx", password: "RadioImagen2026!" } }; }
 }
 
 function writeDB(data) {
@@ -37,17 +41,76 @@ function readBody(req) {
   return new Promise((resolve, reject) => {
     let body = "";
     req.on("data", chunk => { body += chunk; });
-    req.on("end", () => {
-      try { resolve(JSON.parse(body)); }
-      catch { reject(new Error("Invalid JSON")); }
-    });
+    req.on("end", () => { try { resolve(JSON.parse(body)); } catch { reject(new Error("Invalid JSON")); } });
     req.on("error", reject);
   });
 }
 
 function json(res, code, data) {
-  res.writeHead(code, { "Content-Type": "application/json; charset=utf-8", "Access-Control-Allow-Origin": "*" });
+  res.writeHead(code, {
+    "Content-Type": "application/json; charset=utf-8",
+    "Access-Control-Allow-Origin": "*"
+  });
   res.end(JSON.stringify(data));
+}
+
+function readFilesIndex() {
+  const indexPath = resolve("data/files-index.json");
+  try { return JSON.parse(readFileSync(indexPath, "utf-8")); }
+  catch { return {}; }
+}
+
+function writeFilesIndex(data) {
+  writeFileSync(resolve("data/files-index.json"), JSON.stringify(data, null, 2), "utf-8");
+}
+
+function handleUpload(req, res) {
+  return new Promise((resolve) => {
+    const bb = Busboy({ headers: req.headers, limits: { fileSize: 200 * 1024 * 1024 } });
+    let orderId = "";
+    let doctorId = "";
+    let fileLabel = "";
+    let savedFile = null;
+
+    bb.on("field", (name, val) => {
+      if (name === "orderId") orderId = val;
+      if (name === "doctorId") doctorId = val;
+      if (name === "fileLabel") fileLabel = val;
+    });
+
+    bb.on("file", (name, stream, info) => {
+      const { filename } = info;
+      const safeFilename = filename.replace(/[^a-zA-Z0-9._\-áéíóúüñÁÉÍÓÚÜÑ ]/g, "_");
+      const orderDir = join(UPLOADS_DIR, orderId || "sin-orden");
+      mkdirSync(orderDir, { recursive: true });
+      const filePath = join(orderDir, safeFilename);
+      const chunks = [];
+      stream.on("data", chunk => chunks.push(chunk));
+      stream.on("end", () => {
+        const buf = Buffer.concat(chunks);
+        writeFileSync(filePath, buf);
+        savedFile = { filename: safeFilename, size: buf.length, label: fileLabel };
+      });
+    });
+
+    bb.on("finish", () => {
+      if (!savedFile || !orderId) {
+        json(res, 400, { error: "Falta orderId o archivo" });
+        resolve();
+        return;
+      }
+      const index = readFilesIndex();
+      if (!index[orderId]) index[orderId] = { doctorId, files: [] };
+      const exists = index[orderId].files.find(f => f.filename === savedFile.filename);
+      if (!exists) index[orderId].files.push({ ...savedFile, uploadedAt: new Date().toISOString() });
+      writeFilesIndex(index);
+      json(res, 201, { ok: true, file: savedFile });
+      resolve();
+    });
+
+    bb.on("error", () => { json(res, 500, { error: "Error al procesar el archivo" }); resolve(); });
+    req.pipe(bb);
+  });
 }
 
 function resolveRequestPath(urlPath) {
@@ -64,17 +127,27 @@ function createAppServer() {
     const urlPath = (req.url || "/").split("?")[0];
 
     if (req.method === "OPTIONS") {
-      res.writeHead(204, { "Access-Control-Allow-Origin": "*", "Access-Control-Allow-Methods": "GET,POST,DELETE", "Access-Control-Allow-Headers": "Content-Type" });
+      res.writeHead(204, {
+        "Access-Control-Allow-Origin": "*",
+        "Access-Control-Allow-Methods": "GET,POST,PUT,DELETE",
+        "Access-Control-Allow-Headers": "Content-Type"
+      });
       res.end();
       return;
     }
 
+    // GET /api/doctors
     if (urlPath === "/api/doctors" && req.method === "GET") {
       const db = readDB();
-      json(res, 200, { doctors: db.doctors, admin: { email: db.admin.email } });
+      const safeDoctors = {};
+      for (const [email, doc] of Object.entries(db.doctors)) {
+        safeDoctors[email] = doc;
+      }
+      json(res, 200, { doctors: safeDoctors, admin: { email: db.admin.email } });
       return;
     }
 
+    // POST /api/doctors
     if (urlPath === "/api/doctors" && req.method === "POST") {
       try {
         const body = await readBody(req);
@@ -89,12 +162,27 @@ function createAppServer() {
         db.doctors[email] = { id, handle, name, specialty: specialty || "", clinic: clinic || "", contactPhone: contactPhone || "", email, city: city || "", password, partner: { referredPatients: validatedPatients || 0, points: pts } };
         writeDB(db);
         json(res, 201, { doctor: db.doctors[email] });
-      } catch (e) {
-        json(res, 400, { error: e.message });
-      }
+      } catch (e) { json(res, 400, { error: e.message }); }
       return;
     }
 
+    // PUT /api/doctors/:email/password
+    if (urlPath.match(/^\/api\/doctors\/[^/]+\/password$/) && req.method === "PUT") {
+      try {
+        const email = decodeURIComponent(urlPath.replace("/api/doctors/", "").replace("/password", ""));
+        const body = await readBody(req);
+        const { password } = body;
+        if (!password) { json(res, 400, { error: "La contraseña no puede estar vacía" }); return; }
+        const db = readDB();
+        if (!db.doctors[email]) { json(res, 404, { error: "Doctor no encontrado" }); return; }
+        db.doctors[email].password = password;
+        writeDB(db);
+        json(res, 200, { ok: true });
+      } catch (e) { json(res, 400, { error: e.message }); }
+      return;
+    }
+
+    // DELETE /api/doctors/:email
     if (urlPath.startsWith("/api/doctors/") && req.method === "DELETE") {
       const email = decodeURIComponent(urlPath.replace("/api/doctors/", ""));
       const db = readDB();
@@ -105,6 +193,7 @@ function createAppServer() {
       return;
     }
 
+    // POST /api/login
     if (urlPath === "/api/login" && req.method === "POST") {
       try {
         const { email, password } = await readBody(req);
@@ -116,16 +205,56 @@ function createAppServer() {
         }
         const doc = db.doctors[normalEmail];
         if (doc && doc.password === password) {
-          json(res, 200, { role: "doctor", email: normalEmail, doctor: { ...doc, password: undefined } });
+          const { password: _pw, ...safeDoc } = doc;
+          json(res, 200, { role: "doctor", email: normalEmail, doctor: safeDoc });
           return;
         }
         json(res, 401, { error: "Correo o contraseña incorrectos" });
-      } catch (e) {
-        json(res, 400, { error: e.message });
-      }
+      } catch (e) { json(res, 400, { error: e.message }); }
       return;
     }
 
+    // POST /api/upload  (multipart)
+    if (urlPath === "/api/upload" && req.method === "POST") {
+      await handleUpload(req, res);
+      return;
+    }
+
+    // GET /api/files/:orderId
+    if (urlPath.startsWith("/api/files/") && req.method === "GET") {
+      const orderId = decodeURIComponent(urlPath.replace("/api/files/", ""));
+      const index = readFilesIndex();
+      json(res, 200, { files: index[orderId]?.files || [], orderId });
+      return;
+    }
+
+    // GET /api/files-index  (all orders with files, for admin)
+    if (urlPath === "/api/files-index" && req.method === "GET") {
+      json(res, 200, readFilesIndex());
+      return;
+    }
+
+    // GET /api/uploads/:orderId/:filename  (serve file for download)
+    if (urlPath.startsWith("/api/uploads/") && req.method === "GET") {
+      const parts = urlPath.replace("/api/uploads/", "").split("/");
+      const orderId = decodeURIComponent(parts[0] || "");
+      const filename = decodeURIComponent(parts[1] || "");
+      const filePath = resolve(join(UPLOADS_DIR, orderId, filename));
+      if (!filePath.startsWith(UPLOADS_DIR) || !existsSync(filePath)) {
+        res.writeHead(404); res.end("Archivo no encontrado"); return;
+      }
+      const ext = extname(filename).toLowerCase();
+      const ct = mimeTypes[ext] || "application/octet-stream";
+      res.writeHead(200, {
+        "Content-Type": ct,
+        "Content-Disposition": `attachment; filename="${filename}"`,
+        "Cache-Control": "no-store"
+      });
+      createReadStream(filePath).pipe(res);
+      return;
+    }
+
+    // Static files
     const filePath = resolveRequestPath(req.url || "/");
     if (!filePath) {
       res.writeHead(404, { "Content-Type": "text/plain; charset=utf-8" });

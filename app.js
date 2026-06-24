@@ -1931,31 +1931,55 @@ function getResultPackage(order) {
   };
 }
 
-function openDownloadModal(order) {
+async function openDownloadModal(order) {
   activeDownloadOrder = order;
-  const resultPackage = getResultPackage(order);
 
   downloadPatientName.textContent = order.patient;
   downloadStudySummary.textContent = order.studies.join(", ");
-  downloadFullStudyButton.dataset.downloadFile = resultPackage.complete;
-  downloadFullStudyButton.dataset.downloadLabel = "estudio completo";
-  downloadFileList.innerHTML = resultPackage.files
-    .map(
-      (file) => `
-        <article class="download-file-card">
-          <div>
-            <strong>${file.label}</strong>
-            <span>${file.type} · ${file.file}</span>
-          </div>
-          <button class="small-action" data-download-file="${file.file}" data-download-label="${file.label}" type="button">
-            Descargar
-          </button>
-        </article>
-      `,
-    )
-    .join("");
-
+  downloadFileList.innerHTML = '<p style="font-size:0.85rem;color:#888;padding:8px 0;">Cargando archivos…</p>';
   downloadModal.hidden = false;
+
+  try {
+    const res = await fetch(`/api/files/${encodeURIComponent(order.id)}`);
+    const data = await res.json();
+    const serverFiles = data.files || [];
+
+    const localPkg = resultPackages[order.id];
+    const allFiles = serverFiles.length > 0 ? serverFiles : (localPkg?.files || []);
+
+    if (allFiles.length === 0) {
+      downloadFileList.innerHTML = '<p style="font-size:0.85rem;color:#888;padding:8px 0;">No hay archivos disponibles para esta orden.</p>';
+      downloadFullStudyButton.disabled = true;
+      downloadFullStudyButton.textContent = "Sin archivos";
+      return;
+    }
+
+    downloadFullStudyButton.disabled = false;
+    downloadFullStudyButton.textContent = "Descargar todo";
+    downloadFullStudyButton.dataset.downloadFile = allFiles[0].filename || allFiles[0].file || "";
+    downloadFullStudyButton.dataset.downloadLabel = "estudio completo";
+
+    downloadFileList.innerHTML = allFiles
+      .map((file) => {
+        const filename = file.filename || file.file || "";
+        const label = file.label || filename;
+        const ext = filename.includes(".") ? filename.split(".").pop().toUpperCase() : "ARCHIVO";
+        return `
+          <article class="download-file-card">
+            <div>
+              <strong>${label}</strong>
+              <span>${ext} · ${filename}</span>
+            </div>
+            <button class="small-action" data-download-file="${filename}" data-download-label="${label}" type="button">
+              Descargar
+            </button>
+          </article>
+        `;
+      })
+      .join("");
+  } catch {
+    downloadFileList.innerHTML = '<p style="font-size:0.85rem;color:#e44;padding:8px 0;">Error al cargar archivos.</p>';
+  }
 }
 
 function closeDownloadModal() {
@@ -1963,9 +1987,27 @@ function closeDownloadModal() {
   activeDownloadOrder = null;
 }
 
+function realDownload(orderId, filename, label = "archivo") {
+  if (!orderId || !filename) {
+    showToast("Archivo no disponible.");
+    return;
+  }
+  const url = `/api/uploads/${encodeURIComponent(orderId)}/${encodeURIComponent(filename)}`;
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+}
+
 function simulateDownload(file, label = "archivo") {
-  const patient = activeDownloadOrder?.patient || "paciente";
-  showToast(`Descarga simulada: ${label} · ${patient} · ${file}`);
+  const orderId = activeDownloadOrder?.id;
+  if (orderId && file) {
+    realDownload(orderId, file, label);
+  } else {
+    showToast(`Archivo no disponible para descarga.`);
+  }
 }
 
 function renderAdmin() {
@@ -2030,6 +2072,7 @@ function renderAdmin() {
   adminDoctorList.innerHTML = allDoctors
     .map((doctor) => {
       const tier = getPartnerTier(doctor.partner.referredPatients);
+      const pw = authorizedAccounts[doctor.email]?.password || doctor.password || "";
 
       return `
         <article class="admin-doctor-card">
@@ -2037,10 +2080,15 @@ function renderAdmin() {
             <strong>${doctor.name}</strong>
             <span class="admin-chip">${tier.shortName}</span>
           </header>
-          <span>${doctor.specialty}</span>
-          <small class="admin-credential-line">Correo: ${doctor.email}</small>
-          <small class="admin-credential-line">Contraseña: ${authorizedAccounts[doctor.email]?.password || doctor.password || "No asignada"}</small>
-          <small>${doctor.partner.referredPatients} pacientes validados · ${doctor.partner.points.toLocaleString("es-MX")} pts</small>
+          <span>${doctor.specialty || "Sin especialidad"}</span>
+          <small class="admin-credential-line">Correo: <strong>${doctor.email}</strong></small>
+          <small class="admin-credential-line">Contraseña actual: <strong>${pw}</strong></small>
+          <div class="admin-pw-row" style="display:flex;gap:6px;margin-top:8px;">
+            <input class="admin-pw-input" type="text" placeholder="Nueva contraseña" data-pw-email="${doctor.email}"
+              style="flex:1;font-size:0.8rem;padding:4px 8px;border:1px solid #ccc;border-radius:6px;" />
+            <button class="small-action admin-reset-password" data-email="${doctor.email}" type="button">Cambiar</button>
+          </div>
+          <small style="margin-top:4px;display:block;">${doctor.partner.referredPatients} pacientes validados · ${doctor.partner.points.toLocaleString("es-MX")} pts</small>
           <button class="ghost-action admin-delete-doctor" data-email="${doctor.email}" type="button" style="margin-top:8px;color:var(--brand);font-size:0.8rem;">Eliminar doctor</button>
         </article>
       `;
@@ -2072,10 +2120,10 @@ function renderManualUploadOptions() {
   }
 
   const currentValue = manualUploadOrder.value;
-  const eligibleOrders = orders.filter((order) => ["Completa", "Lista para descargar"].includes(order.status));
+  const eligibleOrders = orders;
 
   if (eligibleOrders.length === 0) {
-    manualUploadOrder.innerHTML = '<option value="">Primero marca una orden como Completa</option>';
+    manualUploadOrder.innerHTML = '<option value="">No hay órdenes registradas</option>';
     return;
   }
 
@@ -2171,45 +2219,49 @@ function upsertResultPackageFile(order, fileMatch) {
   }
 }
 
-function uploadManualResult(formData) {
+async function uploadManualResult(formData) {
   const orderId = formData.get("manualOrderId");
   const order = orders.find((currentOrder) => currentOrder.id === orderId);
   const file = formData.get("manualResultFile");
   const label = formData.get("manualFileType") || "Archivo";
 
-  if (!order) {
-    showToast("Selecciona una orden válida.");
-    return;
+  if (!order) { showToast("Selecciona una orden válida."); return; }
+  if (!file || !file.name) { showToast("Selecciona el archivo del estudio."); return; }
+
+  showToast("Subiendo archivo...");
+
+  try {
+    const uploadData = new FormData();
+    uploadData.append("orderId", orderId);
+    uploadData.append("doctorId", order.doctorId || "");
+    uploadData.append("fileLabel", label);
+    uploadData.append("file", file);
+
+    const res = await fetch("/api/upload", { method: "POST", body: uploadData });
+    const data = await res.json();
+    if (!res.ok) { showToast(data.error || "Error al subir el archivo."); return; }
+
+    const extension = file.name.includes(".") ? file.name.split(".").pop().toUpperCase() : "ARCHIVO";
+    const fileMatch = {
+      file: file.name, patient: order.patient, modality: label,
+      status: "local_ready", confidence: 100, label, type: extension,
+    };
+    upsertResultPackageFile(order, fileMatch);
+    assignResultToOrder(order, fileMatch, {
+      status: "Subido",
+      storage: "local_server",
+      expires: "Disponible para doctor · sin vencimiento",
+    });
+    agentState.uploads++;
+    manualUploadForm.reset();
+    renderAdmin();
+    renderDoctorOrders();
+    renderResults(resultsSearch.value);
+    showToast(`✓ ${file.name} disponible para ${order.patient}.`);
+  } catch (e) {
+    console.error(e);
+    showToast("Error de conexión al subir el archivo.");
   }
-
-  if (!file || !file.name) {
-    showToast("Selecciona el archivo del estudio.");
-    return;
-  }
-
-  const extension = file.name.includes(".") ? file.name.split(".").pop().toUpperCase() : "ARCHIVO";
-  const fileMatch = {
-    file: file.name,
-    patient: order.patient,
-    modality: label,
-    status: "cloud_ready",
-    confidence: 100,
-    label,
-    type: extension,
-  };
-
-  upsertResultPackageFile(order, fileMatch);
-  assignResultToOrder(order, fileMatch, {
-    status: "Subido manual",
-    storage: "supabase_ready_demo",
-    expires: "Disponible para doctor · vigencia 90 días",
-  });
-  agentState.uploads = adminDownloadRequests.filter((request) => request.storage === "upload_requested").length;
-  manualUploadForm.reset();
-  renderAdmin();
-  renderDoctorOrders();
-  renderResults(resultsSearch.value);
-  showToast(`${file.name} liberado para ${order.patient}.`);
 }
 
 function matchLocalFileToOrder(order) {
@@ -2670,9 +2722,31 @@ adminDoctorForm?.addEventListener("submit", async (event) => {
 });
 
 adminDoctorList?.addEventListener("click", async (event) => {
-  const btn = event.target.closest(".admin-delete-doctor");
-  if (btn) {
-    await deleteDoctorFromAdmin(btn.dataset.email);
+  const deleteBtn = event.target.closest(".admin-delete-doctor");
+  if (deleteBtn) {
+    await deleteDoctorFromAdmin(deleteBtn.dataset.email);
+    return;
+  }
+
+  const resetBtn = event.target.closest(".admin-reset-password");
+  if (resetBtn) {
+    const email = resetBtn.dataset.email;
+    const input = adminDoctorList.querySelector(`.admin-pw-input[data-pw-email="${email}"]`);
+    const newPassword = input?.value?.trim();
+    if (!newPassword) { showToast("Escribe la nueva contraseña primero."); return; }
+    try {
+      const res = await fetch(`/api/doctors/${encodeURIComponent(email)}/password`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ password: newPassword }),
+      });
+      if (!res.ok) { const d = await res.json(); showToast(d.error || "Error al cambiar contraseña."); return; }
+      if (authorizedAccounts[email]) authorizedAccounts[email].password = newPassword;
+      showToast(`✓ Contraseña de ${email} actualizada.`);
+      input.value = "";
+      renderAdmin();
+    } catch { showToast("Error de conexión."); }
+    return;
   }
 });
 
