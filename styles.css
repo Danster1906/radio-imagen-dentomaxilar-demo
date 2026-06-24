@@ -1021,6 +1021,65 @@ h2 {
   margin-top: 12px;
 }
 
+.partner-history {
+  margin-top: 14px;
+}
+
+.partner-history-label {
+  display: block;
+  font-size: 0.72rem;
+  font-weight: 900;
+  opacity: 0.74;
+  text-transform: uppercase;
+  margin-bottom: 8px;
+  color: #ffffff;
+}
+
+.partner-history ul {
+  display: grid;
+  gap: 6px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.partner-history-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 10px;
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  border-radius: 7px;
+}
+
+.partner-history-patient {
+  flex: 1 1 0;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: #ffffff;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.partner-history-meta {
+  flex: 0 0 auto;
+  font-size: 0.72rem;
+  opacity: 0.7;
+  color: #ffffff;
+}
+
+.partner-history-pts {
+  flex: 0 0 auto;
+  font-size: 0.75rem;
+  font-weight: 900;
+  color: #ffffff;
+  background: rgba(255, 255, 255, 0.18);
+  border-radius: 999px;
+  padding: 2px 8px;
+}
+
 .benefit-catalog article {
   display: grid;
   gap: 2px;

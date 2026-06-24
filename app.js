@@ -702,6 +702,8 @@ const partnerCurrentBenefits = document.querySelector("[data-partner-current-ben
 const partnerNextBenefits = document.querySelector("[data-partner-next-benefits]");
 const partnerBenefitCatalog = document.querySelector("[data-partner-benefit-catalog]");
 const partnerLadder = document.querySelector("[data-partner-ladder]");
+const partnerHistorySection = document.querySelector("[data-partner-history]");
+const partnerHistoryList = document.querySelector("[data-partner-history-list]");
 let dragStart = null;
 let selectedMetricsPeriod = "today";
 let currentRole = "doctor";
@@ -1260,6 +1262,28 @@ function renderPartnerProgram() {
       `,
     )
     .join("");
+
+  const validatedOrders = orders
+    .filter((o) => o.doctorId === doctorProfile.id && o.countsForPartner)
+    .sort((a, b) => (b.validatedAt || "").localeCompare(a.validatedAt || ""));
+
+  if (partnerHistorySection) {
+    partnerHistorySection.style.display = validatedOrders.length ? "" : "none";
+  }
+
+  if (partnerHistoryList) {
+    partnerHistoryList.innerHTML = validatedOrders
+      .map(
+        (o) => `
+          <li class="partner-history-row">
+            <span class="partner-history-patient">${o.patient}</span>
+            <span class="partner-history-meta">${o.validatedAt || ""}</span>
+            <span class="partner-history-pts">+${POINTS_PER_REFERRED_PATIENT} pts</span>
+          </li>
+        `,
+      )
+      .join("");
+  }
 }
 
 function renderBenefits(benefits) {
