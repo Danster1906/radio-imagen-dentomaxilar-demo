@@ -1497,6 +1497,16 @@ async function validateAttendedOrder(orderId, nextStatus = "Completa") {
     if (doctorProfile.id === doctor.id) {
       doctorProfile.partner = { ...doctor.partner };
     }
+
+    try {
+      await fetch(`/api/doctors/${encodeURIComponent(doctor.email)}/partner`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json", "x-admin-token": getAdminToken() },
+        body: JSON.stringify({ referredPatients: doctor.partner.referredPatients, points: doctor.partner.points })
+      });
+    } catch (e) {
+      console.error("Error al persistir puntos del doctor:", e);
+    }
   }
 
   await apiUpdateOrder(order.id, {

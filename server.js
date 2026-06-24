@@ -286,6 +286,22 @@ function createAppServer() {
       return;
     }
 
+    // PUT /api/doctors/:email/partner
+    if (urlPath.match(/^\/api\/doctors\/[^/]+\/partner$/) && req.method === "PUT") {
+      if (!requireAdmin(req, res)) return;
+      try {
+        const email = decodeURIComponent(urlPath.replace("/api/doctors/", "").replace("/partner", ""));
+        const body = await readBody(req);
+        const db = readDB();
+        if (!db.doctors[email]) { json(res, 404, { error: "Doctor no encontrado" }); return; }
+        if (typeof body.referredPatients === "number") db.doctors[email].partner.referredPatients = body.referredPatients;
+        if (typeof body.points === "number") db.doctors[email].partner.points = body.points;
+        writeDB(db);
+        json(res, 200, { ok: true, partner: db.doctors[email].partner });
+      } catch (e) { json(res, 400, { error: e.message }); }
+      return;
+    }
+
     // PUT /api/doctors/:email/notifications
     if (urlPath.match(/^\/api\/doctors\/[^/]+\/notifications$/) && req.method === "PUT") {
       if (!requireAdmin(req, res)) return;
