@@ -1,4 +1,4 @@
-import { createReadStream, existsSync, statSync, readFileSync, writeFileSync, mkdirSync } from "node:fs";
+import { createReadStream, existsSync, statSync, readFileSync, writeFileSync, mkdirSync, unlinkSync } from "node:fs";
 import { createServer } from "node:http";
 import { extname, join, normalize, resolve } from "node:path";
 import { createRequire } from "node:module";
@@ -234,7 +234,7 @@ function createAppServer() {
       return;
     }
 
-    // GET /api/uploads/:orderId/:filename  (serve file for download)
+    // GET /api/uploads/:orderId/:filename  (serve file for download, then delete)
     if (urlPath.startsWith("/api/uploads/") && req.method === "GET") {
       const parts = urlPath.replace("/api/uploads/", "").split("/");
       const orderId = decodeURIComponent(parts[0] || "");
@@ -250,7 +250,37 @@ function createAppServer() {
         "Content-Disposition": `attachment; filename="${filename}"`,
         "Cache-Control": "no-store"
       });
-      createReadStream(filePath).pipe(res);
+      const stream = createReadStream(filePath);
+      stream.pipe(res);
+      stream.on("end", () => {
+        try {
+          unlinkSync(filePath);
+          const index = readFilesIndex();
+          if (index[orderId]) {
+            const fileEntry = index[orderId].files.find(f => f.filename === filename);
+            if (fileEntry) {
+              fileEntry.downloaded = true;
+              fileEntry.downloadedAt = new Date().toISOString();
+            }
+            const allDownloaded = index[orderId].files.every(f => f.downloaded);
+            if (allDownloaded) index[orderId].allDownloaded = true;
+            writeFilesIndex(index);
+          }
+        } catch {}
+      });
+      return;
+    }
+
+    // POST /api/mark-downloaded/:orderId  (mark order as fully downloaded)
+    if (urlPath.startsWith("/api/mark-downloaded/") && req.method === "POST") {
+      const orderId = decodeURIComponent(urlPath.replace("/api/mark-downloaded/", ""));
+      const index = readFilesIndex();
+      if (index[orderId]) {
+        index[orderId].allDownloaded = true;
+        index[orderId].downloadedAt = new Date().toISOString();
+        writeFilesIndex(index);
+      }
+      json(res, 200, { ok: true });
       return;
     }
 

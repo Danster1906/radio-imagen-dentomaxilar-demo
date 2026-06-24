@@ -339,11 +339,16 @@
             <div class="panel-heading">
               <div>
                 <span class="eyebrow">Resultados</span>
-                <h2>Archivos disponibles</h2>
+                <h2>Mis estudios</h2>
               </div>
               <input class="search-field" id="results-search" placeholder="Buscar paciente" />
             </div>
-            <div class="results-table" id="results-table"></div>
+            <div class="results-tabs" id="results-tabs">
+              <button class="results-tab active" data-results-tab="active" type="button">Activas</button>
+              <button class="results-tab" data-results-tab="done" type="button">Terminadas</button>
+            </div>
+            <div class="results-table" id="results-table" data-results-panel="active"></div>
+            <div class="results-table" id="results-table-done" data-results-panel="done" hidden></div>
           </div>
         </section>
 

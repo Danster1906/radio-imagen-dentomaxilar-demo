@@ -1052,7 +1052,46 @@ h2 {
   opacity: 0.78;
 }
 
-.order-list,
+.results-tabs {
+  display: flex;
+  gap: 4px;
+  margin-bottom: 16px;
+}
+
+.results-tab {
+  padding: 6px 18px;
+  border-radius: 20px;
+  border: 1.5px solid var(--line);
+  background: transparent;
+  font-size: 0.85rem;
+  font-weight: 500;
+  color: #888;
+  cursor: pointer;
+  transition: all 150ms ease;
+}
+
+.results-tab.active {
+  background: var(--brand, #c00);
+  border-color: var(--brand, #c00);
+  color: #fff;
+}
+
+.result-row--done {
+  opacity: 0.65;
+}
+
+.result-row--done .download-action {
+  background: #e8e8e8;
+  color: #999;
+}
+
+.empty-state-hint {
+  text-align: center;
+  color: #aaa;
+  font-size: 0.88rem;
+  padding: 32px 0;
+}
+
 .results-table,
 .feature-grid {
   display: grid;

@@ -321,6 +321,20 @@ const agentState = {
   hasRun: false,
 };
 
+const downloadedOrders = new Set(
+  JSON.parse(localStorage.getItem("ri_downloaded_orders") || "[]")
+);
+
+function persistDownloadedOrders() {
+  localStorage.setItem("ri_downloaded_orders", JSON.stringify([...downloadedOrders]));
+}
+
+function markOrderDownloaded(orderId) {
+  downloadedOrders.add(orderId);
+  persistDownloadedOrders();
+  fetch(`/api/mark-downloaded/${encodeURIComponent(orderId)}`, { method: "POST" }).catch(() => {});
+}
+
 const partnerTiers = [
   {
     name: "Socio Activo",
@@ -587,6 +601,8 @@ const periodButtons = document.querySelectorAll("[data-period]");
 const studyGrid = document.querySelector("#study-grid");
 const doctorOrderList = document.querySelector("#doctor-order-list");
 const resultsTable = document.querySelector("#results-table");
+const resultsTableDone = document.querySelector("#results-table-done");
+const resultsTabButtons = document.querySelectorAll("[data-results-tab]");
 const resultsSearch = document.querySelector("#results-search");
 const adminStatusFilter = document.querySelector("#admin-status-filter");
 const adminOrderTable = document.querySelector("#admin-order-table");
@@ -1885,27 +1901,51 @@ function renderDoctorOrders() {
 
 function renderResults(filter = "") {
   const normalizedFilter = filter.trim().toLowerCase();
-  const visibleOrders = orders.filter((order) =>
-    order.doctorId === doctorProfile.id && order.patient.toLowerCase().includes(normalizedFilter),
+  const myOrders = orders.filter(
+    (order) => order.doctorId === doctorProfile.id && order.patient.toLowerCase().includes(normalizedFilter),
   );
 
-  resultsTable.innerHTML = visibleOrders
-    .map(
-      (order) => `
-        <article class="result-row">
-          <div class="result-name">
-            <strong>${order.patient}</strong>
-            <span class="result-meta">${order.studies.join(", ")}</span>
-          </div>
-          <span class="result-meta">${order.doctor}</span>
-          <span class="status ${statusClass(order.status)}">${order.status}</span>
-          <button class="download-action ${order.result ? "ready" : ""}" data-download-order="${order.id}" type="button" ${order.result ? "" : "disabled"}>
-            ${order.result ? "Descargar" : "Pendiente"}
-          </button>
-        </article>
-      `,
-    )
-    .join("");
+  const activeOrders = myOrders.filter((o) => !downloadedOrders.has(o.id));
+  const doneOrders = myOrders.filter((o) => downloadedOrders.has(o.id));
+
+  const activeTab = document.querySelector("[data-results-tab].active")?.dataset.resultsTab || "active";
+
+  const buildRow = (order, isDone) => `
+    <article class="result-row ${isDone ? "result-row--done" : ""}">
+      <div class="result-name">
+        <strong>${order.patient}</strong>
+        <span class="result-meta">${order.studies.join(", ")}</span>
+      </div>
+      <span class="result-meta">${order.doctor}</span>
+      ${isDone
+        ? `<span class="status lista">Descargado</span>
+           <button class="download-action" type="button" disabled>Entregado</button>`
+        : `<span class="status ${statusClass(order.status)}">${order.status}</span>
+           <button class="download-action ${order.result ? "ready" : ""}" data-download-order="${order.id}" type="button" ${order.result ? "" : "disabled"}>
+             ${order.result ? "Descargar" : "Pendiente"}
+           </button>`
+      }
+    </article>
+  `;
+
+  if (resultsTable) {
+    resultsTable.innerHTML = activeOrders.length
+      ? activeOrders.map((o) => buildRow(o, false)).join("")
+      : `<p class="empty-state-hint">No hay estudios activos.</p>`;
+  }
+
+  if (resultsTableDone) {
+    resultsTableDone.innerHTML = doneOrders.length
+      ? doneOrders.map((o) => buildRow(o, true)).join("")
+      : `<p class="empty-state-hint">Aún no has descargado ningún estudio.</p>`;
+  }
+
+  resultsTabButtons.forEach((btn) => {
+    const count = btn.dataset.resultsTab === "done" ? doneOrders.length : activeOrders.length;
+    btn.textContent = btn.dataset.resultsTab === "done"
+      ? `Terminadas${doneOrders.length ? ` (${doneOrders.length})` : ""}`
+      : `Activas${activeOrders.length ? ` (${activeOrders.length})` : ""}`;
+  });
 }
 
 function getResultPackage(order) {
@@ -1999,6 +2039,14 @@ function realDownload(orderId, filename, label = "archivo") {
   document.body.appendChild(a);
   a.click();
   document.body.removeChild(a);
+
+  markOrderDownloaded(orderId);
+
+  setTimeout(() => {
+    closeDownloadModal();
+    renderResults(resultsSearch?.value || "");
+    showToast("✓ Archivo descargado. La orden se movió a Terminadas.");
+  }, 800);
 }
 
 function simulateDownload(file, label = "archivo") {
@@ -2006,7 +2054,7 @@ function simulateDownload(file, label = "archivo") {
   if (orderId && file) {
     realDownload(orderId, file, label);
   } else {
-    showToast(`Archivo no disponible para descarga.`);
+    showToast("Archivo no disponible para descarga.");
   }
 }
 
@@ -2652,6 +2700,16 @@ centerPhotoButton.addEventListener("click", () => {
 });
 
 resultsSearch.addEventListener("input", () => renderResults(resultsSearch.value));
+
+resultsTabButtons.forEach((btn) => {
+  btn.addEventListener("click", () => {
+    resultsTabButtons.forEach((b) => b.classList.remove("active"));
+    btn.classList.add("active");
+    const panel = btn.dataset.resultsTab;
+    if (resultsTable) resultsTable.hidden = panel !== "active";
+    if (resultsTableDone) resultsTableDone.hidden = panel !== "done";
+  });
+});
 
 adminStatusFilter?.addEventListener("change", renderAdmin);
 
