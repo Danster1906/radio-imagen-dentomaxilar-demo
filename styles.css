@@ -1052,6 +1052,7 @@ h2 {
   opacity: 0.78;
 }
 
+.order-list,
 .results-tabs {
   display: flex;
   gap: 4px;
