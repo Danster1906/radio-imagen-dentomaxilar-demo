@@ -1052,11 +1052,11 @@ h2 {
   opacity: 0.78;
 }
 
-.order-list,
 .results-tabs {
   display: flex;
-  gap: 4px;
+  gap: 6px;
   margin-bottom: 16px;
+  flex-wrap: wrap;
 }
 
 .results-tab {
@@ -1093,6 +1093,7 @@ h2 {
   padding: 32px 0;
 }
 
+.order-list,
 .results-table,
 .feature-grid {
   display: grid;
@@ -1258,17 +1259,18 @@ h2 {
 
 .profile-form {
   display: grid;
-  gap: 18px;
+  gap: 20px;
 }
 
 .profile-photo-editor {
-  display: flex;
-  align-items: center;
-  gap: 16px;
-  padding: 14px;
-  background: #fbfcfd;
+  display: grid;
+  grid-template-columns: 80px 1fr;
+  gap: 20px;
+  align-items: start;
+  padding: 18px;
+  background: #f8f9fb;
   border: 1px solid var(--line);
-  border-radius: 8px;
+  border-radius: 10px;
 }
 
 .photo-upload {
@@ -1277,8 +1279,7 @@ h2 {
 
 .photo-controls {
   display: grid;
-  flex: 1;
-  gap: 12px;
+  gap: 10px;
 }
 
 .photo-upload input {
@@ -1287,42 +1288,47 @@ h2 {
 
 .photo-hint {
   color: var(--muted);
-  font-size: 0.9rem;
-  font-weight: 700;
+  font-size: 0.82rem;
+  font-weight: 600;
+  line-height: 1.4;
+  margin: 0 0 6px;
 }
 
 .photo-upload span {
   color: var(--muted);
-  font-size: 0.84rem;
-  font-weight: 500;
+  font-size: 0.8rem;
+  font-weight: 400;
+  display: block;
+  margin-top: 4px;
 }
 
 .crop-controls {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr)) auto;
-  gap: 10px;
+  gap: 8px;
   align-items: end;
 }
 
 .crop-controls label {
-  gap: 5px;
-  font-size: 0.78rem;
+  gap: 4px;
+  font-size: 0.75rem;
 }
 
 .crop-controls input {
-  min-height: 32px;
+  min-height: 28px;
   padding: 0;
 }
 
 .compact-action {
-  min-height: 36px;
+  min-height: 34px;
   padding: 0 12px;
+  font-size: 0.8rem;
 }
 
 .form-grid {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 16px;
+  grid-template-columns: repeat(2, minmax(140px, 1fr));
+  gap: 14px;
 }
 
 label {
