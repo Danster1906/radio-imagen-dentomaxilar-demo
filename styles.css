@@ -2948,12 +2948,23 @@ textarea:focus {
 }
 
 .login-panel .eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
   width: fit-content;
   padding: 6px 13px;
   color: #ffffff;
   background: rgba(255, 255, 255, 0.15);
   border: 1px solid rgba(255, 255, 255, 0.3);
   border-radius: 999px;
+}
+
+.eyebrow-dot {
+  display: inline-block;
+  width: 6px;
+  height: 6px;
+  background: currentColor;
+  border-radius: 50%;
 }
 
 .login-panel .login-copy {
@@ -2986,7 +2997,8 @@ textarea:focus {
   display: flex;
   min-height: 34px;
   align-items: center;
-  padding: 8px 10px 8px 42px;
+  gap: 12px;
+  padding: 8px 10px;
   color: rgba(255, 255, 255, 0.86);
   background: transparent;
   border: 0;
@@ -2995,26 +3007,24 @@ textarea:focus {
   font-weight: 700;
 }
 
-.login-trust span::before {
-  position: absolute;
-  left: 0;
+.login-trust-icon {
   display: grid;
+  flex: none;
   width: 30px;
   height: 30px;
   place-items: center;
   color: #ffffff;
-  content: "✓";
   background: rgba(255, 255, 255, 0.15);
   border: 1px solid rgba(255, 255, 255, 0.23);
   border-radius: 8px;
 }
 
-.login-branches {
-  display: grid;
-  gap: 8px;
+.login-trust-icon svg {
+  width: 16px;
+  height: 16px;
 }
 
-.login-branches p {
+.login-branches-label {
   margin: 0 0 4px;
   color: rgba(255, 255, 255, 0.54);
   font-size: 0.7rem;
@@ -3023,20 +3033,48 @@ textarea:focus {
   text-transform: uppercase;
 }
 
-.login-branches a {
+.login-branches {
   display: grid;
-  gap: 2px;
+  gap: 8px;
+}
+
+.login-branches a {
+  display: flex;
+  align-items: center;
+  gap: 12px;
   padding: 11px 14px;
   color: #ffffff;
   text-decoration: none;
   background: rgba(255, 255, 255, 0.075);
   border: 1px solid rgba(255, 255, 255, 0.14);
   border-radius: 8px;
+  transition: background 0.2s, border-color 0.2s;
 }
 
 .login-branches a:hover {
   background: rgba(255, 255, 255, 0.13);
   border-color: rgba(255, 255, 255, 0.28);
+}
+
+.login-branch-icon {
+  display: grid;
+  flex: none;
+  width: 30px;
+  height: 30px;
+  place-items: center;
+  color: #25d366;
+  background: rgba(255, 255, 255, 0.16);
+  border-radius: 50%;
+}
+
+.login-branch-icon svg {
+  width: 15px;
+  height: 15px;
+}
+
+.login-branch-info {
+  display: grid;
+  gap: 2px;
 }
 
 .login-branches span {
@@ -3065,27 +3103,12 @@ textarea:focus {
   width: min(100%, 500px);
 }
 
-.login-showcase .login-copy {
-  gap: 12px;
-  margin-bottom: 30px;
-}
-
-.login-showcase .login-copy h1 {
-  color: #16203a;
-  font-size: clamp(2rem, 3vw, 2.45rem);
-  line-height: 1.04;
-}
-
-.login-showcase .login-copy p {
-  color: #6a7280;
-}
-
 .login-back-link {
   display: inline-flex;
   align-items: center;
   gap: 8px;
   width: fit-content;
-  margin-bottom: 42px;
+  margin-bottom: 24px;
   color: #8a8080;
   font-size: 0.84rem;
   font-weight: 800;
@@ -3095,6 +3118,30 @@ textarea:focus {
 .login-back-link::before {
   content: "←";
   font-size: 1rem;
+}
+
+.login-card {
+  display: grid;
+  width: min(100%, 500px);
+  padding: clamp(28px, 4vw, 44px);
+  background: #ffffff;
+  border-radius: 22px;
+  box-shadow: 0 30px 60px -30px rgba(22, 32, 58, 0.25), 0 8px 24px -12px rgba(22, 32, 58, 0.12);
+}
+
+.login-card .login-copy {
+  gap: 12px;
+  margin-bottom: 30px;
+}
+
+.login-card .login-copy h1 {
+  color: #16203a;
+  font-size: clamp(2rem, 3vw, 2.45rem);
+  line-height: 1.04;
+}
+
+.login-card .login-copy p {
+  color: #6a7280;
 }
 
 .login-form {
@@ -3107,6 +3154,24 @@ textarea:focus {
   color: #16203a;
   font-size: 0.86rem;
   font-weight: 800;
+}
+
+.login-label-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.login-forgot-link {
+  color: #d62b2b;
+  font-size: 0.8rem;
+  font-weight: 700;
+  text-decoration: none;
+}
+
+.login-forgot-link:hover {
+  text-decoration: underline;
 }
 
 .login-form input {
@@ -3134,11 +3199,58 @@ textarea:focus {
   box-shadow: 0 12px 26px -12px rgba(214, 43, 43, 0.65);
 }
 
-.login-note {
-  margin-top: 24px;
+.login-divider {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 24px 0 14px;
   color: #a8a0a0;
-  font-size: 0.8rem;
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.login-divider::before,
+.login-divider::after {
+  flex: 1;
+  height: 1px;
+  content: "";
+  background: #e9e2df;
+}
+
+.login-divider span {
+  padding: 0 12px;
+}
+
+.login-note {
+  margin: 0;
+  color: #6a7280;
+  font-size: 0.86rem;
   text-align: center;
+}
+
+.login-note a {
+  color: #d62b2b;
+  font-weight: 800;
+  text-decoration: none;
+}
+
+.login-note a:hover {
+  text-decoration: underline;
+}
+
+.login-legal {
+  margin: 8px 0 0;
+  color: #a8a0a0;
+  font-size: 0.76rem;
+  text-align: center;
+}
+
+.login-legal a {
+  color: #8a8080;
+  text-decoration: underline;
 }
 
 @media (max-width: 980px) {
@@ -3166,7 +3278,7 @@ textarea:focus {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
-  .login-branches p {
+  .login-branches-label {
     grid-column: 1 / -1;
   }
 
