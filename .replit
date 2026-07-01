@@ -56,3 +56,6 @@ outputType = "webview"
 [postMerge]
 path = "scripts/post-merge.sh"
 timeoutMs = 60000
+
+[objectStorage]
+defaultBucketID = "replit-objstore-3085c990-df23-4fd3-a500-a0a4613ba91c"
