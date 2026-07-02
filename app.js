@@ -235,22 +235,6 @@ const adminDownloadRequests = [
 
 const SESSION_KEY = "radioImagenDoctorSession";
 const ADMIN_EMAIL = "admin@radioimagen.mx";
-const DEFAULT_DOCTOR_PASSWORD = "Dentista2026!";
-
-const authorizedAccounts = {
-  [ADMIN_EMAIL]: {
-    password: "RadioImagen2026!",
-    role: "admin",
-  },
-  "sofia.herrera@consulta.mx": {
-    password: DEFAULT_DOCTOR_PASSWORD,
-    role: "doctor",
-  },
-  "marco.padilla@consulta.mx": {
-    password: DEFAULT_DOCTOR_PASSWORD,
-    role: "doctor",
-  },
-};
 
 const adminProfile = {
   id: "ADM-0001",
@@ -496,9 +480,6 @@ async function apiLoadDoctors() {
         },
         metricsByPeriod: doctorDirectory[email]?.metricsByPeriod || {},
       };
-      if (!authorizedAccounts[email]) {
-        authorizedAccounts[email] = { password: doc.password, role: "doctor" };
-      }
     }
   } catch (e) {
     console.error("apiLoadDoctors:", e);
@@ -1644,7 +1625,6 @@ async function createDoctorFromAdmin(formData) {
       metrics: buildDefaultMetrics(validatedPatients),
       metricsByPeriod: buildMetricsByPeriod(validatedPatients),
     };
-    authorizedAccounts[email] = { password, role: "doctor" };
 
     renderAdmin();
     adminDoctorForm.reset();
@@ -1658,13 +1638,19 @@ async function createDoctorFromAdmin(formData) {
   }
 }
 
+function generateRandomPassword() {
+  const chars = "ABCDEFGHJKLMNPQRSTUVWXYZabcdefghjkmnpqrstuvwxyz23456789!#$%";
+  const values = new Uint32Array(14);
+  crypto.getRandomValues(values);
+  return Array.from(values, (v) => chars[v % chars.length]).join("");
+}
+
 async function deleteDoctorFromAdmin(email) {
   if (!confirm(`¿Eliminar al doctor ${email}?`)) return;
   try {
     const res = await fetch(`/api/doctors/${encodeURIComponent(email)}`, { method: "DELETE", headers: { "x-admin-token": getAdminToken() } });
     if (!res.ok) { showToast("No se pudo eliminar el doctor."); return; }
     delete doctorDirectory[email];
-    delete authorizedAccounts[email];
     renderAdmin();
     showToast("Doctor eliminado.");
   } catch (e) {
@@ -2287,7 +2273,6 @@ function renderAdmin() {
   adminDoctorList.innerHTML = allDoctors
     .map((doctor) => {
       const tier = getPartnerTier(doctor.partner.referredPatients);
-      const pw = authorizedAccounts[doctor.email]?.password || doctor.password || "";
       const notificationsOn = doctor.notifications !== false;
       const doctorEvents = partnerEvents
         .filter((e) => e.email === doctor.email)
@@ -2315,10 +2300,10 @@ function renderAdmin() {
           </header>
           <span>${doctor.specialty || "Sin especialidad"}</span>
           <small class="admin-credential-line">Correo: <strong>${doctor.email}</strong></small>
-          <small class="admin-credential-line">Contraseña actual: <strong>${pw}</strong></small>
           <div class="admin-pw-row" style="display:flex;gap:6px;margin-top:8px;">
             <input class="admin-pw-input" type="text" placeholder="Nueva contraseña" data-pw-email="${doctor.email}"
               style="flex:1;font-size:0.8rem;padding:4px 8px;border:1px solid #ccc;border-radius:6px;" />
+            <button class="small-action admin-generate-password" data-email="${doctor.email}" type="button">Generar</button>
             <button class="small-action admin-reset-password" data-email="${doctor.email}" type="button">Cambiar</button>
           </div>
           <div class="admin-notif-row" style="display:flex;align-items:center;gap:8px;margin-top:10px;">
@@ -3056,6 +3041,13 @@ adminDoctorList?.addEventListener("click", async (event) => {
     return;
   }
 
+  const generateBtn = event.target.closest(".admin-generate-password");
+  if (generateBtn) {
+    const input = adminDoctorList.querySelector(`.admin-pw-input[data-pw-email="${generateBtn.dataset.email}"]`);
+    if (input) input.value = generateRandomPassword();
+    return;
+  }
+
   const resetBtn = event.target.closest(".admin-reset-password");
   if (resetBtn) {
     const email = resetBtn.dataset.email;
@@ -3069,7 +3061,6 @@ adminDoctorList?.addEventListener("click", async (event) => {
         body: JSON.stringify({ password: newPassword }),
       });
       if (!res.ok) { const d = await res.json(); showToast(d.error || "Error al cambiar contraseña."); return; }
-      if (authorizedAccounts[email]) authorizedAccounts[email].password = newPassword;
       showToast(`✓ Contraseña de ${email} actualizada.`);
       input.value = "";
       renderAdmin();
@@ -3090,7 +3081,6 @@ adminDoctorList?.addEventListener("change", async (event) => {
       body: JSON.stringify({ notifications: enabled }),
     });
     if (!res.ok) { showToast("Error al actualizar notificaciones."); toggle.checked = !enabled; return; }
-    if (authorizedAccounts[email]) authorizedAccounts[email].notifications = enabled;
     if (doctorDirectory[email]) doctorDirectory[email].notifications = enabled;
     showToast(enabled ? `✓ Notificaciones activadas para ${email}.` : `Notificaciones desactivadas para ${email}.`);
   } catch { showToast("Error de conexión."); toggle.checked = !enabled; }

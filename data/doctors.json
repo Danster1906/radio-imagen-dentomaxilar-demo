@@ -9,7 +9,7 @@
       "contactPhone": "55 7123 8842",
       "email": "sofia.herrera@consulta.mx",
       "city": "Ciudad de México",
-      "password": "Dentista2026!",
+      "password": "scrypt$f745db5e1e292230f67d0d577949a86c$f364535a6da051802566dfab3ecb26160147e96e84048d4a1a61bb463e45f6431e3f8ad26ba6002e65bcf334896019dc2a0da838cdee52b7ad847a63db5fd56c",
       "notifications": true,
       "partner": {
         "referredPatients": 18,
