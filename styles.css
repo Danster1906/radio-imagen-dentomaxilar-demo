@@ -1,14 +1,14 @@
-@import url('https://fonts.googleapis.com/css2?family=Figtree:wght@400;500;600;700;800&family=Noto+Sans:wght@400;500;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=Schibsted+Grotesk:wght@500;700;800&display=swap');
 
 :root {
   --bg: #fafafa;
   --surface: #ffffff;
   --surface-soft: #fff8f8;
-  --ink: #0f172a;
-  --muted: #64748b;
+  --ink: #16203a;
+  --muted: #6a7280;
   --line: #eaecf0;
-  --brand: #dc2626;
-  --brand-dark: #991b1b;
+  --brand: #d62b2b;
+  --brand-dark: #b01e1e;
   --accent: #ef4444;
   --premium: #1e293b;
   --ok: #2d8a61;
@@ -22,16 +22,21 @@
   box-sizing: border-box;
 }
 
+/* El atributo hidden siempre gana, aunque una regla defina display */
+[hidden] {
+  display: none !important;
+}
+
 body {
   margin: 0;
   min-height: 100vh;
   color: var(--ink);
   background: var(--bg);
-  font-family: 'Noto Sans', ui-sans-serif, system-ui, -apple-system, sans-serif;
+  font-family: 'IBM Plex Sans', ui-sans-serif, system-ui, -apple-system, sans-serif;
 }
 
 h1, h2, h3, h4 {
-  font-family: 'Figtree', ui-sans-serif, system-ui, -apple-system, sans-serif;
+  font-family: 'Schibsted Grotesk', ui-sans-serif, system-ui, -apple-system, sans-serif;
 }
 
 button,
@@ -2120,6 +2125,23 @@ textarea:focus {
   z-index: 1;
 }
 
+/* Entrada escalonada del panel izquierdo (del diseño Claude Design) */
+@keyframes login-fade-up {
+  from { opacity: 0; transform: translateY(16px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .login-panel > * {
+    animation: login-fade-up 0.55s ease both;
+  }
+
+  .login-panel > *:nth-child(1) { animation-delay: 0.05s; }
+  .login-panel > *:nth-child(2) { animation-delay: 0.13s; }
+  .login-panel > *:nth-child(3) { animation-delay: 0.21s; }
+  .login-panel > *:nth-child(4) { animation-delay: 0.29s; }
+}
+
 .login-brand.login-brand-lockup {
   align-items: flex-start;
   justify-content: flex-start;
@@ -2166,8 +2188,9 @@ textarea:focus {
 }
 
 .login-panel .login-copy h1 {
-  font-size: clamp(1.9rem, 3vw, 2.3rem);
-  line-height: 1.04;
+  font-size: clamp(1.5rem, 2.4vw, 2rem);
+  line-height: 1.06;
+  letter-spacing: -0.025em;
 }
 
 .login-panel .login-copy p {
@@ -2184,14 +2207,14 @@ textarea:focus {
   display: flex;
   min-height: 34px;
   align-items: center;
-  gap: 12px;
+  gap: 11px;
   padding: 8px 10px;
-  color: rgba(255, 255, 255, 0.86);
+  color: rgba(255, 255, 255, 0.8);
   background: transparent;
   border: 0;
   border-radius: 8px;
-  font-size: 0.86rem;
-  font-weight: 700;
+  font-size: 0.84rem;
+  font-weight: 500;
 }
 
 .login-trust-icon {
@@ -2229,12 +2252,12 @@ textarea:focus {
   display: flex;
   align-items: center;
   gap: 12px;
-  padding: 11px 14px;
+  padding: 10px 14px;
   color: #ffffff;
   text-decoration: none;
-  background: rgba(255, 255, 255, 0.075);
-  border: 1px solid rgba(255, 255, 255, 0.14);
-  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 10px;
   transition: background 0.2s, border-color 0.2s;
 }
 
@@ -2287,7 +2310,7 @@ textarea:focus {
 }
 
 .login-showcase > * {
-  width: min(100%, 500px);
+  width: min(100%, 420px);
 }
 
 .login-back-link {
@@ -2309,11 +2332,20 @@ textarea:focus {
 
 .login-card {
   display: grid;
-  width: min(100%, 500px);
-  padding: clamp(28px, 4vw, 44px);
+  width: min(100%, 420px);
+  padding: 40px 36px;
   background: #ffffff;
-  border-radius: 22px;
-  box-shadow: 0 30px 60px -30px rgba(22, 32, 58, 0.25), 0 8px 24px -12px rgba(22, 32, 58, 0.12);
+  border: 1px solid #ede8e4;
+  border-radius: 20px;
+  box-shadow: 0 20px 50px -20px rgba(22, 32, 58, 0.12);
+}
+
+.login-card .eyebrow {
+  margin-bottom: 12px;
+  color: var(--brand-dark);
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.16em;
 }
 
 .login-card .login-copy {
@@ -2323,8 +2355,9 @@ textarea:focus {
 
 .login-card .login-copy h1 {
   color: #16203a;
-  font-size: clamp(2rem, 3vw, 2.45rem);
-  line-height: 1.04;
+  font-size: clamp(1.7rem, 2.6vw, 2.1rem);
+  line-height: 1.05;
+  letter-spacing: -0.025em;
 }
 
 .login-card .login-copy p {
@@ -2339,8 +2372,8 @@ textarea:focus {
   display: grid;
   gap: 7px;
   color: #16203a;
-  font-size: 0.86rem;
-  font-weight: 800;
+  font-size: 0.84rem;
+  font-weight: 600;
 }
 
 .login-label-row {
@@ -2368,9 +2401,13 @@ textarea:focus {
   color: #16203a;
   background: #f8f7f6;
   border: 1.5px solid #e6e2df;
-  border-radius: 8px;
+  border-radius: 10px;
   outline: none;
   transition: border-color 0.2s, box-shadow 0.2s, background 0.2s;
+}
+
+.login-form input::placeholder {
+  color: #b0a8a8;
 }
 
 .login-form input:focus {
@@ -2380,10 +2417,49 @@ textarea:focus {
 }
 
 .login-form .primary-action {
+  position: relative;
   min-height: 50px;
   margin-top: 4px;
-  border-radius: 8px;
-  box-shadow: 0 12px 26px -12px rgba(214, 43, 43, 0.65);
+  overflow: hidden;
+  border-radius: 10px;
+  font-size: 0.97rem;
+  font-weight: 700;
+  box-shadow: 0 8px 24px -8px rgba(214, 43, 43, 0.55);
+  transition: transform 0.15s ease, box-shadow 0.2s ease;
+}
+
+/* Línea de escaneo al pasar el cursor (del diseño Claude Design) */
+@keyframes login-scan-line {
+  0% { transform: translateY(-150%) scaleX(1.1); opacity: 0; }
+  8% { opacity: 1; }
+  92% { opacity: 1; }
+  100% { transform: translateY(320%) scaleX(1.1); opacity: 0; }
+}
+
+.login-form .primary-action::before {
+  position: absolute;
+  top: 0;
+  left: -8%;
+  width: 116%;
+  height: 28%;
+  content: "";
+  background: linear-gradient(to bottom, transparent 0%, rgba(255, 220, 220, 0.25) 15%, rgba(255, 255, 255, 0.92) 50%, rgba(255, 220, 220, 0.25) 85%, transparent 100%);
+  box-shadow: 0 0 12px 4px rgba(255, 180, 180, 0.5);
+  border-radius: inherit;
+  transform: translateY(-150%);
+  opacity: 0;
+  pointer-events: none;
+  z-index: 2;
+}
+
+.login-form .primary-action:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 8px 24px rgba(214, 43, 43, 0.4);
+}
+
+.login-form .primary-action:hover::before {
+  opacity: 1;
+  animation: login-scan-line 1.2s ease-in-out infinite;
 }
 
 .login-divider {
@@ -2391,12 +2467,10 @@ textarea:focus {
   display: flex;
   align-items: center;
   justify-content: center;
-  margin: 24px 0 14px;
+  margin: 28px 0 14px;
   color: #a8a0a0;
-  font-size: 0.72rem;
-  font-weight: 800;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
+  font-size: 0.75rem;
+  font-weight: 500;
 }
 
 .login-divider::before,
@@ -2404,7 +2478,7 @@ textarea:focus {
   flex: 1;
   height: 1px;
   content: "";
-  background: #e9e2df;
+  background: #e6e2df;
 }
 
 .login-divider span {
@@ -2413,14 +2487,14 @@ textarea:focus {
 
 .login-note {
   margin: 0;
-  color: #6a7280;
-  font-size: 0.86rem;
+  color: #a8a0a0;
+  font-size: 0.82rem;
   text-align: center;
 }
 
 .login-note a {
-  color: #d62b2b;
-  font-weight: 800;
+  color: var(--brand-dark);
+  font-weight: 600;
   text-decoration: none;
 }
 
@@ -2430,14 +2504,16 @@ textarea:focus {
 
 .login-legal {
   margin: 8px 0 0;
-  color: #a8a0a0;
-  font-size: 0.76rem;
+  color: #c0b8b8;
+  font-size: 0.78rem;
   text-align: center;
 }
 
 .login-legal a {
   color: #8a8080;
+  font-weight: 600;
   text-decoration: underline;
+  text-underline-offset: 3px;
 }
 
 @media (max-width: 980px) {
