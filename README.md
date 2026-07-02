@@ -1,48 +1,38 @@
-# Radio Imagen Dentomaxilar - Portal de doctores
+# Radio Imagen Dentomaxilar — Portal de doctores
 
-Interfaz inicial para que doctores generen órdenes digitales y Radio Imagen/Radiodiagnóstico pueda darles seguimiento operativo.
+Portal para que doctores generen órdenes digitales y Radio Imagen pueda darles seguimiento operativo.
 
-- Panel del doctor.
-- Captura de orden digital.
-- Seleccion de estudios.
-- Consulta de resultados.
-- Perfil profesional del doctor.
-- Login con correo o Google simulado.
-- Vista futura para agenda, finanzas y KPIs como servicio aparte.
+- Login de doctores y administrador (el login es la página principal).
+- Panel del doctor con métricas y programa de socios.
+- Captura de orden digital y selección de estudios.
+- Consulta y descarga de resultados.
+- Panel de administración (órdenes, doctores, subida de resultados).
 
-## Documentación
+## Arquitectura
 
-- `PDR_RADIO_IMAGEN.md`: definición funcional del producto.
-- `PDR_CAMBIOS.md`: registro de cambios de producto.
-- `LOGICA_INFORMACION.md`: lógica de datos, permisos y seguimiento.
-- `LOGICA_PUNTOS_SOCIOS.md`: reglas de puntos, niveles, cashback y auditoría del programa de socios.
-- `CONFIG_SUPABASE_STORAGE_TEMPORAL.md`: configuración propuesta para usar Supabase como almacenamiento temporal bajo demanda.
-- `REPLIT_DEPLOYMENT.md`: guía para publicar el portal en Replit y conectarlo con Supabase/agente local.
-- `DEPLOY_OPERATIVO_DOCTORES.md`: ruta concreta para publicar el portal e iniciar operación real con doctores.
-- `DATA_MODEL.md`: estructura escalable de base de datos.
-- `database/`: base SQLite demo, esquema, datos semilla y consultas de prueba.
-- `local-agent/`: agente local Node.js para subir resultados a Supabase bajo demanda.
+- `portal.html` — única página de la app (login + SPA de vistas).
+- `app.js` — lógica del cliente (vanilla JS, sin framework).
+- `styles.css` / `admin.css` — estilos.
+- `server.js` — servidor Node (sin dependencias de framework): archivos estáticos + API JSON en `/api/*`.
+- `data/` — persistencia en archivos JSON (`doctors.json`, `orders.json`, `partner-events.json`) y `data/uploads/`.
+- `local-agent/` — agente local Node.js para subir resultados bajo demanda.
+- `supabase/` y `database/schema.sql` — artefactos del backend Supabase propuesto (no activo en el frontend actual).
 
 ## Uso local
 
-Abre `index.html` en el navegador.
-
-## Base de datos demo
-
-Reconstruir la base:
-
 ```bash
-rm -f database/radio_imagen_demo.sqlite
-sqlite3 database/radio_imagen_demo.sqlite < database/schema.sql
-sqlite3 database/radio_imagen_demo.sqlite < database/seed.sql
+npm start
 ```
 
-Ejecutar reportes demo:
+Abre `http://localhost:5000` (el login es la página inicial).
 
-```bash
-sqlite3 database/radio_imagen_demo.sqlite < database/demo_queries.sql
-```
+## Credenciales
 
-## Uso en Replit
+- Las contraseñas de doctores se guardan como hash `scrypt` en `data/doctors.json` (los valores legados en texto plano se migran automáticamente al iniciar sesión).
+- Credenciales de administrador: configura `ADMIN_EMAIL` y `ADMIN_PASSWORD` como secretos del entorno. Sin ellos, el servidor usa `data/doctors.json` como respaldo y muestra una advertencia al arrancar.
+- Notificaciones por correo: configura `SMTP_HOST`, `SMTP_USER`, `SMTP_PASS` (opcional).
 
-Puedes subir estos archivos a un Repl estatico de HTML/CSS/JS. No requiere instalacion de dependencias ni backend para probar el flujo visual.
+## Documentación
+
+- `DATA_MODEL.md` — estructura escalable de base de datos.
+- `REPLIT_DEPLOYMENT.md` — guía para publicar el portal en Replit.

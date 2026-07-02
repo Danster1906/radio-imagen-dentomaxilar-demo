@@ -1,189 +1,67 @@
 # Deployment en Replit
 
-## Arquitectura recomendada
+## Arquitectura
 
 ```text
 Replit
--> Portal web del doctor
--> Login y llamadas a backend/API
-
-Supabase
--> Base de datos
--> Auth
--> Storage temporal
--> Solicitudes de descarga
+-> Portal web del doctor (portal.html + app.js)
+-> server.js: archivos estáticos + API JSON (/api/*)
+-> Persistencia en data/*.json
 
 Computadora local Radio Imagen
 -> Archivos maestros por 3 meses
--> Agente local
--> Sube archivos a Supabase solo bajo demanda
+-> Agente local (local-agent/)
+-> Sube archivos solo bajo demanda
 ```
 
-## Qué va en Replit
+## Qué aloja Replit
 
-Replit debe alojar:
-
-- `index.html`
-- `styles.css`
-- `app.js`
-- Futuro backend/API si decidimos hacerlo en Node/Express.
-
-Para el MVP visual actual, puede ser un Static Deployment porque es HTML/CSS/JS.
-
-Replit documenta Static Deployments como una forma de hospedar archivos HTML, CSS y JavaScript en servidor cloud. También permite importar repositorios existentes desde GitHub.
+- `portal.html` (el login es la página principal; `/` la sirve directamente)
+- `styles.css`, `admin.css`, `app.js`, `img/`
+- `server.js` (API y estáticos)
+- `data/` (persistencia JSON y uploads)
 
 ## Qué NO va en Replit
 
-No debe ir:
-
-- `SUPABASE_SERVICE_ROLE_KEY`.
+- Llaves privadas (p. ej. `SUPABASE_SERVICE_ROLE_KEY`).
 - Archivos pesados de estudios.
-- Rutas locales de la computadora de Radio Imagen visibles al usuario.
 - El agente local con acceso al disco de Radio Imagen.
 
-## Estado actual del proyecto
-
-El proyecto ya incluye configuracion para que Replit pueda correrlo como app Node estatica:
-
-```text
-package.json
-server.js
-.replit
-```
-
-Comando de ejecucion:
+## Ejecución
 
 ```bash
 npm start
 ```
 
-Puerto interno:
+El servidor escucha en `PORT` (por defecto 5000; `.replit` mapea 5000 → 80).
 
-```text
-8003
-```
+## Secretos del entorno
 
-En Replit tambien puede usar `PORT` automaticamente cuando publique la app.
+Configura en Replit Secrets:
 
-## Pasos para desplegar el frontend en Replit
+- `ADMIN_EMAIL` / `ADMIN_PASSWORD` — credenciales del administrador (sin ellos el servidor usa `data/doctors.json` como respaldo y advierte al arrancar).
+- `SMTP_HOST` / `SMTP_USER` / `SMTP_PASS` — opcional, para notificaciones por correo al subir resultados.
+- `PORTAL_URL` — opcional, URL pública usada en los correos.
 
-1. Abrir Replit.
-2. Importar desde GitHub:
-
-```text
-https://github.com/Danster1906/radio-imagen-dentomaxilar-demo
-```
-
-3. Si Replit pregunta como correr la app, usar:
-
-```text
-npm start
-```
-
-4. Confirmar que carguen:
-
-```text
-index.html
-portal.html
-styles.css
-app.js
-server.js
-```
-
-5. Presionar `Run` y abrir el preview.
-6. Entrar a `portal.html` desde el boton `Portal doctores`.
-7. Crear deployment.
-
-### Tipo de deployment recomendado
-
-Para probar y operar con el frontend actual:
+## Tipo de deployment
 
 ```text
 Autoscale Deployment
 ```
 
-Motivo: permite usar el servidor `server.js`, mantener una configuracion parecida a produccion y migrar mas facil a endpoints propios si despues agregamos backend.
+Motivo: ejecuta `server.js` (la API JSON y las subidas de archivos lo requieren). Un Static Deployment NO funciona porque no ejecuta el servidor.
 
-Para un sitio puramente estatico sin backend:
-
-```text
-Static Deployment
-```
-
-Tambien funciona, pero no ejecuta `server.js`.
-
-## Pasos para conectar Supabase
-
-El proyecto ya esta conectado al proyecto Supabase:
+## Flujo de descarga
 
 ```text
-https://wwrfuwtvllgecjmfjfwf.supabase.co
-```
-
-La clave publica esta en `app.js` y puede vivir en frontend. No es la llave privada.
-
-La operacion actual ya incluye:
-
-- Login real con Supabase Auth.
-- Lectura de perfiles y roles.
-- Creacion real de ordenes.
-- Cambio real de estados desde admin.
-- Edge Function `create-doctor` para alta segura de doctores.
-
-Pendiente para resultados:
-
-1. Crear o confirmar bucket privado:
-
-```text
-result-temp
-```
-
-2. Conectar subida manual a Storage.
-3. Generar signed URLs para descargas.
-
-Las tablas de operacion ya existen en Supabase.
-
-## Flujo de descarga con Replit
-
-```text
-Doctor entra a Replit app
+Doctor entra al portal
 -> click Solicitar descarga
--> Replit/Supabase crea download_request
--> agente local ve solicitud
--> agente sube archivo a Supabase Storage
--> Supabase genera signed URL
--> doctor descarga desde Supabase
+-> se crea la solicitud en el servidor
+-> agente local la procesa y sube el archivo
+-> doctor descarga desde el portal
 ```
 
-## Primer MVP recomendado
-
-Fase 1:
-
-- Replit solo como frontend publicado.
-- Supabase como base de datos y storage temporal.
-- Agente local corriendo manualmente en la computadora de Radio Imagen.
-
-Fase 2:
-
-- Agregar backend/API.
-- Agregar Auth real.
-- Conectar órdenes y resultados reales.
-
-Fase 3:
-
-- Automatizar agente local como servicio.
-- Borrado automático de nube.
-- Limpieza local a los 3 meses.
-
-## Comandos útiles
-
-Para correr el frontend local:
-
-```bash
-python3 -m http.server 8003
-```
-
-Para correr el agente local:
+## Agente local
 
 ```bash
 cd local-agent
@@ -193,16 +71,4 @@ npm run once
 npm start
 ```
 
-## Decisión importante
-
-El agente local no debe depender de Replit para acceder al disco local.
-
-Replit vive en la nube. No puede leer directamente el disco de Radio Imagen.
-
-Por eso el patrón correcto es:
-
-```text
-Replit crea solicitud
-Agente local la procesa
-Supabase entrega temporalmente
-```
+El agente local no depende de Replit para acceder al disco local; Replit solo publica solicitudes que el agente procesa.
