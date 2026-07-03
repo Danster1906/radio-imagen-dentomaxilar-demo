@@ -1,5 +1,28 @@
 [
   {
+    "id": "ORD-2026-0006",
+    "patient": "Paciente prueba ",
+    "phone": "312 1462676",
+    "doctor": "Dra. Sofia Herrera",
+    "owner": "current-doctor",
+    "doctorId": "DR-0001",
+    "studies": [
+      "Estudio Ortodóntico Completo 2D - incluye ortopantomografía, lateral de cráneo, escaneo intraoral, modelos en resina, fotografía extraoral e intraoral, Análisis cefalométrico: NEMOCEF STEINER",
+      "Tomografía 3D FOV 5x5 - Pieza 36",
+      "FOTOGRAFÍA EXTRAORAL E INTRAORAL DIGITAL",
+      "FOTOGRAFÍA EXTRAORAL E INTRAORAL IMPRESA",
+      "MODELOS DE ESTUDIO EN YESO",
+      "NEMOCEF RICKETS",
+      "NEMOCEF MC. NAMARA"
+    ],
+    "status": "Agendada",
+    "date": "2026-07-02",
+    "result": "",
+    "notes": "",
+    "countsForPartner": false,
+    "scheduledAt": "2026-07-02"
+  },
+  {
     "id": "ORD-2026-0005",
     "patient": "alosno",
     "phone": "33 4672rr671r23",
@@ -9,11 +32,14 @@
     "studies": [
       "Ortopantomografía"
     ],
-    "status": "Recibida",
+    "status": "Completa",
     "date": "2026-06-26",
     "result": "",
     "notes": "",
-    "countsForPartner": false
+    "countsForPartner": true,
+    "validatedAt": "2026-07-02",
+    "validatedBy": "Admin Radio Imagen",
+    "completedAt": "2026-07-02"
   },
   {
     "id": "ORD-2026-0001",
@@ -44,11 +70,14 @@
     "studies": [
       "Ortopantomografía"
     ],
-    "status": "Agendada",
+    "status": "Completa",
     "date": "2026-06-02",
     "result": "",
     "notes": "Valoración general para diagnóstico y plan de tratamiento.",
-    "countsForPartner": false
+    "countsForPartner": true,
+    "validatedAt": "2026-07-02",
+    "validatedBy": "Admin Radio Imagen",
+    "completedAt": "2026-07-02"
   },
   {
     "id": "ORD-2026-0003",
@@ -61,11 +90,14 @@
       "Lateral de Craneo",
       "PA De craneo"
     ],
-    "status": "Completa",
+    "status": "Lista para descargar",
     "date": "2026-06-01",
-    "result": "",
+    "result": "Valeria_Torres_Diaz_Cefalometria.zip",
     "notes": "Cefalometría y fotografías para seguimiento.",
-    "countsForPartner": false
+    "countsForPartner": true,
+    "validatedAt": "2026-07-02",
+    "validatedBy": "Admin Radio Imagen",
+    "completedAt": "2026-07-02"
   },
   {
     "id": "ORD-2026-0004",
@@ -77,10 +109,14 @@
     "studies": [
       "ATM COMPARATIVA"
     ],
-    "status": "Recibida",
+    "status": "Lista para descargar",
     "date": "2026-06-04",
-    "result": "",
+    "result": "Roberto_Salinas_Vega_ATM.zip",
     "notes": "Evaluación de ATM y dolor articular referido.",
-    "countsForPartner": false
+    "countsForPartner": true,
+    "scheduledAt": "2026-07-02",
+    "validatedAt": "2026-07-02",
+    "validatedBy": "Admin Radio Imagen",
+    "completedAt": "2026-07-02"
   }
 ]

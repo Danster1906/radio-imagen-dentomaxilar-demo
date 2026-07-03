@@ -1,1 +1,32 @@
-{ "events": [] }
+{
+  "events": [
+    {
+      "email": "sofia.herrera@consulta.mx",
+      "orderId": "ORD-2026-0005",
+      "delta": 100,
+      "timestamp": "2026-07-02T16:51:48.297Z",
+      "reason": "validation"
+    },
+    {
+      "email": "sofia.herrera@consulta.mx",
+      "orderId": "ORD-2026-0002",
+      "delta": 100,
+      "timestamp": "2026-07-02T16:52:21.203Z",
+      "reason": "validation"
+    },
+    {
+      "email": "marco.padilla@consulta.mx",
+      "orderId": "ORD-2026-0003",
+      "delta": 100,
+      "timestamp": "2026-07-02T16:52:23.480Z",
+      "reason": "validation"
+    },
+    {
+      "email": "sofia.herrera@consulta.mx",
+      "orderId": "ORD-2026-0004",
+      "delta": 100,
+      "timestamp": "2026-07-02T16:52:30.550Z",
+      "reason": "validation"
+    }
+  ]
+}

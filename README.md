@@ -7,16 +7,15 @@ Portal para que doctores generen órdenes digitales y Radio Imagen pueda darles 
 - Captura de orden digital y selección de estudios.
 - Consulta y descarga de resultados.
 - Panel de administración (órdenes, doctores, subida de resultados).
+- Cuentas de clínica con varios dentistas bajo un mismo perfil (los puntos se comparten).
 
 ## Arquitectura
 
 - `portal.html` — única página de la app (login + SPA de vistas).
-- `app.js` — lógica del cliente (vanilla JS, sin framework).
-- `styles.css` / `admin.css` — estilos.
+- `js/` — lógica del cliente en módulos ES (vanilla JS, sin framework; `js/main.js` es el punto de entrada).
+- `styles.css` / `admin.css` — estilos (tokens de diseño compartidos en `:root` de `styles.css`).
 - `server.js` — servidor Node (sin dependencias de framework): archivos estáticos + API JSON en `/api/*`.
-- `data/` — persistencia en archivos JSON (`doctors.json`, `orders.json`, `partner-events.json`) y `data/uploads/`.
-- `local-agent/` — agente local Node.js para subir resultados bajo demanda.
-- `supabase/` y `database/schema.sql` — artefactos del backend Supabase propuesto (no activo en el frontend actual).
+- `data/` — persistencia en archivos JSON (`doctors.json`, `orders.json`, `partner-events.json`), `data/uploads/` y `data/avatars/`.
 
 ## Uso local
 
@@ -34,5 +33,4 @@ Abre `http://localhost:5000` (el login es la página inicial).
 
 ## Documentación
 
-- `DATA_MODEL.md` — estructura escalable de base de datos.
 - `REPLIT_DEPLOYMENT.md` — guía para publicar el portal en Replit.

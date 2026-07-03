@@ -566,12 +566,3 @@ function listen(port) {
 }
 
 listen(preferredPort);
-
-// También escuchar en puerto 8003 si está configurado en .replit como fallback
-if (preferredPort !== 8003) {
-  const fallback = createAppServer();
-  fallback.listen(8003, "0.0.0.0", () => {
-    console.log("Puerto alternativo 8003 activo");
-  });
-  fallback.on("error", () => {});
-}
