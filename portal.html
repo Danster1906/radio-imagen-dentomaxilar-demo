@@ -149,7 +149,7 @@
 
         <div class="profile-card">
           <span class="eyebrow">Cuenta activa</span>
-          <strong data-profile-name>Dra. Sofia Herrera</strong>
+          <strong data-profile-name></strong>
           <span data-profile-specialty>Ortodoncia y ATM</span>
           <small class="profile-handle" data-profile-handle>@sofia-herrera</small>
         </div>
@@ -351,6 +351,15 @@
                   <input name="referralDate" type="date" required />
                   <span class="field-error" data-error="referralDate">Para poder dar seguimiento a tu paciente debes llenar este campo.</span>
                 </label>
+                <label data-clinic-only hidden>
+                  Doctor tratante <span class="required-star" aria-hidden="true">*</span>
+                  <select name="treatingDoctor" id="treating-doctor-select"></select>
+                </label>
+                <label data-clinic-only data-new-treating hidden>
+                  Nombre del nuevo doctor <span class="required-star" aria-hidden="true">*</span>
+                  <input name="newTreatingDoctor" placeholder="Ej. Dr. Juan Pérez" autocomplete="off" />
+                  <span class="field-error" data-error="newTreatingDoctor">Escribe el nombre del doctor tratante.</span>
+                </label>
                 <label class="full">
                   Indicaciones clínicas
                   <textarea name="notes" placeholder="Motivo del estudio, zona de interés o comentarios para Radio Imagen"></textarea>
@@ -373,7 +382,7 @@
               <div>
                 <span class="eyebrow">Resumen</span>
                 <h2>Doctor referente</h2>
-                <p><span data-profile-name>Dra. Sofia Herrera</span>, <span data-profile-specialty>Ortodoncia y ATM</span></p>
+                <p><span data-profile-name></span>, <span data-profile-specialty></span></p>
               </div>
               <button class="primary-action" type="submit">Enviar orden</button>
             </section>
@@ -451,27 +460,27 @@
                 <div class="form-grid">
                   <label>
                     Nombre profesional
-                    <input name="doctorName" value="Dra. Sofia Herrera" required />
+                    <input name="doctorName" required />
                   </label>
                   <label>
                     Especialidad
-                    <input name="specialty" value="Ortodoncia y ATM" placeholder="Ej. Endodoncia, Ortodoncia" />
+                    <input name="specialty" placeholder="Ej. Endodoncia, Ortodoncia" />
                   </label>
                   <label>
                     Clínica o consultorio
-                    <input name="clinic" value="Clínica Herrera Dental" />
+                    <input name="clinic" />
                   </label>
                   <label>
                     Teléfono de contacto
-                    <input name="contactPhone" value="55 7123 8842" />
+                    <input name="contactPhone" />
                   </label>
                   <label>
                     Correo electrónico
-                    <input name="email" type="email" value="sofia.herrera@consulta.mx" />
+                    <input name="email" type="email" />
                   </label>
                   <label>
                     Ciudad
-                    <input name="city" value="Ciudad de México" />
+                    <input name="city" />
                   </label>
                   <label class="full">
                     Notas para Radio Imagen
@@ -498,7 +507,7 @@
                     </div>
                   </div>
                   <div class="preview-identity">
-                    <h3 data-profile-name>Dra. Sofia Herrera</h3>
+                    <h3 data-profile-name></h3>
                     <p data-profile-specialty>Ortodoncia y ATM</p>
                   </div>
                   <dl class="preview-details">
@@ -534,18 +543,22 @@
                 <article>
                   <strong>Agenda</strong>
                   <span>Citas, recordatorios y seguimiento de pacientes.</span>
+                  <button class="small-action plus-interest-action" data-plus-module="agenda" type="button">Me interesa</button>
                 </article>
                 <article>
                   <strong>Finanzas</strong>
                   <span>Ingresos, gastos, no-shows y ticket promedio.</span>
+                  <button class="small-action plus-interest-action" data-plus-module="finanzas" type="button">Me interesa</button>
                 </article>
                 <article>
                   <strong>KPIs</strong>
                   <span>Pacientes nuevos, referidos, crecimiento y conversión.</span>
+                  <button class="small-action plus-interest-action" data-plus-module="kpis" type="button">Me interesa</button>
                 </article>
                 <article>
                   <strong>Coach</strong>
                   <span>Recomendaciones mensuales para mejorar la consulta.</span>
+                  <button class="small-action plus-interest-action" data-plus-module="coach" type="button">Me interesa</button>
                 </article>
               </div>
             </section>
@@ -555,6 +568,10 @@
               <p>
                 El doctor entra para mandar órdenes a Radio Imagen. Cuando ese hábito existe,
                 se puede ofrecer agenda, finanzas y métricas como un módulo aparte.
+              </p>
+              <p>
+                Tu interés nos ayuda a decidir qué módulo construir primero. Marca los que
+                usarías y te avisaremos cuando estén listos.
               </p>
             </section>
           </div>
@@ -568,7 +585,7 @@
               <p>Una bandeja para saber qué orden llegó, cuál ya fue agendada, cuál se completó y qué resultado falta enviar.</p>
             </div>
             <div class="admin-hero-actions">
-              <button class="primary-action" id="send-studies-button" type="button">Mandar estudios</button>
+              <button class="primary-action" id="send-studies-button" type="button">Subir resultados</button>
               <button class="secondary-action" id="focus-new-doctor" type="button">Alta doctor</button>
             </div>
           </section>
@@ -603,9 +620,9 @@
                 <small>Para descargar</small>
               </article>
               <article>
-                <span>Descargas</span>
+                <span>Entregas</span>
                 <strong data-admin-metric="downloadRequests">--</strong>
-                <small>Solicitudes activas</small>
+                <small>Pendientes de descarga</small>
               </article>
             </section>
 
@@ -617,7 +634,7 @@
                   <li>Contactar órdenes recibidas.</li>
                   <li>Confirmar asistencia de pacientes agendados.</li>
                   <li>Asignar archivos a estudios completos.</li>
-                  <li>Enviar estudios listos cuando el doctor los solicite.</li>
+                  <li>Atender solicitudes de reenvío de archivos.</li>
                 </ol>
               </article>
               <article class="panel admin-panel">
@@ -627,10 +644,15 @@
                   <span>Órdenes</span>
                   <small>Seguimiento paciente por paciente</small>
                   <span>Resultados</span>
-                  <small>Agente local, archivos y descargas</small>
+                  <small>Subida de archivos y entregas</small>
                   <span>Doctores</span>
                   <small>Alta, credenciales y socios</small>
                 </div>
+              </article>
+              <article class="panel admin-panel">
+                <span class="eyebrow">Consulta plus</span>
+                <h2>Interés de doctores</h2>
+                <div class="plus-interest-summary" id="plus-interest-summary"></div>
               </article>
             </section>
           </section>
@@ -681,12 +703,13 @@
             <section class="panel admin-panel wide manual-upload-panel">
               <div class="panel-heading">
                 <div>
-                  <span class="eyebrow">Subida directa</span>
-                  <h2>Asignar resultado manual</h2>
+                  <span class="eyebrow">Subida de resultados</span>
+                  <h2>Subir archivos del estudio</h2>
                 </div>
               </div>
               <p class="admin-helper">
-                Primero eliges el paciente/orden. Después indicas qué entrega estás subiendo; el formato real lo toma del archivo seleccionado.
+                Elige la orden, indica qué entrega subes y arrastra los archivos. Los estudios pesados
+                (tomografías DICOM / ZIP de hasta 2 GB) se suben por fragmentos con reintentos automáticos.
               </p>
               <form class="manual-upload-form" id="manual-upload-form">
                 <label>
@@ -704,54 +727,27 @@
                     <option value="Modelo 3D">Modelo 3D / STL (.stl / .ply)</option>
                   </select>
                 </label>
-                <label class="manual-file-picker">
-                  Archivo
-                  <input name="manualResultFile" type="file" accept=".pdf,.zip,.dcm,.stl,.ply,.obj,image/png,image/jpeg" required />
-                </label>
-                <button class="primary-action" type="submit">Subir y liberar al doctor</button>
               </form>
+              <div class="upload-dropzone" id="upload-dropzone" role="button" tabindex="0" aria-label="Arrastra archivos aquí o haz clic para elegir">
+                <strong>Arrastra los archivos aquí o haz clic para elegir</strong>
+                <span>ZIP · DCM · PDF · STL · JPG — hasta 2 GB por archivo</span>
+                <input id="upload-file-input" type="file" multiple accept=".pdf,.zip,.dcm,.stl,.ply,.obj,image/png,image/jpeg" hidden />
+              </div>
+              <div class="upload-queue" id="upload-queue"></div>
               <div class="manual-upload-note">
-                <strong>Flujo de entrega</strong>
-                <span>Admin sube archivo → se guarda en el servidor → la orden queda lista → el doctor descarga directamente desde su panel.</span>
+                <strong>Entrega de descarga única</strong>
+                <span>El doctor recibe un correo de aviso; al completar su descarga, el archivo se elimina del almacenamiento automáticamente. Si lo necesita de nuevo, su solicitud aparecerá aquí como "Reenvío solicitado".</span>
               </div>
             </section>
 
-            <section class="panel admin-panel">
+            <section class="panel admin-panel wide">
               <div class="panel-heading">
                 <div>
-                  <span class="eyebrow">Resultados</span>
-                  <h2>Asignación local</h2>
-                </div>
-                <button class="small-action" id="run-agent-button" type="button">Correr agente</button>
-              </div>
-              <p class="admin-helper">
-                Cruza nombres de pacientes con archivos del servidor local, asigna el resultado correcto y prepara la subida inmediata.
-              </p>
-              <div class="agent-summary" aria-label="Resumen del agente">
-                <article>
-                  <span>Archivos locales</span>
-                  <strong data-agent-metric="localFiles">--</strong>
-                </article>
-                <article>
-                  <span>Matches</span>
-                  <strong data-agent-metric="matches">--</strong>
-                </article>
-                <article>
-                  <span>Subidas</span>
-                  <strong data-agent-metric="uploads">--</strong>
-                </article>
-              </div>
-              <div class="agent-log" id="agent-log"></div>
-            </section>
-
-            <section class="panel admin-panel">
-              <div class="panel-heading">
-                <div>
-                  <span class="eyebrow">Servidor local</span>
-                  <h2>Cola de entregas</h2>
+                  <span class="eyebrow">Almacenamiento temporal</span>
+                  <h2>Archivos entregados</h2>
                 </div>
               </div>
-              <div class="download-queue" id="admin-download-queue"></div>
+              <div class="delivered-files" id="delivered-files"></div>
             </section>
           </div>
 
@@ -776,35 +772,42 @@
               <form class="admin-form-grid" id="admin-doctor-form">
                 <label>
                   Nombre
-                  <input name="doctorName" value="Dra. Natalia Rivas" required />
+                  <input name="doctorName" required />
+                </label>
+                <label>
+                  Tipo de cuenta
+                  <select name="accountType">
+                    <option value="personal">Personal (doctor individual)</option>
+                    <option value="clinic">Clínica (varios doctores)</option>
+                  </select>
                 </label>
                 <label>
                   Correo
-                  <input name="doctorEmail" type="email" value="natalia.rivas@consulta.mx" required />
+                  <input name="doctorEmail" type="email" required />
                 </label>
                 <label>
                   Contraseña inicial
-                  <input name="doctorPassword" type="text" value="Dentista2026!" autocomplete="new-password" required />
+                  <input name="doctorPassword" type="text" autocomplete="new-password" required />
                 </label>
                 <label>
                   Especialidad
-                  <input name="doctorSpecialty" value="Ortodoncia" />
+                  <input name="doctorSpecialty" />
                 </label>
                 <label>
                   Clínica
-                  <input name="doctorClinic" value="Clínica Rivas Ortodoncia" />
+                  <input name="doctorClinic" />
                 </label>
                 <label>
                   Teléfono
-                  <input name="doctorPhone" value="55 0000 0000" />
+                  <input name="doctorPhone" />
                 </label>
                 <label>
                   Ciudad
-                  <input name="doctorCity" value="Ciudad de México" />
+                  <input name="doctorCity" />
                 </label>
                 <label>
                   Pacientes validados
-                  <input name="validatedPatients" min="0" type="number" value="12" />
+                  <input name="validatedPatients" min="0" type="number" value="0" />
                 </label>
                 <button class="primary-action" type="submit">Crear doctor y asignar puntos</button>
               </form>

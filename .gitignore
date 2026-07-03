@@ -3,3 +3,4 @@
 node_modules/
 local-agent/node_modules/
 local-agent/.env
+backups/

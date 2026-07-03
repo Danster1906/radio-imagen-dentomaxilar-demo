@@ -679,3 +679,125 @@
   }
 
 }
+
+/* ── Subida de archivos por fragmentos ── */
+.upload-dropzone {
+  display: grid;
+  gap: 4px;
+  justify-items: center;
+  margin-top: 12px;
+  padding: 28px 16px;
+  text-align: center;
+  background: #fff7f7;
+  border: 2px dashed #fecaca;
+  border-radius: 10px;
+  cursor: pointer;
+  transition: background 150ms ease, border-color 150ms ease;
+}
+
+.upload-dropzone:hover,
+.upload-dropzone:focus-visible,
+.upload-dropzone.dragging {
+  background: #fee2e2;
+  border-color: var(--brand);
+  outline: none;
+}
+
+.upload-dropzone strong {
+  color: var(--brand-dark);
+  font-size: 0.92rem;
+}
+
+.upload-dropzone span {
+  color: var(--muted);
+  font-size: 0.75rem;
+  font-weight: 700;
+}
+
+.upload-queue {
+  display: grid;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.upload-item {
+  display: grid;
+  grid-template-columns: minmax(200px, 1fr) minmax(140px, 0.8fr) auto;
+  align-items: center;
+  gap: 12px;
+  padding: 12px;
+  background: #fafafa;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+}
+
+.upload-item-info {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+}
+
+.upload-item-info strong {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.upload-item-info span,
+.upload-item-status {
+  color: var(--muted);
+  font-size: 0.75rem;
+  font-weight: 700;
+}
+
+.upload-item--done .upload-item-status {
+  color: #1a7a3a;
+}
+
+.upload-item--error .upload-item-status,
+.upload-item--cancelled .upload-item-status {
+  color: #c0392b;
+}
+
+.upload-item-progress {
+  height: 8px;
+  background: #eee;
+  border-radius: 999px;
+  overflow: hidden;
+}
+
+.upload-item-bar {
+  height: 100%;
+  width: 0%;
+  background: var(--brand);
+  border-radius: 999px;
+  transition: width 200ms ease;
+}
+
+.upload-item--done .upload-item-bar {
+  background: #1a7a3a;
+}
+
+.delivered-files {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 8px;
+}
+
+.admin-chip.chip-pending {
+  background: #fef3c7;
+  color: #92400e;
+}
+
+.admin-chip.chip-resend {
+  background: #fee2e2;
+  color: #991b1b;
+}
+
+.download-file-status {
+  display: block;
+  margin-top: 3px;
+  color: var(--muted);
+  font-size: 0.72rem;
+  font-weight: 700;
+}

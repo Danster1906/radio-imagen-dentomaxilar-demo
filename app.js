@@ -146,112 +146,10 @@ const studies = [
 
 const cephalometricStudies = studies.filter((study) => study.category === "Análisis cefalométrico NEMOCEF");
 
-const orders = [
-  {
-    id: "ORD-2026-0001",
-    patient: "Mariana Lopez Garcia",
-    doctor: "Dra. Sofia Herrera",
-    owner: "current-doctor",
-    doctorId: "DR-0001",
-    studies: ["Ortopantomografía", "Lateral de Craneo"],
-    status: "Lista para descargar",
-    date: "2026-06-03",
-    result: "Ortopantomografia_Mariana_Lopez.pdf",
-    notes: "Planeación ortodóncica y registro fotográfico inicial.",
-    countsForPartner: true,
-    validatedAt: "2026-06-03",
-    validatedBy: "Admin Radio Imagen",
-  },
-  {
-    id: "ORD-2026-0002",
-    patient: "Carlos Mendez Ruiz",
-    doctor: "Dra. Sofia Herrera",
-    owner: "current-doctor",
-    doctorId: "DR-0001",
-    studies: ["Ortopantomografía"],
-    status: "Agendada",
-    date: "2026-06-02",
-    result: "",
-    notes: "Valoración general para diagnóstico y plan de tratamiento.",
-    countsForPartner: false,
-  },
-  {
-    id: "ORD-2026-0003",
-    patient: "Valeria Torres Diaz",
-    doctor: "Dr. Marco Padilla",
-    owner: "external-doctor",
-    doctorId: "DR-0002",
-    studies: ["Lateral de Craneo", "PA De craneo"],
-    status: "Completa",
-    date: "2026-06-01",
-    result: "",
-    notes: "Cefalometría y fotografías para seguimiento.",
-    countsForPartner: false,
-  },
-  {
-    id: "ORD-2026-0004",
-    patient: "Roberto Salinas Vega",
-    doctor: "Dra. Sofia Herrera",
-    owner: "current-doctor",
-    doctorId: "DR-0001",
-    studies: ["ATM COMPARATIVA"],
-    status: "Recibida",
-    date: "2026-06-04",
-    result: "",
-    notes: "Evaluación de ATM y dolor articular referido.",
-    countsForPartner: false,
-  },
-];
-
-const adminDownloadRequests = [
-  {
-    orderId: "ORD-2026-0001",
-    patient: "Mariana Lopez Garcia",
-    doctor: "Dra. Sofia Herrera",
-    file: "ORD-2026-0001.zip",
-    status: "Solicitada",
-    storage: "local_ready",
-    expires: "Local vence en 68 días",
-  },
-  {
-    orderId: "ORD-2026-0003",
-    patient: "Valeria Torres Diaz",
-    doctor: "Dr. Marco Padilla",
-    file: "CBCT_Valeria_Torres.zip",
-    status: "Subiendo",
-    storage: "upload_requested",
-    expires: "Supabase pendiente",
-  },
-  {
-    orderId: "ORD-2026-0018",
-    patient: "Sofia Calderon Reyes",
-    doctor: "Dra. Sofia Herrera",
-    file: "ORD-2026-0018.pdf",
-    status: "Lista",
-    storage: "cloud_ready",
-    expires: "Link vence en 54 min",
-  },
-];
+const orders = [];
 
 const SESSION_KEY = "radioImagenDoctorSession";
 const ADMIN_EMAIL = "admin@radioimagen.mx";
-const DEFAULT_DOCTOR_PASSWORD = "Dentista2026!";
-
-const authorizedAccounts = {
-  [ADMIN_EMAIL]: {
-    password: "RadioImagen2026!",
-    role: "admin",
-  },
-  "sofia.herrera@consulta.mx": {
-    password: DEFAULT_DOCTOR_PASSWORD,
-    role: "doctor",
-  },
-  "marco.padilla@consulta.mx": {
-    password: DEFAULT_DOCTOR_PASSWORD,
-    role: "doctor",
-  },
-};
-
 const adminProfile = {
   id: "ADM-0001",
   handle: "@radio-imagen-admin",
@@ -263,63 +161,7 @@ const adminProfile = {
   city: "Ciudad de México",
 };
 
-const localResultFiles = [
-  {
-    file: "Mariana_Lopez_Garcia_OPG_Lateral.zip",
-    patient: "Mariana Lopez Garcia",
-    modality: "OPG + Lateral",
-    status: "local_ready",
-    confidence: 98,
-  },
-  {
-    file: "Valeria_Torres_Diaz_Cefalometria.zip",
-    patient: "Valeria Torres Diaz",
-    modality: "Cefalometría",
-    status: "local_ready",
-    confidence: 94,
-  },
-  {
-    file: "Roberto_Salinas_Vega_ATM.zip",
-    patient: "Roberto Salinas Vega",
-    modality: "ATM comparativa",
-    status: "local_ready",
-    confidence: 96,
-  },
-];
-
-const resultPackages = {
-  "ORD-2026-0001": {
-    complete: "Mariana_Lopez_Garcia_Estudio_Completo.zip",
-    files: [
-      { label: "Radiografía panorámica", type: "PDF", file: "Mariana_Lopez_Garcia_OPG.pdf" },
-      { label: "Lateral de cráneo", type: "PDF", file: "Mariana_Lopez_Garcia_Lateral.pdf" },
-      { label: "Análisis cefalométrico", type: "PDF", file: "Mariana_Lopez_Garcia_Cefalometria.pdf" },
-      { label: "Fotografías clínicas", type: "ZIP", file: "Mariana_Lopez_Garcia_Fotografias.zip" },
-    ],
-  },
-  "ORD-2026-0003": {
-    complete: "Valeria_Torres_Diaz_Estudio_Completo.zip",
-    files: [
-      { label: "Lateral de cráneo", type: "PDF", file: "Valeria_Torres_Diaz_Lateral.pdf" },
-      { label: "PA de cráneo", type: "PDF", file: "Valeria_Torres_Diaz_PA.pdf" },
-      { label: "Trazado cefalométrico", type: "PDF", file: "Valeria_Torres_Diaz_Cefalometria.pdf" },
-    ],
-  },
-  "ORD-2026-0004": {
-    complete: "Roberto_Salinas_Vega_ATM_Completo.zip",
-    files: [
-      { label: "ATM boca cerrada", type: "PDF", file: "Roberto_Salinas_Vega_ATM_Cerrada.pdf" },
-      { label: "ATM boca abierta", type: "PDF", file: "Roberto_Salinas_Vega_ATM_Abierta.pdf" },
-      { label: "Reporte comparativo", type: "PDF", file: "Roberto_Salinas_Vega_ATM_Reporte.pdf" },
-    ],
-  },
-};
-
-const agentState = {
-  matches: [],
-  uploads: 0,
-  hasRun: false,
-};
+let deliveredFilesIndex = {};
 
 const downloadedOrders = new Set(
   JSON.parse(localStorage.getItem("ri_downloaded_orders") || "[]")
@@ -407,9 +249,6 @@ const metricPeriods = {
 
 const adminOrderStatuses = ["Recibida", "Agendada", "Completa", "Lista para descargar", "Cancelada"];
 
-const supabaseClient = null;
-let currentAuthUser = null;
-let currentProfile = null;
 let partnerEvents = [];
 
 async function apiLoadPartnerEvents() {
@@ -489,164 +328,14 @@ async function apiLoadDoctors() {
       doctorDirectory[email] = {
         ...doctorDirectory[email],
         ...doc,
-        metrics: doctorDirectory[email]?.metrics || {
-          activeOrders: "0", readyResults: "0 listas", monthlyPatients: "0",
-          growth: "0%", pendingAppointments: "0", topStudy: "OPG",
-          topStudyDetail: "Ortopantomografía", conversion: "0%",
-        },
-        metricsByPeriod: doctorDirectory[email]?.metricsByPeriod || {},
       };
-      if (!authorizedAccounts[email]) {
-        authorizedAccounts[email] = { password: doc.password, role: "doctor" };
-      }
     }
   } catch (e) {
     console.error("apiLoadDoctors:", e);
   }
 }
 
-const doctorDirectory = {
-  "sofia.herrera@consulta.mx": {
-    id: "DR-0001",
-    handle: "@sofia-herrera",
-    name: "Dra. Sofia Herrera",
-    specialty: "Ortodoncia y ATM",
-    clinic: "Clínica Herrera Dental",
-    contactPhone: "55 7123 8842",
-    email: "sofia.herrera@consulta.mx",
-    city: "Ciudad de México",
-    metrics: {
-      activeOrders: "18",
-      readyResults: "4 listas",
-      monthlyPatients: "42",
-      growth: "+12%",
-      pendingAppointments: "6",
-      topStudy: "OPG",
-      topStudyDetail: "Ortopantomografía",
-      conversion: "83%",
-    },
-    metricsByPeriod: {
-      today: {
-        activeOrders: "18",
-        readyResults: "4 listas",
-        patientsLabel: "Pacientes hoy",
-        monthlyPatients: "42",
-        growth: "+12% vs ayer",
-        pendingAppointments: "6",
-        topStudy: "OPG",
-        topStudyDetail: "Ortopantomografía",
-        conversion: "83%",
-      },
-      week: {
-        activeOrders: "34",
-        readyResults: "11 listas",
-        patientsLabel: "Pacientes semana",
-        monthlyPatients: "96",
-        growth: "+18% vs semana anterior",
-        pendingAppointments: "14",
-        topStudy: "EOC",
-        topStudyDetail: "Estudio ortodóntico completo",
-        conversion: "86%",
-      },
-      month: {
-        activeOrders: "52",
-        readyResults: "19 listas",
-        patientsLabel: "Pacientes mes",
-        monthlyPatients: "184",
-        growth: "+24% vs mes anterior",
-        pendingAppointments: "21",
-        topStudy: "OPG",
-        topStudyDetail: "Ortopantomografía",
-        conversion: "84%",
-      },
-      year: {
-        activeOrders: "118",
-        readyResults: "63 listas",
-        patientsLabel: "Pacientes año",
-        monthlyPatients: "1,248",
-        growth: "+31% acumulado",
-        pendingAppointments: "48",
-        topStudy: "EOC",
-        topStudyDetail: "Estudio ortodóntico completo",
-        conversion: "88%",
-      },
-    },
-    partner: {
-      referredPatients: 18,
-      points: 1850,
-    },
-  },
-  "marco.padilla@consulta.mx": {
-    id: "DR-0002",
-    handle: "@marco-padilla",
-    name: "Dr. Marco Padilla",
-    specialty: "Cirugía maxilofacial",
-    clinic: "Padilla Maxilofacial",
-    contactPhone: "55 4400 9821",
-    email: "marco.padilla@consulta.mx",
-    city: "Ciudad de México",
-    metrics: {
-      activeOrders: "9",
-      readyResults: "2 listas",
-      monthlyPatients: "28",
-      growth: "+8%",
-      pendingAppointments: "3",
-      topStudy: "ATM COMPARATIVA",
-      topStudyDetail: "Articulación temporomandibular",
-      conversion: "76%",
-    },
-    metricsByPeriod: {
-      today: {
-        activeOrders: "9",
-        readyResults: "2 listas",
-        patientsLabel: "Pacientes hoy",
-        monthlyPatients: "28",
-        growth: "+8% vs ayer",
-        pendingAppointments: "3",
-        topStudy: "ATM",
-        topStudyDetail: "Articulación temporomandibular",
-        conversion: "76%",
-      },
-      week: {
-        activeOrders: "16",
-        readyResults: "5 listas",
-        patientsLabel: "Pacientes semana",
-        monthlyPatients: "48",
-        growth: "+11% vs semana anterior",
-        pendingAppointments: "7",
-        topStudy: "CBCT",
-        topStudyDetail: "Tomografía 3D",
-        conversion: "78%",
-      },
-      month: {
-        activeOrders: "29",
-        readyResults: "12 listas",
-        patientsLabel: "Pacientes mes",
-        monthlyPatients: "116",
-        growth: "+16% vs mes anterior",
-        pendingAppointments: "11",
-        topStudy: "CBCT",
-        topStudyDetail: "Tomografía 3D",
-        conversion: "81%",
-      },
-      year: {
-        activeOrders: "74",
-        readyResults: "38 listas",
-        patientsLabel: "Pacientes año",
-        monthlyPatients: "692",
-        growth: "+22% acumulado",
-        pendingAppointments: "24",
-        topStudy: "CBCT",
-        topStudyDetail: "Tomografía 3D",
-        conversion: "85%",
-      },
-    },
-    partner: {
-      referredPatients: 8,
-      points: 820,
-    },
-  },
-};
+const doctorDirectory = {};
 
 const viewTitles = {
   dashboard: "Panel doctor",
@@ -676,17 +365,19 @@ const resultsSearch = document.querySelector("#results-search");
 const adminStatusFilter = document.querySelector("#admin-status-filter");
 const adminOrderTable = document.querySelector("#admin-order-table");
 const adminDoctorList = document.querySelector("#admin-doctor-list");
-const adminDownloadQueue = document.querySelector("#admin-download-queue");
 const adminDoctorForm = document.querySelector("#admin-doctor-form");
 const focusNewDoctorButton = document.querySelector("#focus-new-doctor");
 const adminSectionButtons = document.querySelectorAll("[data-admin-section]");
 const adminSectionPanels = document.querySelectorAll("[data-admin-section-panel]");
-const runAgentButton = document.querySelector("#run-agent-button");
 const sendStudiesButton = document.querySelector("#send-studies-button");
 const manualUploadForm = document.querySelector("#manual-upload-form");
 const manualUploadOrder = document.querySelector("#manual-upload-order");
-const agentLog = document.querySelector("#agent-log");
+const uploadDropzone = document.querySelector("#upload-dropzone");
+const uploadFileInput = document.querySelector("#upload-file-input");
+const uploadQueueList = document.querySelector("#upload-queue");
+const deliveredFilesList = document.querySelector("#delivered-files");
 const orderForm = document.querySelector("#order-form");
+const treatingDoctorSelect = document.querySelector("#treating-doctor-select");
 const profileForm = document.querySelector("#profile-form");
 const toast = document.querySelector("#toast");
 const currentDate = document.querySelector("#current-date");
@@ -736,21 +427,21 @@ let currentRole = "doctor";
 let activeDownloadOrder = null;
 
 const doctorProfile = {
-  id: "DR-0001",
-  handle: "@sofia-herrera",
-  name: "Dra. Sofia Herrera",
-  specialty: "Ortodoncia y ATM",
-  clinic: "Clínica Herrera Dental",
-  contactPhone: "55 7123 8842",
-  email: "sofia.herrera@consulta.mx",
-  city: "Ciudad de México",
+  id: "",
+  handle: "",
+  name: "",
+  specialty: "",
+  clinic: "",
+  contactPhone: "",
+  email: "",
+  city: "",
   photo: "",
   photoZoom: 1,
   photoX: 0,
   photoY: 0,
-  metrics: doctorDirectory["sofia.herrera@consulta.mx"].metrics,
-  metricsByPeriod: doctorDirectory["sofia.herrera@consulta.mx"].metricsByPeriod,
-  partner: { ...doctorDirectory["sofia.herrera@consulta.mx"].partner },
+  metrics: {},
+  metricsByPeriod: {},
+  partner: { referredPatients: 0, points: 0 },
 };
 
 function todayISO() {
@@ -808,34 +499,6 @@ function getStudyBySelection(selection) {
     studies.find((study) => normalizedSelection.startsWith(study.name.toLowerCase())) ||
     studies.find((study) => normalizedSelection.includes(study.name.toLowerCase()))
   );
-}
-
-function mapDatabaseOrder(order) {
-  const studyRows = order.order_studies || [];
-  const doctorName = order.doctor_profiles?.display_name || order.doctor_name || "Doctor no asignado";
-  const resultFiles = order.result_files || [];
-  const hasResult = resultFiles.some((file) => ["cloud_ready", "ready", "uploaded"].includes(file.status));
-
-  return {
-    id: order.id,
-    folio: order.folio,
-    patient: order.patient_full_name,
-    phone: order.patient_phone || "",
-    doctor: doctorName,
-    owner: "supabase",
-    doctorId: order.doctor_id,
-    studies: studyRows.length ? studyRows.map((study) => study.study_name) : ["Estudio sin detalle"],
-    status: order.status,
-    date: order.referral_date,
-    result: hasResult ? resultFiles[0]?.display_name || "Resultado disponible" : "",
-    notes: order.clinical_notes || "",
-    countsForPartner: Boolean(order.counts_for_partner),
-    scheduledAt: order.scheduled_at?.slice(0, 10),
-    completedAt: order.completed_at?.slice(0, 10),
-    validatedAt: order.patient_attended_at?.slice(0, 10),
-    validatedBy: order.validated_by ? "Admin Radio Imagen" : "",
-    resultFiles,
-  };
 }
 
 function buildMetricsFromOrders(doctorId) {
@@ -908,187 +571,6 @@ function getStudyAbbreviation(studyName) {
     .toUpperCase();
 }
 
-function mapDatabaseDoctor(doctor, profile, partnerStatus) {
-  const partner = {
-    referredPatients: partnerStatus?.referred_patients || 0,
-    points: partnerStatus?.points || 0,
-  };
-  const metricsData = buildMetricsFromOrders(doctor.id);
-
-  return {
-    id: doctor.id,
-    doctorCode: doctor.doctor_code,
-    handle: slugifyDoctorName(doctor.display_name),
-    name: doctor.display_name,
-    specialty: doctor.specialty || "Especialidad por definir",
-    clinic: doctor.clinic || "Consultorio independiente",
-    contactPhone: doctor.contact_phone || profile?.phone || "",
-    email: profile?.email || "",
-    city: doctor.city || "Ciudad por definir",
-    photo: doctor.profile_image_url || "",
-    photoZoom: 1,
-    photoX: 0,
-    photoY: 0,
-    partner,
-    ...metricsData,
-  };
-}
-
-async function loadOrdersFromSupabase(role) {
-  if (!supabaseClient) {
-    return;
-  }
-
-  let query = supabaseClient
-    .from("orders")
-    .select(
-      "*, doctor_profiles(display_name, doctor_code, profile_id), order_studies(study_id, study_name, study_category, details), result_files(display_name, file_type, original_file_name, storage_path, status)",
-    )
-    .order("created_at", { ascending: false });
-
-  if (role === "doctor" && doctorProfile.id) {
-    query = query.eq("doctor_id", doctorProfile.id);
-  }
-
-  const { data, error } = await query;
-
-  if (error) {
-    throw error;
-  }
-
-  setOrders((data || []).map(mapDatabaseOrder));
-}
-
-async function loadDoctorsFromSupabase() {
-  if (!supabaseClient) {
-    return;
-  }
-
-  const [{ data: doctors, error: doctorsError }, { data: profiles, error: profilesError }, { data: partnerStatuses, error: partnerError }] =
-    await Promise.all([
-      supabaseClient.from("doctor_profiles").select("*").order("doctor_code"),
-      supabaseClient.from("profiles").select("*").eq("role", "doctor"),
-      supabaseClient.from("doctor_partner_status").select("*"),
-    ]);
-
-  if (doctorsError || profilesError || partnerError) {
-    throw doctorsError || profilesError || partnerError;
-  }
-
-  Object.keys(doctorDirectory).forEach((email) => delete doctorDirectory[email]);
-  (doctors || []).forEach((doctor) => {
-    const profile = (profiles || []).find((item) => item.id === doctor.profile_id);
-    const partnerStatus = (partnerStatuses || []).find((item) => item.doctor_id === doctor.id);
-    const mappedDoctor = mapDatabaseDoctor(doctor, profile, partnerStatus);
-    doctorDirectory[mappedDoctor.email] = mappedDoctor;
-  });
-}
-
-async function loadAuthenticatedContext(user) {
-  currentAuthUser = user;
-  const { data: profile, error: profileError } = await supabaseClient
-    .from("profiles")
-    .select("*")
-    .eq("id", user.id)
-    .single();
-
-  if (profileError || !profile) {
-    throw profileError || new Error("Cuenta sin perfil operativo.");
-  }
-
-  currentProfile = profile;
-  currentRole = profile.role;
-
-  if (currentRole === "admin") {
-    adminProfile.id = profile.id;
-    adminProfile.name = profile.full_name;
-    adminProfile.email = profile.email;
-    await loadOrdersFromSupabase("admin");
-    await loadDoctorsFromSupabase();
-    return;
-  }
-
-  const { data: doctor, error: doctorError } = await supabaseClient
-    .from("doctor_profiles")
-    .select("*")
-    .eq("profile_id", user.id)
-    .single();
-
-  if (doctorError || !doctor) {
-    throw doctorError || new Error("Cuenta sin perfil de doctor.");
-  }
-
-  doctorProfile.id = doctor.id;
-  doctorProfile.doctorCode = doctor.doctor_code;
-  await loadOrdersFromSupabase("doctor");
-
-  const { data: partnerStatus } = await supabaseClient
-    .from("doctor_partner_status")
-    .select("*")
-    .eq("doctor_id", doctor.id)
-    .maybeSingle();
-  const mappedDoctor = mapDatabaseDoctor(doctor, profile, partnerStatus);
-  doctorDirectory[mappedDoctor.email] = mappedDoctor;
-  applyDoctorProfile(mappedDoctor);
-}
-
-function getNextDoctorCode() {
-  const nextNumber =
-    Object.values(doctorDirectory).reduce((maxCode, doctor) => {
-      const codeNumber = Number(doctor.id.replace("DR-", ""));
-      return Number.isFinite(codeNumber) ? Math.max(maxCode, codeNumber) : maxCode;
-    }, 0) + 1;
-
-  return `DR-${String(nextNumber).padStart(4, "0")}`;
-}
-
-function slugifyDoctorName(name) {
-  return `@${normalizeName(name).replace(/\s+/g, "-") || "doctor"}`;
-}
-
-function buildDefaultMetrics(validatedPatients) {
-  const activeOrders = Math.max(Math.round(validatedPatients * 0.45), 0);
-  const readyResults = Math.max(Math.round(validatedPatients * 0.2), 0);
-  const pendingAppointments = Math.max(Math.round(validatedPatients * 0.12), 0);
-  const conversion = validatedPatients > 0 ? "78%" : "0%";
-
-  return {
-    activeOrders: String(activeOrders),
-    readyResults: `${readyResults} listas`,
-    monthlyPatients: String(validatedPatients),
-    growth: validatedPatients > 0 ? "Histórico cargado" : "Sin histórico",
-    pendingAppointments: String(pendingAppointments),
-    topStudy: "OPG",
-    topStudyDetail: "Ortopantomografía",
-    conversion,
-  };
-}
-
-function buildMetricsByPeriod(validatedPatients) {
-  return {
-    today: {
-      ...buildDefaultMetrics(Math.min(validatedPatients, 3)),
-      patientsLabel: "Pacientes hoy",
-      growth: validatedPatients > 0 ? "Alta inicial" : "Sin actividad",
-    },
-    week: {
-      ...buildDefaultMetrics(Math.min(validatedPatients, 8)),
-      patientsLabel: "Pacientes semana",
-      growth: "Base inicial",
-    },
-    month: {
-      ...buildDefaultMetrics(validatedPatients),
-      patientsLabel: "Pacientes mes",
-      growth: "Base histórica",
-    },
-    year: {
-      ...buildDefaultMetrics(validatedPatients),
-      patientsLabel: "Pacientes año",
-      growth: "Histórico cargado",
-    },
-  };
-}
-
 function normalizeName(value) {
   return value
     .toLowerCase()
@@ -1139,6 +621,73 @@ function setView(viewId) {
   });
 
   pageTitle.textContent = viewTitles[viewId] || "Radio Imagen";
+
+  if (viewId === "future") {
+    loadPlusInterestState();
+  }
+}
+
+async function loadPlusInterestState() {
+  if (currentRole !== "doctor" || !doctorProfile.email) {
+    return;
+  }
+  try {
+    const res = await fetch(`/api/plus-interest/${encodeURIComponent(doctorProfile.email)}`);
+    if (!res.ok) return;
+    const data = await res.json();
+    applyPlusInterestState(data.modules || []);
+  } catch (e) {
+    console.error("loadPlusInterestState:", e);
+  }
+}
+
+function applyPlusInterestState(modules) {
+  document.querySelectorAll("[data-plus-module]").forEach((button) => {
+    const registered = modules.includes(button.dataset.plusModule);
+    button.disabled = registered;
+    button.textContent = registered ? "Interés registrado" : "Me interesa";
+  });
+}
+
+let plusInterestData = [];
+
+async function refreshPlusInterestAdmin() {
+  try {
+    const res = await fetch("/api/plus-interest", { headers: { "x-admin-token": getAdminToken() } });
+    if (res.ok) {
+      plusInterestData = (await res.json()).interests || [];
+    }
+  } catch (e) {
+    console.error("refreshPlusInterestAdmin:", e);
+  }
+  renderPlusInterestSummary();
+}
+
+function renderPlusInterestSummary() {
+  const node = document.querySelector("#plus-interest-summary");
+  if (!node) {
+    return;
+  }
+  if (!plusInterestData.length) {
+    node.innerHTML = '<p class="admin-helper">Aún no hay doctores interesados. Los registros aparecerán aquí.</p>';
+    return;
+  }
+  const labels = { agenda: "Agenda", finanzas: "Finanzas", kpis: "KPIs", coach: "Coach" };
+  const counts = {};
+  plusInterestData.forEach((interest) => {
+    counts[interest.module] = (counts[interest.module] || 0) + 1;
+  });
+  node.innerHTML =
+    Object.entries(labels)
+      .map(
+        ([key, label]) => `
+          <div class="plus-interest-row">
+            <span>${label}</span>
+            <strong>${counts[key] || 0}</strong>
+          </div>
+        `,
+      )
+      .join("") + `<small>${plusInterestData.length} registro(s) en total</small>`;
 }
 
 function configureShellForRole(role) {
@@ -1184,9 +733,59 @@ function applyDoctorProfile(profile) {
   doctorProfile.photoZoom = profile.photoZoom || doctorProfile.photoZoom || 1;
   doctorProfile.photoX = profile.photoX || doctorProfile.photoX || 0;
   doctorProfile.photoY = profile.photoY || doctorProfile.photoY || 0;
-  doctorProfile.metrics = profile.metrics;
-  doctorProfile.metricsByPeriod = profile.metricsByPeriod;
-  doctorProfile.partner = { ...profile.partner };
+  doctorProfile.metrics = profile.metrics || {};
+  doctorProfile.metricsByPeriod = profile.metricsByPeriod || {};
+  doctorProfile.partner = { referredPatients: 0, points: 0, ...profile.partner };
+  doctorProfile.accountType = profile.accountType || "personal";
+  if (Array.isArray(profile.clinicDoctors)) {
+    doctorProfile.clinicDoctors = [...profile.clinicDoctors];
+  } else if (doctorProfile.accountType !== "clinic") {
+    doctorProfile.clinicDoctors = [];
+  }
+}
+
+async function loadClinicRoster() {
+  if (doctorProfile.accountType !== "clinic" || !doctorProfile.email) {
+    return;
+  }
+  try {
+    const res = await fetch(`/api/clinic-doctors/${encodeURIComponent(doctorProfile.email)}`);
+    if (!res.ok) return;
+    const data = await res.json();
+    doctorProfile.clinicDoctors = data.doctors || [];
+    renderTreatingDoctorField();
+  } catch (e) {
+    console.error("loadClinicRoster:", e);
+  }
+}
+
+function renderTreatingDoctorField() {
+  const clinicNodes = document.querySelectorAll("[data-clinic-only]");
+  const isClinic = currentRole === "doctor" && doctorProfile.accountType === "clinic";
+
+  if (!isClinic || !treatingDoctorSelect) {
+    clinicNodes.forEach((node) => {
+      node.hidden = true;
+    });
+    return;
+  }
+
+  const roster = doctorProfile.clinicDoctors || [];
+  const current = treatingDoctorSelect.value;
+  treatingDoctorSelect.innerHTML = [
+    '<option value="">Seleccionar doctor</option>',
+    ...roster.map((name) => `<option value="${name}">${name}</option>`),
+    '<option value="__new__">+ Agregar nuevo doctor</option>',
+  ].join("");
+  if (roster.includes(current) || current === "__new__") {
+    treatingDoctorSelect.value = current;
+  } else if (!roster.length) {
+    treatingDoctorSelect.value = "__new__";
+  }
+
+  clinicNodes.forEach((node) => {
+    node.hidden = node.hasAttribute("data-new-treating") ? treatingDoctorSelect.value !== "__new__" : false;
+  });
 }
 
 function getAccountRole(email) {
@@ -1194,10 +793,15 @@ function getAccountRole(email) {
 }
 
 function findDoctorByEmail(email) {
-  return doctorDirectory[email.toLowerCase()] || doctorDirectory["sofia.herrera@consulta.mx"];
+  return doctorDirectory[email.toLowerCase()];
 }
 
 function renderMetrics() {
+  if (doctorProfile.id) {
+    const computed = buildMetricsFromOrders(doctorProfile.id);
+    doctorProfile.metrics = computed.metrics;
+    doctorProfile.metricsByPeriod = computed.metricsByPeriod;
+  }
   const metrics = doctorProfile.metricsByPeriod?.[selectedMetricsPeriod] || doctorProfile.metrics;
   document.querySelector('[data-metric-label="patients"]').textContent = metrics.patientsLabel || "Pacientes";
   document.querySelector('[data-metric="activeOrders"]').textContent = metrics.activeOrders;
@@ -1317,11 +921,6 @@ function renderBenefits(benefits) {
   return benefits.map((benefit) => `<li>${benefit}</li>`).join("");
 }
 
-function awardPartnerPoints() {
-  doctorProfile.partner.referredPatients += 1;
-  doctorProfile.partner.points += POINTS_PER_REFERRED_PATIENT;
-}
-
 function getOrderOperationalCopy(order) {
   if (order.status === "Recibida") {
     return "WhatsApp pendiente para agendar";
@@ -1363,8 +962,8 @@ function getAdminNextStep(order) {
 
   if (order.status === "Completa") {
     return {
-      label: "Asignar archivos del estudio",
-      action: "Asignar resultado",
+      label: "Subir archivos del estudio",
+      action: "Subir resultado",
     };
   }
 
@@ -1381,85 +980,6 @@ function getAdminNextStep(order) {
   };
 }
 
-async function updateOrderStatusInSupabase(order, nextStatus) {
-  const now = new Date().toISOString();
-  const payload = {
-    status: nextStatus,
-    updated_at: now,
-  };
-
-  if (nextStatus === "Agendada") {
-    payload.scheduled_at = order.scheduledAt ? undefined : now;
-    payload.scheduled_by = currentAuthUser?.id || null;
-  }
-
-  if (nextStatus === "Completa" || nextStatus === "Lista para descargar") {
-    payload.completed_at = order.completedAt ? undefined : now;
-    payload.patient_attended_at = order.validatedAt ? undefined : now;
-    payload.validated_by = currentAuthUser?.id || null;
-    payload.counts_for_partner = true;
-  }
-
-  if (nextStatus === "Lista para descargar") {
-    payload.result_ready_at = now;
-  }
-
-  Object.keys(payload).forEach((key) => {
-    if (payload[key] === undefined) {
-      delete payload[key];
-    }
-  });
-
-  const { error } = await supabaseClient.from("orders").update(payload).eq("id", order.id);
-
-  if (error) {
-    throw error;
-  }
-
-  await supabaseClient.from("order_status_events").insert({
-    order_id: order.id,
-    previous_status: order.status,
-    new_status: nextStatus,
-    changed_by: currentAuthUser?.id || null,
-    notes: "Cambio desde panel admin",
-  });
-
-  if ((nextStatus === "Completa" || nextStatus === "Lista para descargar") && !order.countsForPartner) {
-    const { data: partnerStatus } = await supabaseClient
-      .from("doctor_partner_status")
-      .select("*")
-      .eq("doctor_id", order.doctorId)
-      .maybeSingle();
-    const nextReferrals = (partnerStatus?.referred_patients || 0) + 1;
-    const nextPoints = (partnerStatus?.points || 0) + POINTS_PER_REFERRED_PATIENT;
-    const nextTier = getPartnerTier(nextReferrals);
-
-    await supabaseClient
-      .from("doctor_partner_status")
-      .update({
-        referred_patients: nextReferrals,
-        points: nextPoints,
-        current_tier_id: nextTier.shortName === "Inicio" ? null : nextTier.shortName.toLowerCase(),
-        updated_at: now,
-      })
-      .eq("doctor_id", order.doctorId);
-
-    await supabaseClient.from("partner_point_events").insert({
-      doctor_id: order.doctorId,
-      order_id: order.id,
-      event_type: "paciente_validado",
-      points: POINTS_PER_REFERRED_PATIENT,
-      notes: `Paciente validado desde admin: ${order.patient}`,
-    });
-  }
-
-  await loadOrdersFromSupabase(currentRole);
-
-  if (currentRole === "admin") {
-    await loadDoctorsFromSupabase();
-  }
-}
-
 async function runAdminNextStep(orderId) {
   const order = orders.find((currentOrder) => currentOrder.id === orderId);
 
@@ -1468,13 +988,9 @@ async function runAdminNextStep(orderId) {
   }
 
   if (order.status === "Recibida") {
-    if (supabaseClient && currentAuthUser) {
-      await updateOrderStatusInSupabase(order, "Agendada");
-    } else {
-      order.status = "Agendada";
-      order.scheduledAt = todayISO();
-      await apiUpdateOrder(order.id, { status: order.status, scheduledAt: order.scheduledAt });
-    }
+    order.status = "Agendada";
+    order.scheduledAt = todayISO();
+    await apiUpdateOrder(order.id, { status: order.status, scheduledAt: order.scheduledAt });
     renderAdmin();
     renderDoctorOrders();
     renderResults(resultsSearch.value);
@@ -1488,7 +1004,12 @@ async function runAdminNextStep(orderId) {
   }
 
   if (order.status === "Completa") {
-    runAgent(order.id);
+    setAdminSection("results");
+    renderManualUploadOptions();
+    if (manualUploadOrder) {
+      manualUploadOrder.value = order.id;
+    }
+    showToast(`Sube los archivos del estudio de ${order.patient}.`);
     return;
   }
 
@@ -1533,22 +1054,6 @@ async function validateAttendedOrder(orderId, nextStatus = "Completa") {
 
   if (!order) {
     return;
-  }
-
-  if (supabaseClient && currentAuthUser) {
-    try {
-      await updateOrderStatusInSupabase(order, nextStatus);
-      renderAdmin();
-      renderPartnerProgram();
-      renderDoctorOrders();
-      renderResults(resultsSearch.value);
-      showToast(`Paciente actualizado: ${order.patient} · ${nextStatus}.`);
-      return;
-    } catch (error) {
-      console.error(error);
-      showToast("No se pudo actualizar la orden en Supabase.");
-      return;
-    }
   }
 
   if (order.countsForPartner) {
@@ -1624,6 +1129,7 @@ async function createDoctorFromAdmin(formData) {
         email,
         name,
         password,
+        accountType: formData.get("accountType") === "clinic" ? "clinic" : "personal",
         specialty: formData.get("doctorSpecialty").trim() || "Especialidad por definir",
         clinic: formData.get("doctorClinic").trim() || "Consultorio independiente",
         contactPhone: formData.get("doctorPhone").trim(),
@@ -1639,12 +1145,7 @@ async function createDoctorFromAdmin(formData) {
     }
 
     const doc = data.doctor;
-    doctorDirectory[email] = {
-      ...doc,
-      metrics: buildDefaultMetrics(validatedPatients),
-      metricsByPeriod: buildMetricsByPeriod(validatedPatients),
-    };
-    authorizedAccounts[email] = { password, role: "doctor" };
+    doctorDirectory[email] = { ...doc };
 
     renderAdmin();
     adminDoctorForm.reset();
@@ -1664,7 +1165,6 @@ async function deleteDoctorFromAdmin(email) {
     const res = await fetch(`/api/doctors/${encodeURIComponent(email)}`, { method: "DELETE", headers: { "x-admin-token": getAdminToken() } });
     if (!res.ok) { showToast("No se pudo eliminar el doctor."); return; }
     delete doctorDirectory[email];
-    delete authorizedAccounts[email];
     renderAdmin();
     showToast("Doctor eliminado.");
   } catch (e) {
@@ -1683,6 +1183,7 @@ function renderDoctorScopedData() {
   renderPartnerProgram();
   renderDoctorOrders();
   renderResults(resultsSearch.value);
+  renderTreatingDoctorField();
   renderAdmin();
 }
 
@@ -1743,14 +1244,9 @@ async function loginAccount(email, password) {
       doctorDirectory[normalizedEmail] = {
         ...doctorDirectory[normalizedEmail],
         ...data.doctor,
-        metrics: doctorDirectory[normalizedEmail]?.metrics || {
-          activeOrders: "0", readyResults: "0 listas", monthlyPatients: "0",
-          growth: "0%", pendingAppointments: "0", topStudy: "OPG",
-          topStudyDetail: "Ortopantomografía", conversion: "0%",
-        },
-        metricsByPeriod: doctorDirectory[normalizedEmail]?.metricsByPeriod || {},
       };
-      applyDoctorProfile(findDoctorByEmail(normalizedEmail));
+      applyDoctorProfile(doctorDirectory[normalizedEmail]);
+      loadClinicRoster();
     }
 
     localStorage.setItem(
@@ -1767,6 +1263,8 @@ async function loginAccount(email, password) {
     );
     if (role === "admin") {
       await apiLoadPartnerEvents();
+      refreshDeliveredFiles();
+      refreshPlusInterestAdmin();
     }
     showApp(true, role === "admin" ? "admin" : "dashboard");
     showToast(role === "admin" ? "Sesión admin iniciada." : "Sesión iniciada.");
@@ -2044,6 +1542,11 @@ function renderDoctorOrders() {
           <div class="order-name">
             <strong>${order.patient}</strong>
             <span class="order-meta">${order.studies.join(", ")}</span>
+            ${
+              order.treatingDoctor && order.treatingDoctor !== order.doctor
+                ? `<span class="order-meta">Atiende: ${order.treatingDoctor}</span>`
+                : ""
+            }
           </div>
           <span class="order-meta">${order.date}</span>
           <span class="status ${statusClass(order.status)}">${order.status}</span>
@@ -2071,10 +1574,10 @@ function renderResults(filter = "") {
         <strong>${order.patient}</strong>
         <span class="result-meta">${order.studies.join(", ")}</span>
       </div>
-      <span class="result-meta">${order.doctor}</span>
+      <span class="result-meta">${order.treatingDoctor || order.doctor}</span>
       ${isDone
         ? `<span class="status lista">Descargado</span>
-           <button class="download-action" type="button" disabled>Entregado</button>`
+           <button class="download-action" data-download-order="${order.id}" type="button">Ver archivos</button>`
         : `<span class="status ${statusClass(order.status)}">${order.status}</span>
            <button class="download-action ${order.result ? "ready" : ""}" data-download-order="${order.id}" type="button" ${order.result ? "" : "disabled"}>
              ${order.result ? "Descargar" : "Pendiente"}
@@ -2103,27 +1606,13 @@ function renderResults(filter = "") {
   });
 }
 
-function getResultPackage(order) {
-  if (resultPackages[order.id]) {
-    return resultPackages[order.id];
+function formatBytes(bytes) {
+  if (!Number.isFinite(bytes) || bytes <= 0) {
+    return "0 B";
   }
-
-  const baseName = normalizeName(order.patient).replace(/\s+/g, "_");
-  return {
-    complete: order.result || `${baseName}_Estudio_Completo.zip`,
-    files: [
-      {
-        label: "Paquete liberado por Radio Imagen",
-        type: "ZIP",
-        file: order.result || `${baseName}_Resultado.zip`,
-      },
-      {
-        label: "Reporte clínico",
-        type: "PDF",
-        file: `${baseName}_Reporte.pdf`,
-      },
-    ],
-  };
+  const units = ["B", "KB", "MB", "GB"];
+  const i = Math.min(Math.floor(Math.log(bytes) / Math.log(1024)), units.length - 1);
+  return `${(bytes / 1024 ** i).toFixed(i === 0 ? 0 : 1)} ${units[i]}`;
 }
 
 async function openDownloadModal(order) {
@@ -2137,10 +1626,7 @@ async function openDownloadModal(order) {
   try {
     const res = await fetch(`/api/files/${encodeURIComponent(order.id)}`);
     const data = await res.json();
-    const serverFiles = data.files || [];
-
-    const localPkg = resultPackages[order.id];
-    const allFiles = serverFiles.length > 0 ? serverFiles : (localPkg?.files || []);
+    const allFiles = data.files || [];
 
     if (allFiles.length === 0) {
       downloadFileList.innerHTML = '<p style="font-size:0.85rem;color:#888;padding:8px 0;">No hay archivos disponibles para esta orden.</p>';
@@ -2149,25 +1635,37 @@ async function openDownloadModal(order) {
       return;
     }
 
-    downloadFullStudyButton.disabled = false;
-    downloadFullStudyButton.textContent = "Descargar todo";
-    downloadFullStudyButton.dataset.downloadFile = allFiles[0].filename || allFiles[0].file || "";
+    const pendingFiles = allFiles.filter((file) => !file.deleted && !file.downloaded);
+    downloadFullStudyButton.disabled = pendingFiles.length === 0;
+    downloadFullStudyButton.textContent = pendingFiles.length ? "Descargar todo" : "Sin descargas pendientes";
+    downloadFullStudyButton.dataset.downloadFile = pendingFiles[0]?.filename || "";
     downloadFullStudyButton.dataset.downloadLabel = "estudio completo";
 
     downloadFileList.innerHTML = allFiles
       .map((file) => {
-        const filename = file.filename || file.file || "";
+        const filename = file.filename || "";
         const label = file.label || filename;
         const ext = filename.includes(".") ? filename.split(".").pop().toUpperCase() : "ARCHIVO";
+        const sizeLabel = file.size ? ` · ${formatBytes(file.size)}` : "";
+        const isGone = file.deleted || file.downloaded;
+        const statusLine = isGone
+          ? file.resendRequested
+            ? '<small class="download-file-status">Reenvío solicitado — Radio Imagen lo subirá de nuevo</small>'
+            : '<small class="download-file-status">Descargado y eliminado de nuestros servidores</small>'
+          : '<small class="download-file-status">Descarga única: el archivo se elimina al completarse</small>';
+        const action = isGone
+          ? file.resendRequested
+            ? '<button class="small-action" type="button" disabled>Solicitado</button>'
+            : `<button class="small-action" data-request-resend="${filename}" type="button">Solicitar reenvío</button>`
+          : `<button class="small-action" data-download-file="${filename}" data-download-label="${label}" type="button">Descargar</button>`;
         return `
           <article class="download-file-card">
             <div>
               <strong>${label}</strong>
-              <span>${ext} · ${filename}</span>
+              <span>${ext} · ${filename}${sizeLabel}</span>
+              ${statusLine}
             </div>
-            <button class="small-action" data-download-file="${filename}" data-download-label="${label}" type="button">
-              Descargar
-            </button>
+            ${action}
           </article>
         `;
       })
@@ -2200,7 +1698,7 @@ function realDownload(orderId, filename, label = "archivo") {
   setTimeout(() => {
     closeDownloadModal();
     renderResults(resultsSearch?.value || "");
-    showToast("✓ Archivo descargado. La orden se movió a Terminadas.");
+    showToast("✓ Descarga iniciada. El archivo se eliminará de nuestros servidores al completarse.");
   }, 800);
 }
 
@@ -2214,7 +1712,7 @@ function simulateDownload(file, label = "archivo") {
 }
 
 function renderAdmin() {
-  if (!adminOrderTable || !adminDoctorList || !adminDownloadQueue) {
+  if (!adminOrderTable || !adminDoctorList) {
     return;
   }
 
@@ -2230,10 +1728,6 @@ function renderAdmin() {
   document.querySelector('[data-admin-metric="scheduledOrders"]').textContent = scheduledOrders;
   document.querySelector('[data-admin-metric="completedOrders"]').textContent = completedOrders;
   document.querySelector('[data-admin-metric="readyResults"]').textContent = readyResults;
-  document.querySelector('[data-admin-metric="downloadRequests"]').textContent = adminDownloadRequests.length;
-  document.querySelector('[data-agent-metric="localFiles"]').textContent = localResultFiles.length;
-  document.querySelector('[data-agent-metric="matches"]').textContent = agentState.matches.length;
-  document.querySelector('[data-agent-metric="uploads"]').textContent = agentState.uploads;
   renderManualUploadOptions();
 
   adminOrderTable.innerHTML = visibleOrders
@@ -2261,7 +1755,11 @@ function renderAdmin() {
               ${getOrderOperationalCopy(order)}
             </small>
           </div>
-          <span>${order.doctor}</span>
+          <span>${order.doctor}${
+            order.treatingDoctor && order.treatingDoctor !== order.doctor
+              ? `<br /><small class="treating-doctor-label">Atiende: ${order.treatingDoctor}</small>`
+              : ""
+          }</span>
           <label class="admin-status-control">
             <span>Estatus</span>
             <select data-admin-status="${order.id}" aria-label="Cambiar estatus de ${order.patient}">
@@ -2287,7 +1785,6 @@ function renderAdmin() {
   adminDoctorList.innerHTML = allDoctors
     .map((doctor) => {
       const tier = getPartnerTier(doctor.partner.referredPatients);
-      const pw = authorizedAccounts[doctor.email]?.password || doctor.password || "";
       const notificationsOn = doctor.notifications !== false;
       const doctorEvents = partnerEvents
         .filter((e) => e.email === doctor.email)
@@ -2311,11 +1808,11 @@ function renderAdmin() {
         <article class="admin-doctor-card">
           <header>
             <strong>${doctor.name}</strong>
+            <span class="admin-chip">${doctor.accountType === "clinic" ? "Clínica" : "Personal"}</span>
             <span class="admin-chip">${tier.shortName}</span>
           </header>
           <span>${doctor.specialty || "Sin especialidad"}</span>
           <small class="admin-credential-line">Correo: <strong>${doctor.email}</strong></small>
-          <small class="admin-credential-line">Contraseña actual: <strong>${pw}</strong></small>
           <div class="admin-pw-row" style="display:flex;gap:6px;margin-top:8px;">
             <input class="admin-pw-input" type="text" placeholder="Nueva contraseña" data-pw-email="${doctor.email}"
               style="flex:1;font-size:0.8rem;padding:4px 8px;border:1px solid #ccc;border-radius:6px;" />
@@ -2340,23 +1837,7 @@ function renderAdmin() {
     })
     .join("");
 
-  adminDownloadQueue.innerHTML = adminDownloadRequests
-    .map(
-      (request) => `
-        <article class="download-card">
-          <header>
-            <strong>${request.patient}</strong>
-            <span class="admin-chip">${request.status}</span>
-          </header>
-          <span>${request.doctor}</span>
-          <small>${request.file}</small>
-          <small>${request.storage} · ${request.expires}</small>
-        </article>
-      `,
-    )
-    .join("");
-
-  renderAgentLog();
+  renderDeliveredFiles();
 }
 
 function renderManualUploadOptions() {
@@ -2381,201 +1862,309 @@ function renderManualUploadOptions() {
     .join("");
 }
 
-function renderAgentLog() {
-  if (!agentLog) {
+function countPendingDeliveries() {
+  let pending = 0;
+  for (const entry of Object.values(deliveredFilesIndex)) {
+    for (const file of entry.files || []) {
+      if (!file.deleted && !file.downloaded) {
+        pending += 1;
+      }
+    }
+  }
+  return pending;
+}
+
+async function refreshDeliveredFiles() {
+  try {
+    const res = await fetch("/api/files-index");
+    if (res.ok) {
+      deliveredFilesIndex = (await res.json()) || {};
+    }
+  } catch (e) {
+    console.error("refreshDeliveredFiles:", e);
+  }
+  renderDeliveredFiles();
+}
+
+function renderDeliveredFiles() {
+  const metricNode = document.querySelector('[data-admin-metric="downloadRequests"]');
+  if (metricNode) {
+    metricNode.textContent = countPendingDeliveries();
+  }
+
+  if (!deliveredFilesList) {
     return;
   }
 
-  if (!agentState.hasRun) {
-    agentLog.innerHTML = `
-      <article>
-        <strong>Agente en espera</strong>
-        <span>Listo para cruzar ${localResultFiles.length} archivos locales contra ${orders.length} órdenes.</span>
-      </article>
-    `;
+  const entries = Object.entries(deliveredFilesIndex).flatMap(([orderId, entry]) =>
+    (entry.files || []).map((file) => ({ orderId, file })),
+  );
+
+  if (!entries.length) {
+    deliveredFilesList.innerHTML = '<p class="admin-helper">Aún no hay archivos subidos.</p>';
     return;
   }
 
-  agentLog.innerHTML = agentState.matches
-    .map(
-      (match) => `
-        <article>
-          <strong>${match.patient}</strong>
-          <span>${match.file}</span>
-          <small>${match.confidence}% coincidencia · ${match.action}</small>
+  entries.sort((a, b) => (b.file.uploadedAt || "").localeCompare(a.file.uploadedAt || ""));
+
+  deliveredFilesList.innerHTML = entries
+    .map(({ orderId, file }) => {
+      const order = orders.find((currentOrder) => currentOrder.id === orderId);
+      const patient = order?.patient || orderId;
+      const chip = file.resendRequested
+        ? '<span class="admin-chip chip-resend">Reenvío solicitado</span>'
+        : file.deleted || file.downloaded
+          ? '<span class="admin-chip">Descargado y eliminado</span>'
+          : '<span class="admin-chip chip-pending">Pendiente de descarga</span>';
+      const when = file.downloadedAt || file.uploadedAt || "";
+      const canDelete = !file.deleted && !file.downloaded && file.storagePrefix;
+      return `
+        <article class="download-card">
+          <header>
+            <strong>${patient}</strong>
+            ${chip}
+          </header>
+          <span>${file.label || "Archivo"} · ${file.filename}</span>
+          <small>${file.size ? `${formatBytes(file.size)} · ` : ""}${when ? new Date(when).toLocaleString("es-MX") : ""}</small>
+          ${canDelete ? `<button class="ghost-action admin-delete-file" data-order-id="${orderId}" data-filename="${file.filename}" type="button">Eliminar del almacenamiento</button>` : ""}
         </article>
-      `,
-    )
+      `;
+    })
     .join("");
 }
 
-function upsertDownloadRequest(order, fileMatch, options = {}) {
-  const existingRequest = adminDownloadRequests.find((request) => request.orderId === order.id);
-  const payload = {
-    orderId: order.id,
-    patient: order.patient,
-    doctor: order.doctor,
-    file: fileMatch.file,
-    status: options.status || "Subida inmediata",
-    storage: options.storage || "upload_requested",
-    expires: options.expires || "Supabase temporal: 60 min al solicitar descarga",
-  };
-
-  if (existingRequest) {
-    Object.assign(existingRequest, payload);
-    return;
-  }
-
-  adminDownloadRequests.unshift(payload);
-}
-
-async function assignResultToOrder(order, fileMatch, options = {}) {
-  order.result = fileMatch.file;
+async function assignResultToOrder(order, resultFilename) {
+  order.result = resultFilename;
   if (!order.countsForPartner) {
     await validateAttendedOrder(order.id, "Lista para descargar");
   } else {
     order.status = "Lista para descargar";
     await apiUpdateOrder(order.id, { status: order.status, result: order.result });
   }
-  upsertDownloadRequest(order, fileMatch, options);
 }
 
-function upsertResultPackageFile(order, fileMatch) {
-  const fileType = fileMatch.type || "ZIP";
-  const fileLabel = fileMatch.label || "Archivo liberado por Radio Imagen";
+const UPLOAD_MAX_SIZE = 2 * 1024 * 1024 * 1024;
+const UPLOAD_EXTENSIONS = [".pdf", ".zip", ".dcm", ".stl", ".ply", ".obj", ".png", ".jpg", ".jpeg"];
+const uploadQueue = [];
+let uploadItemCounter = 0;
+let uploadingNow = false;
 
-  if (!resultPackages[order.id]) {
-    resultPackages[order.id] = {
-      complete: fileMatch.file,
-      files: [],
-    };
+function renderUploadQueue() {
+  if (!uploadQueueList) {
+    return;
   }
+  uploadQueueList.innerHTML = uploadQueue
+    .map(
+      (item) => `
+        <article class="upload-item upload-item--${item.status}" data-upload-item="${item.id}">
+          <div class="upload-item-info">
+            <strong>${item.file.name}</strong>
+            <span>${formatBytes(item.file.size)} · ${item.order.patient}</span>
+            <small class="upload-item-status">${item.statusText}</small>
+          </div>
+          <div class="upload-item-progress">
+            <div class="upload-item-bar" style="width:${Math.round(item.progress * 100)}%"></div>
+          </div>
+          ${
+            item.status === "waiting" || item.status === "uploading"
+              ? `<button class="small-action upload-cancel" data-upload-cancel="${item.id}" type="button">Cancelar</button>`
+              : ""
+          }
+        </article>
+      `,
+    )
+    .join("");
+}
 
-  if (fileLabel === "Estudio completo") {
-    resultPackages[order.id].complete = fileMatch.file;
+function updateUploadItemProgress(item) {
+  const node = uploadQueueList?.querySelector(`[data-upload-item="${item.id}"]`);
+  if (!node) {
+    return;
   }
+  node.querySelector(".upload-item-bar").style.width = `${Math.round(item.progress * 100)}%`;
+  node.querySelector(".upload-item-status").textContent = item.statusText;
+}
 
-  const existingFile = resultPackages[order.id].files.find((file) => file.file === fileMatch.file);
-  if (!existingFile) {
-    resultPackages[order.id].files.unshift({
-      label: fileLabel,
-      type: fileType,
-      file: fileMatch.file,
+async function uploadFileInChunks(item) {
+  const { order, file, label } = item;
+  const token = getAdminToken();
+
+  const startRes = await fetch("/api/upload/start", {
+    method: "POST",
+    headers: { "Content-Type": "application/json", "x-admin-token": token },
+    body: JSON.stringify({
+      orderId: order.id,
+      doctorId: order.doctorId || "",
+      filename: file.name,
+      size: file.size,
+      label,
+      patientName: order.patient || "",
+      studyType: order.studies ? order.studies.join(", ") : label,
+    }),
+  });
+  const startData = await startRes.json();
+  if (!startRes.ok) {
+    throw new Error(startData.error || "No se pudo iniciar la subida");
+  }
+  item.uploadId = startData.uploadId;
+  const { partSize, totalParts } = startData;
+
+  const putPart = (index) =>
+    new Promise((resolvePart, rejectPart) => {
+      const blob = file.slice(index * partSize, Math.min((index + 1) * partSize, file.size));
+      const xhr = new XMLHttpRequest();
+      item.xhr = xhr;
+      xhr.open("PUT", `/api/upload/part/${item.uploadId}/${index}`);
+      xhr.setRequestHeader("x-admin-token", token);
+      xhr.setRequestHeader("Content-Type", "application/octet-stream");
+      xhr.upload.onprogress = (event) => {
+        if (event.lengthComputable) {
+          item.progress = Math.min((index * partSize + event.loaded) / file.size, 1);
+          item.statusText = `Subiendo fragmento ${index + 1} de ${totalParts} · ${Math.round(item.progress * 100)}%`;
+          updateUploadItemProgress(item);
+        }
+      };
+      xhr.onload = () => {
+        if (xhr.status >= 200 && xhr.status < 300) {
+          resolvePart();
+        } else {
+          rejectPart(new Error(`Fragmento ${index + 1}: HTTP ${xhr.status}`));
+        }
+      };
+      xhr.onerror = () => rejectPart(new Error(`Fragmento ${index + 1}: error de red`));
+      xhr.onabort = () => rejectPart(new Error("cancelado"));
+      xhr.send(blob);
     });
+
+  const uploadPart = async (index) => {
+    for (let attempt = 1; attempt <= 3; attempt += 1) {
+      if (item.cancelled) {
+        throw new Error("cancelado");
+      }
+      try {
+        await putPart(index);
+        return;
+      } catch (err) {
+        if (item.cancelled || err.message === "cancelado" || attempt === 3) {
+          throw err;
+        }
+        item.statusText = `Reintentando fragmento ${index + 1} (intento ${attempt + 1} de 3)…`;
+        updateUploadItemProgress(item);
+        await new Promise((wait) => setTimeout(wait, attempt * 3000));
+      }
+    }
+  };
+
+  for (let i = 0; i < totalParts; i += 1) {
+    await uploadPart(i);
   }
+
+  const complete = () =>
+    fetch("/api/upload/complete", {
+      method: "POST",
+      headers: { "Content-Type": "application/json", "x-admin-token": token },
+      body: JSON.stringify({ uploadId: item.uploadId }),
+    });
+
+  let completeRes = await complete();
+  let completeData = await completeRes.json();
+  if (completeRes.status === 409 && Array.isArray(completeData.missing)) {
+    for (const index of completeData.missing) {
+      await uploadPart(index);
+    }
+    completeRes = await complete();
+    completeData = await completeRes.json();
+  }
+  if (!completeRes.ok) {
+    throw new Error(completeData.error || "No se pudo completar la subida");
+  }
+  return completeData.file;
 }
 
-async function uploadManualResult(formData) {
-  const orderId = formData.get("manualOrderId");
-  const order = orders.find((currentOrder) => currentOrder.id === orderId);
-  const file = formData.get("manualResultFile");
-  const label = formData.get("manualFileType") || "Archivo";
-
-  if (!order) { showToast("Selecciona una orden válida."); return; }
-  if (!file || !file.name) { showToast("Selecciona el archivo del estudio."); return; }
-
-  showToast("Subiendo archivo...");
+async function processUploadQueue() {
+  if (uploadingNow) {
+    return;
+  }
+  const item = uploadQueue.find((entry) => entry.status === "waiting");
+  if (!item) {
+    return;
+  }
+  uploadingNow = true;
+  item.status = "uploading";
+  item.statusText = "Iniciando subida…";
+  renderUploadQueue();
 
   try {
-    const uploadData = new FormData();
-    uploadData.append("orderId", orderId);
-    uploadData.append("doctorId", order.doctorId || "");
-    uploadData.append("fileLabel", label);
-    uploadData.append("patientName", order.patient || "");
-    uploadData.append("studyType", order.studies ? order.studies.join(", ") : label);
-    uploadData.append("file", file);
-
-    const res = await fetch("/api/upload", { method: "POST", body: uploadData });
-    const data = await res.json();
-    if (!res.ok) { showToast(data.error || "Error al subir el archivo."); return; }
-
-    const extension = file.name.includes(".") ? file.name.split(".").pop().toUpperCase() : "ARCHIVO";
-    const fileMatch = {
-      file: file.name, patient: order.patient, modality: label,
-      status: "local_ready", confidence: 100, label, type: extension,
-    };
-    upsertResultPackageFile(order, fileMatch);
-    await assignResultToOrder(order, fileMatch, {
-      status: "Subido",
-      storage: "local_server",
-      expires: "Disponible para doctor · sin vencimiento",
-    });
-    agentState.uploads++;
-    manualUploadForm.reset();
-    renderAdmin();
-    renderDoctorOrders();
-    renderResults(resultsSearch.value);
-    showToast(`✓ ${file.name} disponible para ${order.patient}.`);
-  } catch (e) {
-    console.error(e);
-    showToast("Error de conexión al subir el archivo.");
-  }
-}
-
-function matchLocalFileToOrder(order) {
-  const normalizedPatient = normalizeName(order.patient);
-
-  return localResultFiles.find((file) => {
-    const filePatient = normalizeName(file.patient);
-    const fileName = normalizeName(file.file);
-    return filePatient === normalizedPatient || fileName.includes(normalizedPatient.replace(/\s+/g, " "));
-  });
-}
-
-async function runAgent(orderId = null, options = {}) {
-  const targetOrders = orders.filter((order) => !orderId || order.id === orderId);
-  const matches = [];
-
-  const promises = targetOrders.map(async (order) => {
-    const fileMatch = matchLocalFileToOrder(order);
-
-    if (!fileMatch) {
-      return;
+    await uploadFileInChunks(item);
+    item.status = "done";
+    item.progress = 1;
+    item.statusText = "✓ Subido y notificado al doctor";
+    await assignResultToOrder(item.order, item.file.name);
+    showToast(`✓ ${item.file.name} disponible para ${item.order.patient}.`);
+  } catch (err) {
+    if (item.cancelled || err.message === "cancelado") {
+      item.status = "cancelled";
+      item.statusText = "Cancelado";
+      if (item.uploadId) {
+        fetch("/api/upload/abort", {
+          method: "POST",
+          headers: { "Content-Type": "application/json", "x-admin-token": getAdminToken() },
+          body: JSON.stringify({ uploadId: item.uploadId }),
+        }).catch(() => {});
+      }
+    } else {
+      console.error(err);
+      item.status = "error";
+      item.statusText = `Error: ${err.message}`;
+      showToast(`No se pudo subir ${item.file.name}.`);
     }
+  }
 
-    await assignResultToOrder(order, fileMatch);
-    matches.push({
-      patient: order.patient,
-      file: fileMatch.file,
-      confidence: fileMatch.confidence,
-      action: "Resultado asignado y subida solicitada",
-    });
-  });
-  await Promise.all(promises);
-
-  agentState.hasRun = true;
-  agentState.matches = orderId ? [...matches, ...agentState.matches.filter((match) => match.patient !== targetOrders[0]?.patient)] : matches;
-  agentState.uploads = adminDownloadRequests.filter((request) => request.status === "Subida inmediata").length;
+  uploadingNow = false;
+  renderUploadQueue();
   renderAdmin();
   renderDoctorOrders();
   renderResults(resultsSearch.value);
-  if (!options.silent) {
-    showToast(matches.length ? `Agente asignó ${matches.length} resultado(s) y solicitó subida.` : "Agente no encontró coincidencias.");
-  }
+  refreshDeliveredFiles();
+  processUploadQueue();
 }
 
-function sendReadyStudies() {
-  runAgent(null, { silent: true });
-
-  const pendingUploads = adminDownloadRequests.filter(
-    (request) => request.status === "Subida inmediata" || request.storage === "upload_requested",
-  );
-
-  if (pendingUploads.length === 0) {
-    showToast("No hay estudios listos para enviar.");
+function enqueueUploads(fileList) {
+  const orderId = manualUploadOrder?.value;
+  const order = orders.find((currentOrder) => currentOrder.id === orderId);
+  if (!order) {
+    showToast("Selecciona primero la orden del paciente.");
     return;
   }
+  const label = manualUploadForm?.querySelector('[name="manualFileType"]')?.value || "Archivo";
 
-  pendingUploads.forEach((request) => {
-    request.status = "Enviado";
-    request.storage = "cloud_sent";
-    request.expires = "Link enviado al doctor · vigencia 60 min";
-  });
-
-  agentState.uploads = 0;
-  renderAdmin();
-  renderResults(resultsSearch.value);
-  showToast(`${pendingUploads.length} estudio(s) enviados al portal del doctor.`);
+  for (const file of fileList) {
+    const dot = file.name.lastIndexOf(".");
+    const ext = dot === -1 ? "" : file.name.slice(dot).toLowerCase();
+    if (!UPLOAD_EXTENSIONS.includes(ext)) {
+      showToast(`Formato no permitido: ${file.name}`);
+      continue;
+    }
+    if (file.size > UPLOAD_MAX_SIZE) {
+      showToast(`${file.name} excede el máximo de 2 GB.`);
+      continue;
+    }
+    uploadItemCounter += 1;
+    uploadQueue.push({
+      id: uploadItemCounter,
+      order,
+      file,
+      label,
+      status: "waiting",
+      statusText: "En cola…",
+      progress: 0,
+      cancelled: false,
+      uploadId: null,
+      xhr: null,
+    });
+  }
+  renderUploadQueue();
+  processUploadQueue();
 }
 
 function renderProfile() {
@@ -2599,6 +2188,23 @@ function renderProfile() {
   });
   doctorIdLabel.textContent = doctorProfile.doctorCode || doctorProfile.id;
   document.querySelector("[data-profile-contact]").textContent = doctorProfile.contactPhone;
+
+  if (profileForm) {
+    const profileFields = {
+      doctorName: doctorProfile.name,
+      specialty: doctorProfile.specialty,
+      clinic: doctorProfile.clinic,
+      contactPhone: doctorProfile.contactPhone,
+      email: doctorProfile.email,
+      city: doctorProfile.city,
+    };
+    Object.entries(profileFields).forEach(([name, value]) => {
+      const input = profileForm.querySelector(`[name="${name}"]`);
+      if (input && document.activeElement !== input) {
+        input.value = value || "";
+      }
+    });
+  }
   document.querySelector("[data-profile-city]").textContent = doctorProfile.city;
   profileInitials.textContent = initials;
   doctorPreviewInitials.textContent = initials;
@@ -2635,7 +2241,10 @@ function openOrderModal(order) {
   modalOrderDate.textContent = order.date;
   modalOrderStatus.textContent = order.status;
   modalOrderStatus.className = `status ${statusClass(order.status)}`;
-  modalDoctorName.textContent = order.doctor;
+  modalDoctorName.textContent =
+    order.treatingDoctor && order.treatingDoctor !== order.doctor
+      ? `${order.treatingDoctor} · ${order.doctor}`
+      : order.doctor;
   modalResult.textContent = order.result || "Resultado pendiente";
   modalNotes.textContent = order.notes || "Sin indicaciones adicionales.";
   orderModal.hidden = false;
@@ -2704,57 +2313,10 @@ loginForm.addEventListener("submit", async (event) => {
 });
 
 logoutButton.addEventListener("click", async () => {
-  if (supabaseClient) {
-    await supabaseClient.auth.signOut();
-  }
   localStorage.removeItem(SESSION_KEY);
-  currentAuthUser = null;
-  currentProfile = null;
   showLogin();
   showToast("Sesión cerrada.");
 });
-
-async function createOrderInSupabase(formData, selectedStudies) {
-  const folio = `ORD-${new Date().getFullYear()}-${String(Date.now()).slice(-6)}`;
-  const { data: order, error: orderError } = await supabaseClient
-    .from("orders")
-    .insert({
-      folio,
-      doctor_id: doctorProfile.id,
-      patient_full_name: formData.get("patientName").trim(),
-      patient_birth_date: formData.get("birthDate"),
-      patient_phone: formData.get("phone").trim() || null,
-      referral_date: formData.get("referralDate") || todayISO(),
-      clinical_notes: formData.get("notes").trim() || null,
-      status: "Recibida",
-    })
-    .select()
-    .single();
-
-  if (orderError) {
-    throw orderError;
-  }
-
-  const studyRows = selectedStudies.map((selection) => {
-    const study = getStudyBySelection(selection);
-
-    return {
-      order_id: order.id,
-      study_id: study?.id || null,
-      study_name: selection,
-      study_category: study?.category || "Estudio solicitado",
-      details: {},
-    };
-  });
-
-  const { error: studiesError } = await supabaseClient.from("order_studies").insert(studyRows);
-
-  if (studiesError) {
-    throw studiesError;
-  }
-
-  await loadOrdersFromSupabase(currentRole);
-}
 
 function validateOrderForm(formData) {
   const requiredFields = ["patientName", "birthDate", "phone", "referralDate"];
@@ -2815,42 +2377,54 @@ orderForm.addEventListener("submit", async (event) => {
     return;
   }
 
-  if (supabaseClient && currentAuthUser) {
-    try {
-      await createOrderInSupabase(formData, selectedStudies);
-    } catch (error) {
-      console.error(error);
-      showToast("No se pudo guardar la orden en Supabase. Revisa permisos o conexión.");
+  let treatingDoctor = doctorProfile.name;
+  if (doctorProfile.accountType === "clinic") {
+    const selectedValue = formData.get("treatingDoctor") || "";
+    const newName = (formData.get("newTreatingDoctor") || "").trim();
+    treatingDoctor = selectedValue === "__new__" ? newName : selectedValue;
+    if (!treatingDoctor) {
+      showToast(
+        selectedValue === "__new__"
+          ? "Escribe el nombre del nuevo doctor tratante."
+          : "Selecciona el doctor tratante de la orden.",
+      );
       return;
     }
-  } else {
-    const newOrder = {
-      id: `ORD-${new Date().getFullYear()}-${String(orders.length + 1).padStart(4, "0")}`,
-      patient: formData.get("patientName"),
-      phone: formData.get("phone")?.trim() || "",
-      doctor: doctorProfile.name,
-      owner: "current-doctor",
-      doctorId: doctorProfile.id,
-      studies: selectedStudies,
-      status: "Recibida",
-      date: formData.get("referralDate") || todayISO(),
-      result: "",
-      notes: formData.get("notes").trim(),
-      countsForPartner: false,
-    };
-    try {
-      await apiSaveOrder(newOrder);
-      await apiLoadOrders();
-    } catch (e) {
-      orders.unshift(newOrder);
-      console.error("No se pudo persistir la orden:", e);
+  }
+
+  const newOrder = {
+    id: `ORD-${new Date().getFullYear()}-${String(orders.length + 1).padStart(4, "0")}`,
+    patient: formData.get("patientName"),
+    phone: formData.get("phone")?.trim() || "",
+    doctor: doctorProfile.name,
+    treatingDoctor,
+    owner: "current-doctor",
+    doctorId: doctorProfile.id,
+    studies: selectedStudies,
+    status: "Recibida",
+    date: formData.get("referralDate") || todayISO(),
+    result: "",
+    notes: formData.get("notes").trim(),
+    countsForPartner: false,
+  };
+  try {
+    await apiSaveOrder(newOrder);
+    await apiLoadOrders();
+    if (doctorProfile.accountType === "clinic" && !doctorProfile.clinicDoctors?.includes(treatingDoctor)) {
+      doctorProfile.clinicDoctors = [...(doctorProfile.clinicDoctors || []), treatingDoctor].sort((a, b) =>
+        a.localeCompare(b, "es"),
+      );
     }
+  } catch (e) {
+    orders.unshift(newOrder);
+    console.error("No se pudo persistir la orden:", e);
   }
 
   orderForm.reset();
   setDefaultReferralDate();
   updateTomographyFields();
   updateOrthodonticPackageFields();
+  renderTreatingDoctorField();
   renderAdmin();
   renderDoctorOrders();
   renderResults(resultsSearch.value);
@@ -2868,40 +2442,6 @@ profileForm.addEventListener("submit", async (event) => {
   doctorProfile.contactPhone = formData.get("contactPhone").trim();
   doctorProfile.email = formData.get("email").trim();
   doctorProfile.city = formData.get("city").trim();
-
-  if (supabaseClient && currentAuthUser) {
-    try {
-      const [{ error: doctorError }, { error: profileError }] = await Promise.all([
-        supabaseClient
-          .from("doctor_profiles")
-          .update({
-            display_name: doctorProfile.name,
-            specialty: doctorProfile.specialty || null,
-            clinic: doctorProfile.clinic || null,
-            contact_phone: doctorProfile.contactPhone || null,
-            city: doctorProfile.city || null,
-            updated_at: new Date().toISOString(),
-          })
-          .eq("id", doctorProfile.id),
-        supabaseClient
-          .from("profiles")
-          .update({
-            full_name: doctorProfile.name,
-            phone: doctorProfile.contactPhone || null,
-            updated_at: new Date().toISOString(),
-          })
-          .eq("id", currentAuthUser.id),
-      ]);
-
-      if (doctorError || profileError) {
-        throw doctorError || profileError;
-      }
-    } catch (error) {
-      console.error(error);
-      showToast("No se pudo guardar el perfil en Supabase.");
-      return;
-    }
-  }
 
   renderProfile();
   renderDoctorOrders();
@@ -2955,6 +2495,12 @@ centerPhotoButton.addEventListener("click", () => {
 
 resultsSearch.addEventListener("input", () => renderResults(resultsSearch.value));
 
+treatingDoctorSelect?.addEventListener("change", () => {
+  document.querySelectorAll("[data-new-treating]").forEach((node) => {
+    node.hidden = treatingDoctorSelect.value !== "__new__";
+  });
+});
+
 resultsTabButtons.forEach((btn) => {
   btn.addEventListener("click", () => {
     resultsTabButtons.forEach((b) => b.classList.remove("active"));
@@ -2985,36 +2531,25 @@ adminOrderTable?.addEventListener("change", async (event) => {
     return;
   }
 
-  if (supabaseClient && currentAuthUser) {
-    try {
-      await updateOrderStatusInSupabase(order, statusControl.value);
-    } catch (error) {
-      console.error(error);
-      showToast("No se pudo actualizar la orden en Supabase.");
-      renderAdmin();
-      return;
-    }
-  } else {
-    const wasValidated = order.countsForPartner;
-    const nextStatus = statusControl.value;
-    const isReversal = wasValidated && nextStatus !== "Completa" && nextStatus !== "Lista para descargar";
+  const wasValidated = order.countsForPartner;
+  const nextStatus = statusControl.value;
+  const isReversal = wasValidated && nextStatus !== "Completa" && nextStatus !== "Lista para descargar";
 
-    order.status = nextStatus;
-    if (nextStatus === "Agendada" && !order.scheduledAt) {
-      order.scheduledAt = todayISO();
-    }
-
-    const orderChanges = { status: order.status, scheduledAt: order.scheduledAt };
-
-    if (isReversal) {
-      await reverseOrderValidation(order);
-      orderChanges.countsForPartner = false;
-      orderChanges.validatedAt = null;
-      orderChanges.validatedBy = null;
-    }
-
-    await apiUpdateOrder(order.id, orderChanges);
+  order.status = nextStatus;
+  if (nextStatus === "Agendada" && !order.scheduledAt) {
+    order.scheduledAt = todayISO();
   }
+
+  const orderChanges = { status: order.status, scheduledAt: order.scheduledAt };
+
+  if (isReversal) {
+    await reverseOrderValidation(order);
+    orderChanges.countsForPartner = false;
+    orderChanges.validatedAt = null;
+    orderChanges.validatedBy = null;
+  }
+
+  await apiUpdateOrder(order.id, orderChanges);
   renderAdmin();
   renderPartnerProgram();
   renderDoctorOrders();
@@ -3022,11 +2557,8 @@ adminOrderTable?.addEventListener("change", async (event) => {
   showToast(`Estatus actualizado: ${order.patient} · ${order.status}.`);
 });
 
-runAgentButton?.addEventListener("click", () => runAgent());
-
 sendStudiesButton?.addEventListener("click", () => {
   setAdminSection("results");
-  sendReadyStudies();
 });
 
 focusNewDoctorButton?.addEventListener("click", () => {
@@ -3041,7 +2573,81 @@ adminSectionButtons.forEach((button) => {
 
 manualUploadForm?.addEventListener("submit", (event) => {
   event.preventDefault();
-  uploadManualResult(new FormData(manualUploadForm));
+});
+
+uploadDropzone?.addEventListener("click", () => uploadFileInput?.click());
+
+uploadDropzone?.addEventListener("keydown", (event) => {
+  if (event.key === "Enter" || event.key === " ") {
+    event.preventDefault();
+    uploadFileInput?.click();
+  }
+});
+
+uploadDropzone?.addEventListener("dragover", (event) => {
+  event.preventDefault();
+  uploadDropzone.classList.add("dragging");
+});
+
+uploadDropzone?.addEventListener("dragleave", () => {
+  uploadDropzone.classList.remove("dragging");
+});
+
+uploadDropzone?.addEventListener("drop", (event) => {
+  event.preventDefault();
+  uploadDropzone.classList.remove("dragging");
+  if (event.dataTransfer?.files?.length) {
+    enqueueUploads(event.dataTransfer.files);
+  }
+});
+
+uploadFileInput?.addEventListener("change", () => {
+  if (uploadFileInput.files?.length) {
+    enqueueUploads(uploadFileInput.files);
+    uploadFileInput.value = "";
+  }
+});
+
+uploadQueueList?.addEventListener("click", (event) => {
+  const cancelBtn = event.target.closest("[data-upload-cancel]");
+  if (!cancelBtn) {
+    return;
+  }
+  const item = uploadQueue.find((entry) => String(entry.id) === cancelBtn.dataset.uploadCancel);
+  if (!item) {
+    return;
+  }
+  item.cancelled = true;
+  if (item.status === "waiting") {
+    item.status = "cancelled";
+    item.statusText = "Cancelado";
+    renderUploadQueue();
+  }
+  item.xhr?.abort();
+});
+
+deliveredFilesList?.addEventListener("click", async (event) => {
+  const deleteBtn = event.target.closest(".admin-delete-file");
+  if (!deleteBtn) {
+    return;
+  }
+  if (!confirm(`¿Eliminar ${deleteBtn.dataset.filename} del almacenamiento?`)) {
+    return;
+  }
+  try {
+    const res = await fetch(
+      `/api/files/${encodeURIComponent(deleteBtn.dataset.orderId)}/${encodeURIComponent(deleteBtn.dataset.filename)}`,
+      { method: "DELETE", headers: { "x-admin-token": getAdminToken() } },
+    );
+    if (!res.ok) {
+      showToast("No se pudo eliminar el archivo.");
+      return;
+    }
+    showToast("Archivo eliminado del almacenamiento.");
+    refreshDeliveredFiles();
+  } catch {
+    showToast("Error de conexión.");
+  }
 });
 
 adminDoctorForm?.addEventListener("submit", async (event) => {
@@ -3069,7 +2675,6 @@ adminDoctorList?.addEventListener("click", async (event) => {
         body: JSON.stringify({ password: newPassword }),
       });
       if (!res.ok) { const d = await res.json(); showToast(d.error || "Error al cambiar contraseña."); return; }
-      if (authorizedAccounts[email]) authorizedAccounts[email].password = newPassword;
       showToast(`✓ Contraseña de ${email} actualizada.`);
       input.value = "";
       renderAdmin();
@@ -3090,7 +2695,6 @@ adminDoctorList?.addEventListener("change", async (event) => {
       body: JSON.stringify({ notifications: enabled }),
     });
     if (!res.ok) { showToast("Error al actualizar notificaciones."); toggle.checked = !enabled; return; }
-    if (authorizedAccounts[email]) authorizedAccounts[email].notifications = enabled;
     if (doctorDirectory[email]) doctorDirectory[email].notifications = enabled;
     showToast(enabled ? `✓ Notificaciones activadas para ${email}.` : `Notificaciones desactivadas para ${email}.`);
   } catch { showToast("Error de conexión."); toggle.checked = !enabled; }
@@ -3116,8 +2720,9 @@ studyGrid.addEventListener("change", (event) => {
 document.addEventListener("click", async (event) => {
   const downloadOrderButton = event.target.closest("[data-download-order]");
   const downloadFileButton = event.target.closest("[data-download-file]");
+  const resendButton = event.target.closest("[data-request-resend]");
+  const plusButton = event.target.closest("[data-plus-module]");
   const orderButton = event.target.closest("[data-order-patient]");
-  const agentOrderButton = event.target.closest("[data-agent-order]");
   const validateOrderButton = event.target.closest("[data-validate-order]");
   const adminNextButton = event.target.closest("[data-admin-next-order]");
 
@@ -3128,7 +2733,7 @@ document.addEventListener("click", async (event) => {
         currentOrder.id === downloadOrderButton.dataset.downloadOrder,
     );
 
-    if (order?.result) {
+    if (order?.result || downloadedOrders.has(order?.id)) {
       openDownloadModal(order);
     } else {
       showToast("Este resultado aún no está listo.");
@@ -3151,8 +2756,43 @@ document.addEventListener("click", async (event) => {
     }
   }
 
-  if (agentOrderButton) {
-    runAgent(agentOrderButton.dataset.agentOrder);
+  if (resendButton && activeDownloadOrder) {
+    resendButton.disabled = true;
+    try {
+      const res = await fetch("/api/request-resend", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ orderId: activeDownloadOrder.id, filename: resendButton.dataset.requestResend }),
+      });
+      if (!res.ok) {
+        throw new Error("request-resend falló");
+      }
+      showToast("✓ Radio Imagen recibió tu solicitud de reenvío.");
+      openDownloadModal(activeDownloadOrder);
+    } catch {
+      showToast("No se pudo solicitar el reenvío. Intenta de nuevo.");
+      resendButton.disabled = false;
+    }
+  }
+
+  if (plusButton && !plusButton.disabled) {
+    plusButton.disabled = true;
+    const moduleLabel = plusButton.closest("article")?.querySelector("strong")?.textContent || plusButton.dataset.plusModule;
+    try {
+      const res = await fetch("/api/plus-interest", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: doctorProfile.email, module: plusButton.dataset.plusModule }),
+      });
+      if (!res.ok) {
+        throw new Error("plus-interest falló");
+      }
+      plusButton.textContent = "Interés registrado";
+      showToast(`✓ Registramos tu interés en ${moduleLabel}. Te avisaremos cuando esté listo.`);
+    } catch {
+      plusButton.disabled = false;
+      showToast("No se pudo registrar tu interés. Intenta de nuevo.");
+    }
   }
 
   if (validateOrderButton) {
@@ -3209,12 +2849,25 @@ async function initializePortal() {
       const session = JSON.parse(savedSession);
       currentRole = session.role || getAccountRole(session.email);
       if (currentRole === "doctor") {
-        applyDoctorProfile(findDoctorByEmail(session.email));
+        const profile = findDoctorByEmail(session.email);
+        if (!profile) {
+          localStorage.removeItem(SESSION_KEY);
+          showLogin();
+          return;
+        }
+        applyDoctorProfile(profile);
+        loadClinicRoster();
       }
       if (currentRole === "admin") {
         await apiLoadPartnerEvents();
+        refreshDeliveredFiles();
+        refreshPlusInterestAdmin();
       }
-      showApp(false, currentRole === "admin" ? "admin" : "dashboard");
+      const gotoView = new URLSearchParams(window.location.search).get("goto");
+      showApp(
+        false,
+        currentRole === "admin" ? "admin" : gotoView === "results" ? "results" : "dashboard",
+      );
     } catch {
       localStorage.removeItem(SESSION_KEY);
       showLogin();

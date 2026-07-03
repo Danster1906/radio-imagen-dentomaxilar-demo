@@ -6,7 +6,10 @@
   "type": "module",
   "scripts": {
     "start": "node server.js",
-    "dev": "node server.js"
+    "dev": "node server.js",
+    "migrate": "node scripts/migrate.mjs",
+    "smoke": "node scripts/smoke.mjs",
+    "backup": "node scripts/backup.mjs"
   },
   "engines": {
     "node": ">=20"
@@ -15,7 +18,8 @@
     "playwright": "^1.61.0"
   },
   "dependencies": {
-    "busboy": "^1.6.0",
-    "nodemailer": "^9.0.1"
+    "@replit/object-storage": "^1.0.0",
+    "nodemailer": "^9.0.1",
+    "pg": "^8.22.0"
   }
 }

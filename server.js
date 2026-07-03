@@ -1,20 +1,54 @@
-import { createReadStream, existsSync, statSync, readFileSync, writeFileSync, mkdirSync, unlinkSync } from "node:fs";
+import { createReadStream, existsSync, statSync, writeFileSync, mkdirSync, unlinkSync } from "node:fs";
 import { createServer } from "node:http";
 import { extname, join, normalize, resolve } from "node:path";
-import { createRequire } from "node:module";
 import { randomBytes } from "node:crypto";
+import { Transform } from "node:stream";
 import nodemailer from "nodemailer";
-
-const require = createRequire(import.meta.url);
-const Busboy = require("busboy");
+import { putObjectStream, getObjectStream, listKeys, deletePrefix } from "./storage.js";
+import {
+  initDb,
+  getAccounts,
+  getAccountByEmail,
+  findDoctorByIdOrEmail,
+  createAccount,
+  updatePassword,
+  updatePartner,
+  updateNotifications,
+  deleteAccount,
+  getClinicRoster,
+  addClinicDoctor,
+  listOrders,
+  createOrder,
+  updateOrder,
+  listEvents,
+  addEvent,
+  getFilesIndex,
+  getFilesForOrder,
+  getFileEntry,
+  updateFileEntry,
+  upsertFileEntry,
+  markFileDownloaded,
+  markOrderDownloaded,
+  createUploadSession,
+  getUploadSession,
+  recordUploadPart,
+  setUploadSessionStatus,
+  deleteUploadSession,
+  listStaleUploadSessions,
+  addPlusInterest,
+  listPlusInterest,
+  getPlusInterestForEmail,
+  verifyPassword,
+  upgradePasswordHash,
+} from "./db.js";
 
 const rootDir = resolve(".");
 const preferredPort = Number(process.env.PORT || 5000);
-const DB_PATH = resolve("data/doctors.json");
-const ADMIN_TOKEN = randomBytes(32).toString("hex");
-const ORDERS_PATH = resolve("data/orders.json");
-const EVENTS_PATH = resolve("data/partner-events.json");
+const ADMIN_TOKEN = process.env.ADMIN_TOKEN || randomBytes(32).toString("hex");
 const UPLOADS_DIR = resolve("data/uploads");
+const PART_SIZE = 15 * 1024 * 1024; // 15 MiB por fragmento
+const MAX_FILE_SIZE = 2.5 * 1024 * 1024 * 1024; // 2.5 GB
+const PLUS_MODULES = ["agenda", "finanzas", "kpis", "coach"];
 
 mkdirSync(UPLOADS_DIR, { recursive: true });
 
@@ -71,9 +105,14 @@ async function sendNotificationEmail({ doctorEmail, doctorName, patientName, stu
           <td style="padding:8px;">${studyType}</td>
         </tr>
       </table>
-      <a href="${portalUrl}" style="display:inline-block;background:#1a1a2e;color:#fff;padding:12px 24px;border-radius:8px;text-decoration:none;font-weight:bold;">
-        Ir al portal →
+      <a href="${portalUrl}/?goto=results" style="display:inline-block;background:#1a1a2e;color:#fff;padding:12px 24px;border-radius:8px;text-decoration:none;font-weight:bold;">
+        Descargar resultados →
       </a>
+      <p style="margin-top:16px;color:#555;font-size:0.9em;">
+        <strong>Descarga única:</strong> al completar la descarga, el archivo se elimina de nuestros
+        servidores para proteger la información de tu paciente. Si lo necesitas de nuevo,
+        solicita el reenvío desde el portal.
+      </p>
       <p style="margin-top:24px;color:#888;font-size:0.85em;">
         Radio Imagen Dentomaxilar · Portal privado para doctores
       </p>
@@ -90,15 +129,6 @@ async function sendNotificationEmail({ doctorEmail, doctorName, patientName, stu
   } catch (err) {
     console.error(`Error al enviar correo a ${doctorEmail}:`, err.message);
   }
-}
-
-function readDB() {
-  try { return JSON.parse(readFileSync(DB_PATH, "utf-8")); }
-  catch { return { doctors: {}, admin: { email: "admin@radioimagen.mx", password: "RadioImagen2026!" } }; }
-}
-
-function writeDB(data) {
-  writeFileSync(DB_PATH, JSON.stringify(data, null, 2), "utf-8");
 }
 
 function readBody(req) {
@@ -118,32 +148,55 @@ function json(res, code, data) {
   res.end(JSON.stringify(data));
 }
 
-function readFilesIndex() {
-  const indexPath = resolve("data/files-index.json");
-  try { return JSON.parse(readFileSync(indexPath, "utf-8")); }
-  catch { return {}; }
+// Transmite los fragmentos de un archivo, en orden, dentro de una sola
+// respuesta HTTP. Si el cliente se desconecta a medias, lanza para que el
+// caller NO borre el archivo (podrá reintentar la descarga).
+async function pipeSequential(keys, res) {
+  for (let i = 0; i < keys.length; i += 1) {
+    if (res.destroyed) {
+      throw new Error("Cliente desconectado");
+    }
+    await new Promise((resolvePart, rejectPart) => {
+      const source = getObjectStream(keys[i]);
+      const onClose = () => {
+        source.destroy();
+        rejectPart(new Error("Cliente desconectado"));
+      };
+      res.once("close", onClose);
+      source.on("error", (err) => {
+        res.removeListener("close", onClose);
+        rejectPart(err);
+      });
+      source.on("end", () => {
+        res.removeListener("close", onClose);
+        resolvePart();
+      });
+      source.pipe(res, { end: false });
+    });
+  }
+  await new Promise((resolveEnd) => res.end(resolveEnd));
 }
 
-function writeFilesIndex(data) {
-  writeFileSync(resolve("data/files-index.json"), JSON.stringify(data, null, 2), "utf-8");
-}
+const uploadPrefix = (uploadId) => `uploads/${uploadId}/`;
+const partKey = (uploadId, index) => `${uploadPrefix(uploadId)}part-${String(index).padStart(5, "0")}`;
 
-function readOrdersDB() {
-  try { return JSON.parse(readFileSync(ORDERS_PATH, "utf-8")); }
-  catch { return []; }
-}
-
-function writeOrdersDB(orders) {
-  writeFileSync(ORDERS_PATH, JSON.stringify(orders, null, 2), "utf-8");
-}
-
-function readEventsDB() {
-  try { return JSON.parse(readFileSync(EVENTS_PATH, "utf-8")); }
-  catch { return { events: [] }; }
-}
-
-function writeEventsDB(data) {
-  writeFileSync(EVENTS_PATH, JSON.stringify(data, null, 2), "utf-8");
+async function sweepStaleUploads() {
+  try {
+    const stale = await listStaleUploadSessions(24);
+    for (const session of stale) {
+      try {
+        await deletePrefix(uploadPrefix(session.upload_id));
+        await deleteUploadSession(session.upload_id);
+      } catch (err) {
+        console.error(`No se pudo limpiar la subida ${session.upload_id}:`, err.message);
+      }
+    }
+    if (stale.length) {
+      console.log(`Limpieza: ${stale.length} subidas abandonadas eliminadas del storage.`);
+    }
+  } catch (err) {
+    console.error("Error en la limpieza de subidas:", err.message);
+  }
 }
 
 function requireAdmin(req, res) {
@@ -153,76 +206,6 @@ function requireAdmin(req, res) {
     return false;
   }
   return true;
-}
-
-function handleUpload(req, res) {
-  return new Promise((resolve) => {
-    const bb = Busboy({ headers: req.headers, limits: { fileSize: 200 * 1024 * 1024 } });
-    let orderId = "";
-    let doctorId = "";
-    let fileLabel = "";
-    let patientName = "";
-    let studyType = "";
-    let savedFile = null;
-
-    bb.on("field", (name, val) => {
-      if (name === "orderId") orderId = val;
-      if (name === "doctorId") doctorId = val;
-      if (name === "fileLabel") fileLabel = val;
-      if (name === "patientName") patientName = val;
-      if (name === "studyType") studyType = val;
-    });
-
-    bb.on("file", (name, stream, info) => {
-      const { filename } = info;
-      const safeFilename = filename.replace(/[^a-zA-Z0-9._\-áéíóúüñÁÉÍÓÚÜÑ ]/g, "_");
-      const orderDir = join(UPLOADS_DIR, orderId || "sin-orden");
-      mkdirSync(orderDir, { recursive: true });
-      const filePath = join(orderDir, safeFilename);
-      const chunks = [];
-      stream.on("data", chunk => chunks.push(chunk));
-      stream.on("end", () => {
-        const buf = Buffer.concat(chunks);
-        writeFileSync(filePath, buf);
-        savedFile = { filename: safeFilename, size: buf.length, label: fileLabel };
-      });
-    });
-
-    bb.on("finish", async () => {
-      if (!savedFile || !orderId) {
-        json(res, 400, { error: "Falta orderId o archivo" });
-        resolve();
-        return;
-      }
-      const index = readFilesIndex();
-      if (!index[orderId]) index[orderId] = { doctorId, files: [] };
-      const exists = index[orderId].files.find(f => f.filename === savedFile.filename);
-      if (!exists) index[orderId].files.push({ ...savedFile, uploadedAt: new Date().toISOString() });
-      writeFilesIndex(index);
-      json(res, 201, { ok: true, file: savedFile });
-
-      // Send email notification if doctor has notifications enabled
-      try {
-        const db = readDB();
-        const doctorEntry = Object.values(db.doctors).find(d => d.id === doctorId || d.email === doctorId);
-        if (doctorEntry && doctorEntry.notifications !== false && doctorEntry.email) {
-          await sendNotificationEmail({
-            doctorEmail: doctorEntry.email,
-            doctorName: doctorEntry.name,
-            patientName: patientName || orderId,
-            studyType: studyType || fileLabel || "Estudio"
-          });
-        }
-      } catch (err) {
-        console.error("Error al intentar enviar notificación:", err.message);
-      }
-
-      resolve();
-    });
-
-    bb.on("error", () => { json(res, 500, { error: "Error al procesar el archivo" }); resolve(); });
-    req.pipe(bb);
-  });
 }
 
 function resolveRequestPath(urlPath) {
@@ -250,12 +233,10 @@ function createAppServer() {
 
     // GET /api/doctors
     if (urlPath === "/api/doctors" && req.method === "GET") {
-      const db = readDB();
-      const safeDoctors = {};
-      for (const [email, doc] of Object.entries(db.doctors)) {
-        safeDoctors[email] = doc;
-      }
-      json(res, 200, { doctors: safeDoctors, admin: { email: db.admin.email } });
+      try {
+        const { doctors, admin } = await getAccounts();
+        json(res, 200, { doctors, admin: { email: admin?.email || "" } });
+      } catch (e) { json(res, 500, { error: e.message }); }
       return;
     }
 
@@ -264,18 +245,14 @@ function createAppServer() {
       if (!requireAdmin(req, res)) return;
       try {
         const body = await readBody(req);
-        const { email, name, password, specialty, clinic, contactPhone, city, validatedPatients } = body;
+        const { email, name, password, specialty, clinic, contactPhone, city, validatedPatients, accountType } = body;
         if (!email || !name || !password) { json(res, 400, { error: "email, name y password son obligatorios" }); return; }
-        const db = readDB();
-        if (db.doctors[email]) { json(res, 409, { error: "El correo ya existe" }); return; }
-        const count = Object.keys(db.doctors).length + 1;
-        const id = `DR-${String(count).padStart(4, "0")}`;
-        const handle = "@" + name.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
-        const pts = (validatedPatients || 0) * 100;
-        db.doctors[email] = { id, handle, name, specialty: specialty || "", clinic: clinic || "", contactPhone: contactPhone || "", email, city: city || "", password, notifications: true, partner: { referredPatients: validatedPatients || 0, points: pts } };
-        writeDB(db);
-        json(res, 201, { doctor: db.doctors[email] });
-      } catch (e) { json(res, 400, { error: e.message }); }
+        const doctor = await createAccount({ email, name, password, specialty, clinic, contactPhone, city, validatedPatients, accountType });
+        json(res, 201, { doctor });
+      } catch (e) {
+        if (e.code === "23505") { json(res, 409, { error: "El correo ya existe" }); return; }
+        json(res, 400, { error: e.message });
+      }
       return;
     }
 
@@ -287,10 +264,8 @@ function createAppServer() {
         const body = await readBody(req);
         const { password } = body;
         if (!password) { json(res, 400, { error: "La contraseña no puede estar vacía" }); return; }
-        const db = readDB();
-        if (!db.doctors[email]) { json(res, 404, { error: "Doctor no encontrado" }); return; }
-        db.doctors[email].password = password;
-        writeDB(db);
+        const updated = await updatePassword(email, password);
+        if (!updated) { json(res, 404, { error: "Doctor no encontrado" }); return; }
         json(res, 200, { ok: true });
       } catch (e) { json(res, 400, { error: e.message }); }
       return;
@@ -302,12 +277,12 @@ function createAppServer() {
       try {
         const email = decodeURIComponent(urlPath.replace("/api/doctors/", "").replace("/partner", ""));
         const body = await readBody(req);
-        const db = readDB();
-        if (!db.doctors[email]) { json(res, 404, { error: "Doctor no encontrado" }); return; }
-        if (typeof body.referredPatients === "number") db.doctors[email].partner.referredPatients = body.referredPatients;
-        if (typeof body.points === "number") db.doctors[email].partner.points = body.points;
-        writeDB(db);
-        json(res, 200, { ok: true, partner: db.doctors[email].partner });
+        const partner = await updatePartner(email, {
+          referredPatients: typeof body.referredPatients === "number" ? body.referredPatients : undefined,
+          points: typeof body.points === "number" ? body.points : undefined,
+        });
+        if (!partner) { json(res, 404, { error: "Doctor no encontrado" }); return; }
+        json(res, 200, { ok: true, partner });
       } catch (e) { json(res, 400, { error: e.message }); }
       return;
     }
@@ -318,11 +293,10 @@ function createAppServer() {
       try {
         const email = decodeURIComponent(urlPath.replace("/api/doctors/", "").replace("/notifications", ""));
         const body = await readBody(req);
-        const db = readDB();
-        if (!db.doctors[email]) { json(res, 404, { error: "Doctor no encontrado" }); return; }
-        db.doctors[email].notifications = body.notifications !== false;
-        writeDB(db);
-        json(res, 200, { ok: true, notifications: db.doctors[email].notifications });
+        const notifications = body.notifications !== false;
+        const updated = await updateNotifications(email, notifications);
+        if (!updated) { json(res, 404, { error: "Doctor no encontrado" }); return; }
+        json(res, 200, { ok: true, notifications });
       } catch (e) { json(res, 400, { error: e.message }); }
       return;
     }
@@ -331,11 +305,11 @@ function createAppServer() {
     if (urlPath.startsWith("/api/doctors/") && req.method === "DELETE") {
       if (!requireAdmin(req, res)) return;
       const email = decodeURIComponent(urlPath.replace("/api/doctors/", ""));
-      const db = readDB();
-      if (!db.doctors[email]) { json(res, 404, { error: "Doctor no encontrado" }); return; }
-      delete db.doctors[email];
-      writeDB(db);
-      json(res, 200, { ok: true });
+      try {
+        const deleted = await deleteAccount(email);
+        if (!deleted) { json(res, 404, { error: "Doctor no encontrado" }); return; }
+        json(res, 200, { ok: true });
+      } catch (e) { json(res, 500, { error: e.message }); }
       return;
     }
 
@@ -343,48 +317,296 @@ function createAppServer() {
     if (urlPath === "/api/login" && req.method === "POST") {
       try {
         const { email, password } = await readBody(req);
-        const db = readDB();
         const normalEmail = email.toLowerCase();
-        if (normalEmail === db.admin.email && password === db.admin.password) {
+        const account = await getAccountByEmail(normalEmail);
+        let validCredentials = false;
+        if (account?.password_hash) {
+          validCredentials = verifyPassword(password, account.password_hash);
+        } else if (account?.password && account.password === password) {
+          // Cuenta aún con contraseña en texto plano: se acepta y se migra a hash
+          validCredentials = true;
+          await upgradePasswordHash(normalEmail, password);
+        }
+        if (!validCredentials) {
+          json(res, 401, { error: "Correo o contraseña incorrectos" });
+          return;
+        }
+        if (account.role === "admin") {
           json(res, 200, { role: "admin", email: normalEmail, adminToken: ADMIN_TOKEN });
           return;
         }
-        const doc = db.doctors[normalEmail];
-        if (doc && doc.password === password) {
-          const { password: _pw, ...safeDoc } = doc;
-          json(res, 200, { role: "doctor", email: normalEmail, doctor: safeDoc });
-          return;
+        const doctor = await findDoctorByIdOrEmail(normalEmail);
+        const { password: _pw, ...safeDoc } = doctor;
+        if (safeDoc.accountType === "clinic") {
+          safeDoc.clinicDoctors = await getClinicRoster(normalEmail);
         }
-        json(res, 401, { error: "Correo o contraseña incorrectos" });
+        json(res, 200, { role: "doctor", email: normalEmail, doctor: safeDoc });
       } catch (e) { json(res, 400, { error: e.message }); }
       return;
     }
 
-    // POST /api/upload  (multipart)
-    if (urlPath === "/api/upload" && req.method === "POST") {
-      await handleUpload(req, res);
+    // POST /api/upload/start  — inicia una subida por fragmentos
+    if (urlPath === "/api/upload/start" && req.method === "POST") {
+      if (!requireAdmin(req, res)) return;
+      try {
+        const body = await readBody(req);
+        const { orderId, doctorId, filename, size, label, patientName, studyType } = body;
+        if (!orderId || !filename || !Number.isFinite(size) || size <= 0) {
+          json(res, 400, { error: "orderId, filename y size son obligatorios" });
+          return;
+        }
+        if (size > MAX_FILE_SIZE) {
+          json(res, 413, { error: "El archivo excede el máximo de 2.5 GB" });
+          return;
+        }
+        const safeFilename = filename.replace(/[^a-zA-Z0-9._\-áéíóúüñÁÉÍÓÚÜÑ ]/g, "_");
+        const uploadId = randomBytes(12).toString("hex");
+        const totalParts = Math.ceil(size / PART_SIZE);
+        await createUploadSession({
+          uploadId,
+          orderId,
+          doctorId,
+          filename: safeFilename,
+          label,
+          patientName,
+          studyType,
+          sizeBytes: size,
+          partSize: PART_SIZE,
+          totalParts,
+        });
+        json(res, 201, { uploadId, partSize: PART_SIZE, totalParts, filename: safeFilename });
+      } catch (e) { json(res, 400, { error: e.message }); }
       return;
     }
+
+    // PUT /api/upload/part/:uploadId/:index  — un fragmento, cuerpo crudo
+    const partMatch = urlPath.match(/^\/api\/upload\/part\/([a-f0-9]+)\/(\d+)$/);
+    if (partMatch && req.method === "PUT") {
+      if (!requireAdmin(req, res)) return;
+      const uploadId = partMatch[1];
+      const index = Number(partMatch[2]);
+      let tooBig = false;
+      try {
+        const session = await getUploadSession(uploadId);
+        if (!session || session.status !== "pending") {
+          json(res, 404, { error: "Sesión de subida no encontrada o cerrada" });
+          return;
+        }
+        if (index >= session.total_parts) {
+          json(res, 400, { error: "Índice de fragmento inválido" });
+          return;
+        }
+        const maxBytes = session.part_size + 64 * 1024;
+        let bytes = 0;
+        const meter = new Transform({
+          transform(chunk, _enc, callback) {
+            bytes += chunk.length;
+            if (bytes > maxBytes) {
+              tooBig = true;
+              callback(new Error("Fragmento demasiado grande"));
+              return;
+            }
+            callback(null, chunk);
+          },
+        });
+        req.on("error", (err) => meter.destroy(err));
+        req.pipe(meter);
+        await putObjectStream(partKey(uploadId, index), meter);
+        await recordUploadPart(uploadId, index, bytes);
+        json(res, 200, { ok: true, index, bytes });
+      } catch (e) {
+        if (tooBig) {
+          json(res, 413, { error: "El fragmento excede el tamaño permitido" });
+        } else {
+          json(res, 500, { error: e.message });
+        }
+      }
+      return;
+    }
+
+    // POST /api/upload/complete  — valida fragmentos y registra el archivo
+    if (urlPath === "/api/upload/complete" && req.method === "POST") {
+      if (!requireAdmin(req, res)) return;
+      try {
+        const { uploadId } = await readBody(req);
+        const session = await getUploadSession(uploadId);
+        if (!session || session.status !== "pending") {
+          json(res, 404, { error: "Sesión de subida no encontrada o cerrada" });
+          return;
+        }
+        const parts = session.parts || {};
+        const missing = [];
+        let sum = 0;
+        for (let i = 0; i < session.total_parts; i += 1) {
+          if (String(i) in parts) {
+            sum += Number(parts[String(i)]);
+          } else {
+            missing.push(i);
+          }
+        }
+        const storedKeys = await listKeys(uploadPrefix(uploadId));
+        if (missing.length || sum !== Number(session.size_bytes) || storedKeys.length !== session.total_parts) {
+          json(res, 409, { error: "Faltan fragmentos o el tamaño no coincide", missing, expected: session.total_parts, stored: storedKeys.length });
+          return;
+        }
+        const fileEntry = {
+          filename: session.filename,
+          size: Number(session.size_bytes),
+          label: session.label || "",
+          storagePrefix: uploadPrefix(uploadId),
+          parts: session.total_parts,
+        };
+        await upsertFileEntry(session.order_id, session.doctor_id, fileEntry);
+        await setUploadSessionStatus(uploadId, "complete");
+        json(res, 201, { ok: true, file: { ...fileEntry, uploadedAt: new Date().toISOString() } });
+
+        try {
+          const doctorEntry = await findDoctorByIdOrEmail(session.doctor_id);
+          if (doctorEntry && doctorEntry.notifications !== false && doctorEntry.email) {
+            await sendNotificationEmail({
+              doctorEmail: doctorEntry.email,
+              doctorName: doctorEntry.name,
+              patientName: session.patient_name || session.order_id,
+              studyType: session.study_type || session.label || "Estudio",
+            });
+          }
+        } catch (err) {
+          console.error("Error al intentar enviar notificación:", err.message);
+        }
+      } catch (e) { json(res, 400, { error: e.message }); }
+      return;
+    }
+
+    // POST /api/upload/abort  — cancela y limpia una subida
+    if (urlPath === "/api/upload/abort" && req.method === "POST") {
+      if (!requireAdmin(req, res)) return;
+      try {
+        const { uploadId } = await readBody(req);
+        const session = await getUploadSession(uploadId);
+        if (!session) { json(res, 404, { error: "Sesión de subida no encontrada" }); return; }
+        if (session.status !== "pending") {
+          // La subida ya se completó: sus objetos pertenecen a un archivo
+          // registrado y no deben borrarse desde abort.
+          json(res, 409, { error: "La subida ya se completó; no se puede cancelar" });
+          return;
+        }
+        await deletePrefix(uploadPrefix(uploadId));
+        await deleteUploadSession(uploadId);
+        json(res, 200, { ok: true });
+      } catch (e) { json(res, 400, { error: e.message }); }
+      return;
+    }
+
+    // POST /api/request-resend  — el doctor pide que se vuelva a subir un archivo
+    if (urlPath === "/api/request-resend" && req.method === "POST") {
+      try {
+        const { orderId, filename } = await readBody(req);
+        if (!orderId || !filename) {
+          json(res, 400, { error: "orderId y filename son obligatorios" });
+          return;
+        }
+        const entry = await updateFileEntry(orderId, filename, {
+          resendRequested: true,
+          resendRequestedAt: new Date().toISOString(),
+        });
+        if (!entry) { json(res, 404, { error: "Archivo no encontrado" }); return; }
+        json(res, 200, { ok: true });
+      } catch (e) { json(res, 400, { error: e.message }); }
+      return;
+    }
+
+    // DELETE /api/files/:orderId/:filename  — limpieza manual del admin
+    const deleteFileMatch = urlPath.match(/^\/api\/files\/([^/]+)\/([^/]+)$/);
+    if (deleteFileMatch && req.method === "DELETE") {
+      if (!requireAdmin(req, res)) return;
+      try {
+        const orderId = decodeURIComponent(deleteFileMatch[1]);
+        const filename = decodeURIComponent(deleteFileMatch[2]);
+        const entry = await getFileEntry(orderId, filename);
+        if (!entry) { json(res, 404, { error: "Archivo no encontrado" }); return; }
+        if (entry.storagePrefix) {
+          await deletePrefix(entry.storagePrefix);
+        }
+        await updateFileEntry(orderId, filename, { deleted: true, deletedAt: new Date().toISOString(), deletedBy: "admin" });
+        json(res, 200, { ok: true });
+      } catch (e) { json(res, 500, { error: e.message }); }
+      return;
+    }
+
 
     // GET /api/files/:orderId
     if (urlPath.startsWith("/api/files/") && req.method === "GET") {
       const orderId = decodeURIComponent(urlPath.replace("/api/files/", ""));
-      const index = readFilesIndex();
-      json(res, 200, { files: index[orderId]?.files || [], orderId });
+      try {
+        json(res, 200, { files: await getFilesForOrder(orderId), orderId });
+      } catch (e) { json(res, 500, { error: e.message }); }
       return;
     }
 
     // GET /api/files-index  (all orders with files, for admin)
     if (urlPath === "/api/files-index" && req.method === "GET") {
-      json(res, 200, readFilesIndex());
+      try {
+        json(res, 200, await getFilesIndex());
+      } catch (e) { json(res, 500, { error: e.message }); }
       return;
     }
 
-    // GET /api/uploads/:orderId/:filename  (serve file for download, then delete)
+    // GET /api/uploads/:orderId/:filename  — descarga de un solo uso: al
+    // completarse, el archivo se elimina del storage.
     if (urlPath.startsWith("/api/uploads/") && req.method === "GET") {
       const parts = urlPath.replace("/api/uploads/", "").split("/");
       const orderId = decodeURIComponent(parts[0] || "");
       const filename = decodeURIComponent(parts[1] || "");
+
+      try {
+        const entry = await getFileEntry(orderId, filename);
+        if (entry?.storagePrefix) {
+          if (entry.deleted) {
+            res.writeHead(410, { "Content-Type": "text/plain; charset=utf-8" });
+            res.end("El archivo ya fue descargado y eliminado de nuestros servidores. Solicita el reenvío a Radio Imagen desde el portal.");
+            return;
+          }
+          const keys = await listKeys(entry.storagePrefix);
+          if (keys.length !== entry.parts) {
+            res.writeHead(410, { "Content-Type": "text/plain; charset=utf-8" });
+            res.end("El archivo ya no está disponible. Solicita el reenvío a Radio Imagen desde el portal.");
+            return;
+          }
+          const ext = extname(filename).toLowerCase();
+          res.writeHead(200, {
+            "Content-Type": mimeTypes[ext] || "application/octet-stream",
+            "Content-Disposition": `attachment; filename="${filename}"`,
+            "Content-Length": String(entry.size),
+            "Cache-Control": "no-store",
+          });
+          try {
+            await pipeSequential(keys, res);
+          } catch (err) {
+            // Descarga interrumpida: NO se borra, el doctor puede reintentar.
+            console.warn(`Descarga interrumpida de ${orderId}/${filename}:`, err.message);
+            res.destroy();
+            return;
+          }
+          // Descarga completa: borrar del storage y marcar.
+          try {
+            await deletePrefix(entry.storagePrefix);
+            await updateFileEntry(orderId, filename, {
+              downloaded: true,
+              deleted: true,
+              downloadedAt: new Date().toISOString(),
+              resendRequested: false,
+            });
+          } catch (err) {
+            console.error(`No se pudo limpiar ${orderId}/${filename} tras la descarga:`, err.message);
+          }
+          return;
+        }
+      } catch (err) {
+        json(res, 500, { error: err.message });
+        return;
+      }
+
+      // Entradas antiguas sin storagePrefix: servir desde disco (comportamiento previo).
       const filePath = resolve(join(UPLOADS_DIR, orderId, filename));
       if (!filePath.startsWith(UPLOADS_DIR) || !existsSync(filePath)) {
         res.writeHead(404); res.end("Archivo no encontrado"); return;
@@ -398,20 +620,10 @@ function createAppServer() {
       });
       const stream = createReadStream(filePath);
       stream.pipe(res);
-      stream.on("end", () => {
+      stream.on("end", async () => {
         try {
           unlinkSync(filePath);
-          const index = readFilesIndex();
-          if (index[orderId]) {
-            const fileEntry = index[orderId].files.find(f => f.filename === filename);
-            if (fileEntry) {
-              fileEntry.downloaded = true;
-              fileEntry.downloadedAt = new Date().toISOString();
-            }
-            const allDownloaded = index[orderId].files.every(f => f.downloaded);
-            if (allDownloaded) index[orderId].allDownloaded = true;
-            writeFilesIndex(index);
-          }
+          await markFileDownloaded(orderId, filename);
         } catch {}
       });
       return;
@@ -420,21 +632,19 @@ function createAppServer() {
     // POST /api/mark-downloaded/:orderId  (mark order as fully downloaded)
     if (urlPath.startsWith("/api/mark-downloaded/") && req.method === "POST") {
       const orderId = decodeURIComponent(urlPath.replace("/api/mark-downloaded/", ""));
-      const index = readFilesIndex();
-      if (index[orderId]) {
-        index[orderId].allDownloaded = true;
-        index[orderId].downloadedAt = new Date().toISOString();
-        writeFilesIndex(index);
-      }
-      json(res, 200, { ok: true });
+      try {
+        await markOrderDownloaded(orderId);
+        json(res, 200, { ok: true });
+      } catch (e) { json(res, 500, { error: e.message }); }
       return;
     }
 
     // GET /api/partner-events
     if (urlPath === "/api/partner-events" && req.method === "GET") {
       if (!requireAdmin(req, res)) return;
-      const db = readEventsDB();
-      json(res, 200, { events: db.events || [] });
+      try {
+        json(res, 200, { events: await listEvents() });
+      } catch (e) { json(res, 500, { error: e.message }); }
       return;
     }
 
@@ -447,16 +657,7 @@ function createAppServer() {
           json(res, 400, { error: "email y delta son obligatorios" });
           return;
         }
-        const db = readEventsDB();
-        const event = {
-          email: body.email,
-          orderId: body.orderId || null,
-          delta: body.delta,
-          timestamp: new Date().toISOString(),
-          reason: body.reason || "manual"
-        };
-        db.events.push(event);
-        writeEventsDB(db);
+        const event = await addEvent(body);
         json(res, 201, { ok: true, event });
       } catch (e) { json(res, 400, { error: e.message }); }
       return;
@@ -464,10 +665,10 @@ function createAppServer() {
 
     // GET /api/orders
     if (urlPath === "/api/orders" && req.method === "GET") {
-      const orders = readOrdersDB();
-      const doctorId = new URL(req.url, "http://localhost").searchParams.get("doctorId");
-      const result = doctorId ? orders.filter(o => o.doctorId === doctorId) : orders;
-      json(res, 200, { orders: result });
+      try {
+        const doctorId = new URL(req.url, "http://localhost").searchParams.get("doctorId");
+        json(res, 200, { orders: await listOrders(doctorId) });
+      } catch (e) { json(res, 500, { error: e.message }); }
       return;
     }
 
@@ -479,15 +680,21 @@ function createAppServer() {
           json(res, 400, { error: "id, patient y doctorId son obligatorios" });
           return;
         }
-        const orders = readOrdersDB();
-        if (orders.find(o => o.id === body.id)) {
-          json(res, 409, { error: "Ya existe una orden con ese id" });
-          return;
+        const account = await findDoctorByIdOrEmail(body.doctorId);
+        if (account?.accountType === "clinic") {
+          const treatingDoctor = (body.treatingDoctor || "").trim();
+          if (treatingDoctor) {
+            await addClinicDoctor(account.email, treatingDoctor);
+          }
+        } else if (!body.treatingDoctor) {
+          body.treatingDoctor = body.doctor || account?.name || "";
         }
-        orders.unshift(body);
-        writeOrdersDB(orders);
-        json(res, 201, { order: body });
-      } catch (e) { json(res, 400, { error: e.message }); }
+        const order = await createOrder(body);
+        json(res, 201, { order });
+      } catch (e) {
+        if (e.code === "23505") { json(res, 409, { error: "Ya existe una orden con ese id" }); return; }
+        json(res, 400, { error: e.message });
+      }
       return;
     }
 
@@ -496,13 +703,53 @@ function createAppServer() {
       try {
         const orderId = decodeURIComponent(urlPath.replace("/api/orders/", ""));
         const body = await readBody(req);
-        const orders = readOrdersDB();
-        const idx = orders.findIndex(o => o.id === orderId);
-        if (idx === -1) { json(res, 404, { error: "Orden no encontrada" }); return; }
-        orders[idx] = { ...orders[idx], ...body };
-        writeOrdersDB(orders);
-        json(res, 200, { order: orders[idx] });
+        const order = await updateOrder(orderId, body);
+        if (!order) { json(res, 404, { error: "Orden no encontrada" }); return; }
+        json(res, 200, { order });
       } catch (e) { json(res, 400, { error: e.message }); }
+      return;
+    }
+
+    // GET /api/clinic-doctors/:email  (roster de doctores de una cuenta clínica)
+    if (urlPath.startsWith("/api/clinic-doctors/") && req.method === "GET") {
+      const email = decodeURIComponent(urlPath.replace("/api/clinic-doctors/", ""));
+      try {
+        json(res, 200, { doctors: await getClinicRoster(email) });
+      } catch (e) { json(res, 500, { error: e.message }); }
+      return;
+    }
+
+    // POST /api/plus-interest  — registrar interés en un módulo de Consulta plus
+    if (urlPath === "/api/plus-interest" && req.method === "POST") {
+      try {
+        const { email, module } = await readBody(req);
+        if (!email || !PLUS_MODULES.includes(module)) {
+          json(res, 400, { error: "email y module (agenda/finanzas/kpis/coach) son obligatorios" });
+          return;
+        }
+        const doctor = await findDoctorByIdOrEmail(email);
+        if (!doctor) { json(res, 404, { error: "Cuenta no encontrada" }); return; }
+        const inserted = await addPlusInterest(email, module);
+        json(res, inserted ? 201 : 200, { ok: true, already: !inserted });
+      } catch (e) { json(res, 400, { error: e.message }); }
+      return;
+    }
+
+    // GET /api/plus-interest  (admin) — todos los intereses registrados
+    if (urlPath === "/api/plus-interest" && req.method === "GET") {
+      if (!requireAdmin(req, res)) return;
+      try {
+        json(res, 200, { interests: await listPlusInterest() });
+      } catch (e) { json(res, 500, { error: e.message }); }
+      return;
+    }
+
+    // GET /api/plus-interest/:email — módulos registrados por una cuenta
+    if (urlPath.startsWith("/api/plus-interest/") && req.method === "GET") {
+      const email = decodeURIComponent(urlPath.replace("/api/plus-interest/", ""));
+      try {
+        json(res, 200, { modules: await getPlusInterestForEmail(email) });
+      } catch (e) { json(res, 500, { error: e.message }); }
       return;
     }
 
@@ -530,10 +777,23 @@ function listen(port) {
   });
 }
 
+try {
+  await initDb();
+} catch (err) {
+  console.error("No se pudo inicializar la base de datos PostgreSQL:", err.message);
+  console.error("Verifica que DATABASE_URL esté configurada en el entorno de Replit.");
+  process.exit(1);
+}
+
+// Limpieza de subidas abandonadas: al arrancar y cada hora.
+sweepStaleUploads();
+setInterval(sweepStaleUploads, 60 * 60 * 1000).unref();
+
 listen(preferredPort);
 
-// También escuchar en puerto 8003 si está configurado en .replit como fallback
-if (preferredPort !== 8003) {
+// Puerto alternativo solo en desarrollo: los deployments (autoscale) exigen un único puerto
+// y definen PORT en el entorno, así que ahí este bloque no corre.
+if (!process.env.PORT && preferredPort !== 8003) {
   const fallback = createAppServer();
   fallback.listen(8003, "0.0.0.0", () => {
     console.log("Puerto alternativo 8003 activo");
