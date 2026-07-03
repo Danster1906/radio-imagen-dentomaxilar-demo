@@ -3,6 +3,3 @@
 node_modules/
 local-agent/node_modules/
 local-agent/.env
-attached_assets/
-.cache/
-scripts/smoke-shots/

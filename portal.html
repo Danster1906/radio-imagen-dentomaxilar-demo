@@ -5,8 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Radio Imagen | Órdenes Digitales</title>
     <link rel="icon" type="image/png" href="img/favicon.png" />
-    <link rel="stylesheet" href="styles.css?v=2026-07-02b" />
-    <link rel="stylesheet" href="admin.css?v=2026-07-02b" />
+    <link rel="stylesheet" href="styles.css?v=login-grid-fix-2" />
+    <link rel="stylesheet" href="admin.css?v=deploy-v1" />
   </head>
   <body>
     <section class="login-screen" id="login-screen">
@@ -66,6 +66,8 @@
       </div>
 
       <aside class="login-showcase" aria-label="Acceso al portal">
+        <a class="login-back-link" href="index.html">Volver al sitio</a>
+
         <div class="login-card">
           <div class="login-copy">
             <span class="eyebrow">Portal exclusivo</span>
@@ -895,6 +897,7 @@
     </div>
 
     <div class="toast" id="toast" role="status" aria-live="polite"></div>
-    <script type="module" src="js/main.js?v=2026-07-02b"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="app.js?v=deploy-v1"></script>
   </body>
 </html>

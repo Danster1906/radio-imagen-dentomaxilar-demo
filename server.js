@@ -2,7 +2,7 @@ import { createReadStream, existsSync, statSync, readFileSync, writeFileSync, mk
 import { createServer } from "node:http";
 import { extname, join, normalize, resolve } from "node:path";
 import { createRequire } from "node:module";
-import { randomBytes, scryptSync, timingSafeEqual } from "node:crypto";
+import { randomBytes } from "node:crypto";
 import nodemailer from "nodemailer";
 
 const require = createRequire(import.meta.url);
@@ -94,34 +94,7 @@ async function sendNotificationEmail({ doctorEmail, doctorName, patientName, stu
 
 function readDB() {
   try { return JSON.parse(readFileSync(DB_PATH, "utf-8")); }
-  catch { return { doctors: {}, admin: {} }; }
-}
-
-// --- Contraseñas: hash scrypt con migración perezosa desde texto plano ---
-function hashPassword(password) {
-  const salt = randomBytes(16).toString("hex");
-  const hash = scryptSync(password, salt, 64).toString("hex");
-  return `scrypt$${salt}$${hash}`;
-}
-
-function verifyPassword(password, stored) {
-  if (typeof stored !== "string" || !stored) return false;
-  if (!stored.startsWith("scrypt$")) return stored === password; // valor legado en texto plano
-  const [, salt, hash] = stored.split("$");
-  const candidate = scryptSync(password, salt, 64);
-  const expected = Buffer.from(hash, "hex");
-  return candidate.length === expected.length && timingSafeEqual(candidate, expected);
-}
-
-function getAdminCredentials(db) {
-  return {
-    email: (process.env.ADMIN_EMAIL || db.admin?.email || "").toLowerCase(),
-    password: process.env.ADMIN_PASSWORD || db.admin?.password || ""
-  };
-}
-
-if (!process.env.ADMIN_EMAIL || !process.env.ADMIN_PASSWORD) {
-  console.warn("ADVERTENCIA: ADMIN_EMAIL/ADMIN_PASSWORD no configurados; usando credenciales de data/doctors.json como respaldo. Configura los secretos en el entorno.");
+  catch { return { doctors: {}, admin: { email: "admin@radioimagen.mx", password: "RadioImagen2026!" } }; }
 }
 
 function writeDB(data) {
@@ -280,10 +253,9 @@ function createAppServer() {
       const db = readDB();
       const safeDoctors = {};
       for (const [email, doc] of Object.entries(db.doctors)) {
-        const { password: _pw, ...safe } = doc;
-        safeDoctors[email] = safe;
+        safeDoctors[email] = doc;
       }
-      json(res, 200, { doctors: safeDoctors, admin: { email: getAdminCredentials(db).email } });
+      json(res, 200, { doctors: safeDoctors, admin: { email: db.admin.email } });
       return;
     }
 
@@ -300,10 +272,9 @@ function createAppServer() {
         const id = `DR-${String(count).padStart(4, "0")}`;
         const handle = "@" + name.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
         const pts = (validatedPatients || 0) * 100;
-        db.doctors[email] = { id, handle, name, specialty: specialty || "", clinic: clinic || "", contactPhone: contactPhone || "", email, city: city || "", password: hashPassword(password), notifications: true, partner: { referredPatients: validatedPatients || 0, points: pts } };
+        db.doctors[email] = { id, handle, name, specialty: specialty || "", clinic: clinic || "", contactPhone: contactPhone || "", email, city: city || "", password, notifications: true, partner: { referredPatients: validatedPatients || 0, points: pts } };
         writeDB(db);
-        const { password: _pw, ...safeDoc } = db.doctors[email];
-        json(res, 201, { doctor: safeDoc });
+        json(res, 201, { doctor: db.doctors[email] });
       } catch (e) { json(res, 400, { error: e.message }); }
       return;
     }
@@ -318,7 +289,7 @@ function createAppServer() {
         if (!password) { json(res, 400, { error: "La contraseña no puede estar vacía" }); return; }
         const db = readDB();
         if (!db.doctors[email]) { json(res, 404, { error: "Doctor no encontrado" }); return; }
-        db.doctors[email].password = hashPassword(password);
+        db.doctors[email].password = password;
         writeDB(db);
         json(res, 200, { ok: true });
       } catch (e) { json(res, 400, { error: e.message }); }
@@ -374,18 +345,12 @@ function createAppServer() {
         const { email, password } = await readBody(req);
         const db = readDB();
         const normalEmail = email.toLowerCase();
-        const admin = getAdminCredentials(db);
-        if (normalEmail === admin.email && verifyPassword(password, admin.password)) {
+        if (normalEmail === db.admin.email && password === db.admin.password) {
           json(res, 200, { role: "admin", email: normalEmail, adminToken: ADMIN_TOKEN });
           return;
         }
         const doc = db.doctors[normalEmail];
-        if (doc && verifyPassword(password, doc.password)) {
-          // Migración perezosa: re-guardar en hash si aún está en texto plano
-          if (!String(doc.password).startsWith("scrypt$")) {
-            doc.password = hashPassword(password);
-            writeDB(db);
-          }
+        if (doc && doc.password === password) {
           const { password: _pw, ...safeDoc } = doc;
           json(res, 200, { role: "doctor", email: normalEmail, doctor: safeDoc });
           return;
@@ -566,3 +531,12 @@ function listen(port) {
 }
 
 listen(preferredPort);
+
+// También escuchar en puerto 8003 si está configurado en .replit como fallback
+if (preferredPort !== 8003) {
+  const fallback = createAppServer();
+  fallback.listen(8003, "0.0.0.0", () => {
+    console.log("Puerto alternativo 8003 activo");
+  });
+  fallback.on("error", () => {});
+}
