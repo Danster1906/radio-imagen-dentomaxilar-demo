@@ -14,27 +14,30 @@ La lógica separa dos conceptos:
 Cada paciente referido válido suma:
 
 ```text
-1 paciente referido = 100 puntos
+1 paciente referido validado = 100 puntos
 ```
 
-El punto se atribuye al `doctor_id` que creó la orden digital.
+El punto se atribuye a la cuenta (`email`) del doctor que creó la orden digital.
 
 ## Cuándo se asignan puntos
 
-En el MVP, los puntos se asignan cuando:
+> **Implementación real (`app.js` → `validateAttendedOrder`, `server.js`, `db.js`):** los puntos NO se asignan al crear la orden. Se asignan cuando Radio Imagen (admin) **valida que el paciente acudió** y marca la orden como `Completa` (`countsForPartner = true`). Una orden en estado `Recibida` todavía no genera puntos.
 
-1. El doctor crea una orden digital.
-2. La orden queda en estado `recibida`.
-3. La orden tiene un paciente asociado.
-4. La orden no es una duplicación evidente ni una prueba interna.
+Los puntos se asignan cuando:
 
-Evento creado:
+1. El doctor creó una orden digital con un paciente asociado.
+2. El admin valida la asistencia del paciente y la orden pasa a `Completa`.
+3. La orden no es una duplicación evidente ni una prueba interna.
+
+Al validar, se suman 100 puntos e +1 paciente referido a la cuenta, y se registra un evento auditable.
+
+Evento creado (tabla real `partner_events`):
 
 ```text
-partner_point_events.reason = referred_patient
-partner_point_events.points = 100
-partner_point_events.doctor_id = doctor que refiere
-partner_point_events.order_id = orden generada
+partner_events.reason  = validation      -- 'reversal' si luego se revierte
+partner_events.delta   = 100
+partner_events.email   = doctor que refiere
+partner_events.order_id = orden validada
 ```
 
 ## Por paciente, no por estudio
@@ -118,23 +121,23 @@ Beneficios:
 
 Los puntos no deben guardarse solo como un número total. Deben guardarse como eventos para poder auditar el historial.
 
-Tabla:
+Tabla real (`db.js`):
 
 ```text
-partner_point_events
+partner_events (id, email, order_id, delta, reason, created_at)
 ```
 
-Razones permitidas:
+El acumulado de cada doctor vive además en `accounts.points` y `accounts.referred_patients`.
+
+Razones (`reason`) que el código escribe hoy:
 
 | reason | Uso |
 | --- | --- |
-| referred_patient | Suma por paciente referido válido |
-| profile_completion_bonus | Bono por completar perfil |
-| training_attendance_bonus | Bono por asistir a capacitación |
-| manual_adjustment | Ajuste manual de Radio Imagen |
-| duplicate_reversal | Reverso por orden duplicada |
-| cancelled_order_reversal | Reverso por orden cancelada |
-| reward_redemption | Descuento o uso de puntos |
+| validation | Suma por paciente referido validado (+100) |
+| reversal | Reverso cuando se revierte una validación (−100) |
+| manual | Ajuste manual (valor por defecto de `addEvent`) |
+
+> Las razones extendidas (`profile_completion_bonus`, `training_attendance_bonus`, `duplicate_reversal`, `reward_redemption`, etc.) son **diseño futuro**: aún no las genera el código.
 
 ## Ejemplo de cálculo
 
@@ -159,6 +162,8 @@ Dr. Marco:
 - Le faltan 7 pacientes para llegar a 15.
 
 ## Cashback
+
+> **Diseño futuro — no implementado.** No existe la tabla `partner_cashback_events` ni lógica de cashback en `db.js`, `server.js` ni `app.js`. Esta sección describe una propuesta.
 
 El cashback es un beneficio financiero separado de los puntos.
 
@@ -185,18 +190,20 @@ El cashback no cambia el nivel del doctor.
 
 ## Qué pasa si una orden se cancela
 
-Si una orden ya había generado puntos y luego se cancela, no se borra el evento original. Se crea un evento negativo.
+Si una validación que ya había generado puntos se revierte, no se borra el evento original. Se crea un evento negativo.
 
-Ejemplo:
+Ejemplo (tal como lo escribe el código):
 
 ```text
-referred_patient = +100
-cancelled_order_reversal = -100
+validation = +100
+reversal   = -100
 ```
 
 Esto permite conservar auditoría.
 
 ## Consultas útiles
+
+> **Diseño futuro — no implementado.** Las vistas `v_doctor_partner_progress`, `v_partner_points_by_doctor`, `v_doctor_dashboard_metrics` y `v_top_studies_by_doctor` NO existen en la base actual. Hoy los niveles y métricas se calculan en el frontend (`app.js`: `partnerTiers`, `computeDoctorMetrics`) sobre las órdenes y `partner_events`. Las siguientes SQL son una propuesta para un esquema normalizado futuro.
 
 ### Ver nivel y avance
 
@@ -236,10 +243,10 @@ FROM v_top_studies_by_doctor;
 
 ## Recomendación para producción
 
-En producción, el backend debe hacer tres operaciones en una misma transacción:
+Al validar una orden, el backend debe hacer sus operaciones en una misma transacción:
 
-1. Crear `orders`.
-2. Crear `partner_point_events` si la orden es válida.
-3. Recalcular `doctor_partner_status`.
+1. Actualizar el estado de la orden en `orders` a `Completa`.
+2. Registrar el evento en `partner_events` (reason `validation`).
+3. Actualizar el acumulado en `accounts.points` y `accounts.referred_patients`.
 
-Así se evita que una orden exista sin puntos, o que existan puntos sin una orden válida.
+Así se evita que una validación exista sin puntos, o que existan puntos sin una orden válida.

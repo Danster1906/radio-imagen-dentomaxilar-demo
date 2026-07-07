@@ -1,5 +1,10 @@
 # Estructura de datos escalable
 
+> ⚠️ **Modelo objetivo (futuro). NO refleja el esquema actual.**
+> Este documento describe un esquema normalizado con PK `uuid` (tablas `users`, `patients`, `studies`, `results`, `order_studies`, `order_status_events`, etc.) que **no está implementado**. El esquema real es denormalizado y vive en `db.js`:
+> `accounts` (doctores + admin, PK de texto tipo `DR-0001`) · `clinic_doctors` · `orders` (todo el detalle en la columna `data` JSONB) · `partner_events` (`email`, `delta`, `reason`) · `files_index` · `upload_sessions` · `plus_interest`.
+> Los acumulados de Socios viven como columnas `accounts.points` y `accounts.referred_patients`. Usa este documento como norte de diseño, no como referencia del estado actual.
+
 Propuesta para convertir la plataforma en un sistema donde doctores generan órdenes digitales y Radio Imagen/Radiodiagnóstico les da seguimiento operativo.
 
 ## Entidades principales
@@ -285,11 +290,11 @@ Finanzas futuras del doctor.
 
 ## Recomendación para Replit
 
-Para una primera versión real:
+Para una primera versión real (estado actual entre paréntesis):
 
-- Base de datos: PostgreSQL.
-- Auth: Google OAuth + correo mágico o passwordless.
-- Storage: bucket para PDF/resultados/fotos de perfil.
+- Base de datos: PostgreSQL. (✅ implementado — PostgreSQL de Replit vía `DATABASE_URL`, `db.js`.)
+- Auth: correo autorizado + contraseña con hash scrypt en el servidor; alta de cuentas solo por el admin. (✅ implementado, `db.js`/`server.js`. No se usa Google OAuth ni passwordless.)
+- Storage: Object Storage de Replit para archivos de resultados, con subida por fragmentos y descarga de un solo uso. (✅ implementado, `storage.js`.)
 - API: endpoints separados para `auth`, `orders`, `results`, `profile`, `metrics`.
 - Seguridad: cada doctor solo ve órdenes donde `orders.doctor_id = current_doctor.id`.
 - Seguridad interna: Radio Imagen ve todas las órdenes, pero los cambios de estado deben quedar auditados en `order_status_events`.

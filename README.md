@@ -7,9 +7,9 @@ Portal para que doctores y clínicas generen órdenes digitales de estudios radi
 - `server.js` — servidor Node.js (sin framework) que sirve `portal.html` y expone el API REST.
 - `db.js` — capa de datos sobre la **base PostgreSQL integrada de Replit** (`DATABASE_URL`). Crea las tablas al arrancar y, si están vacías, las siembra desde `data/*.json`.
 - `app.js` — frontend en JavaScript vanilla (todas las vistas del portal).
-- `portal.html` — SPA: login + vistas de doctor/clínica y de administración.
-- `index.html` — página pública informativa.
-- `data/` — fixtures de semilla (solo se importan cuando la base está vacía) y archivos subidos temporalmente en `data/uploads/`.
+- `portal.html` — SPA: login + vistas de doctor/clínica y de administración. Es el único HTML servido; el servidor lo entrega en la raíz `/`.
+- `storage.js` — capa sobre el **Object Storage de Replit** donde viven los archivos de resultados (subida por fragmentos, descarga de un solo uso).
+- `data/` — fixtures de semilla (solo se importan cuando la base está vacía). Nota: los archivos de resultados ya NO se guardan en disco; van al Object Storage (ver `storage.js`).
 
 ## Tipos de cuenta
 
@@ -26,7 +26,7 @@ El admin elige el tipo de cuenta al dar de alta en el panel de administración.
 
 ## Archivos de resultados (descarga única)
 
-- El admin sube los archivos (ZIP, DCM, PDF, STL… hasta 2 GB) desde el panel Resultados con arrastrar-y-soltar; la subida va **por fragmentos de 15 MB** con barra de progreso y reintentos, directo al **Object Storage de Replit**.
+- El admin sube los archivos (ZIP, DCM, PDF, STL… hasta 2.5 GB) desde el panel Resultados con arrastrar-y-soltar; la subida va **por fragmentos de 15 MB** con barra de progreso y reintentos, directo al **Object Storage de Replit**.
 - El doctor recibe un correo de aviso. **Al completar su descarga, el archivo se elimina del storage** — el almacenamiento nunca se acumula. Si lo necesita de nuevo, usa "Solicitar reenvío" y el admin lo ve marcado en su panel.
 - Si una descarga se corta a medias, el archivo NO se borra y se puede reintentar. Las subidas abandonadas se limpian solas a las 24 h.
 - Todo el acceso al storage está encapsulado en `storage.js` (5 funciones): migrar a S3/GCS u otro proveedor después es reimplementar solo ese archivo.
@@ -62,5 +62,4 @@ Los archivos de resultados NO forman parte del respaldo: son temporales por dise
 
 ## Pendientes conocidos
 
-- Los archivos de resultados se guardan en disco (`data/uploads/`), que es efímero en el deployment autoscale: si la instancia se reinicia entre la subida y la descarga, el archivo se pierde. El siguiente paso es moverlos al Object Storage de Replit (bucket ya configurado en `.replit`).
 - Los endpoints de doctor no exigen sesión (mismo modelo que la versión anterior); conviene agregar tokens de sesión.

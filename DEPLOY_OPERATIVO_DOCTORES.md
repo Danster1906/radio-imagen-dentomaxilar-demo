@@ -1,341 +1,97 @@
 # Deployment operativo para doctores
 
-## Resumen
+> Esta guía refleja la operación **real** del portal. Reemplaza versiones anteriores que
+> describían un despliegue estático por ZIP (Neubox) y una integración con Supabase
+> (Auth, `order_studies`, `doctor_partner_status`, Edge Function `create-doctor`, bucket
+> `result-temp`): ese diseño fue descartado. Hoy todo corre en una sola app Node en Replit,
+> con PostgreSQL y Object Storage de Replit. Para la infraestructura, ver
+> [`REPLIT_DEPLOYMENT.md`](REPLIT_DEPLOYMENT.md).
 
-Ya existe un paquete actualizado para publicar el portal:
+## Arquitectura de la operación real
 
-```text
-deploy/radio-imagen-operativo-v1.zip
-```
+- **Una sola app Node** (`server.js`) publicada en Replit como **Autoscale Deployment**.
+- **PostgreSQL de Replit** (`db.js`) guarda cuentas, órdenes, eventos de puntos y el índice de archivos. No hay Supabase.
+- **Object Storage de Replit** (`storage.js`) guarda temporalmente los archivos de resultados.
+- **Login propio**: correo autorizado + contraseña con hash scrypt. El alta de cuentas la hace el admin desde el panel; no hay signup público ni OAuth.
 
-Este ZIP sirve para publicar la interfaz actual en Neubox, Replit Static Deployment o cualquier hosting estatico.
+## Ruta para iniciar operación real
 
-## Decision importante antes de invitar doctores
+1. Publicar la app en Replit como Autoscale Deployment (ver `REPLIT_DEPLOYMENT.md`).
+2. Configurar los Secrets: `ADMIN_TOKEN` (obligatorio en producción) y, para correos, `SMTP_HOST` / `SMTP_USER` / `SMTP_PASS` y `PORTAL_URL`.
+3. Iniciar sesión como admin y dar de alta 1 doctor de confianza.
+4. Hacer la prueba de humo operativa (sección "Primer piloto real").
+5. Abrir a 3–5 doctores.
 
-### Opcion A - Piloto visual inmediato
+## Alta de doctores (desde el panel admin)
 
-Sirve para mostrar la herramienta, capacitar doctores y validar flujo.
+Es el único flujo de alta. No se crean usuarios en ninguna consola externa.
 
-Limitaciones:
+1. Iniciar sesión como admin.
+2. Entrar a **Admin Radio Imagen → Doctores**.
+3. Llenar el formulario:
 
-- Los datos viven en el navegador.
-- Las ordenes no se comparten realmente entre computadoras.
-- Las contrasenas son demo.
-- No debe usarse como expediente operativo real.
+   ```text
+   Nombre
+   Correo
+   Contraseña inicial
+   Especialidad
+   Clínica
+   Teléfono
+   Ciudad
+   Tipo de cuenta (Personal o Clínica)
+   Pacientes validados iniciales
+   ```
 
-### Opcion B - Operacion real
+4. Presionar **Crear doctor y asignar puntos**.
 
-Sirve para que doctores creen ordenes reales y Radio Imagen les de seguimiento.
+Al crear, el sistema (`server.js` → `createAccount` en `db.js`):
 
-Requiere conectar:
+- Inserta una fila en la tabla `accounts` con `role = 'doctor'`.
+- Genera un `id` correlativo tipo `DR-0001`.
+- Guarda la contraseña **hasheada con scrypt** (nunca en texto plano; el admin puede asignarla pero no verla).
+- Convierte los "pacientes validados iniciales" en puntos: `pacientes × 100`.
 
-- Supabase Auth para usuarios reales.
-- Supabase Postgres para doctores, ordenes, estudios y resultados.
-- Supabase Storage privado para archivos.
-- RLS para que cada doctor vea solo su informacion.
+> **Tipo de cuenta.** *Personal*: las órdenes quedan a nombre del doctor. *Clínica*: al crear una orden se elige el doctor tratante de su propia lista (o se agrega uno nuevo al vuelo); los puntos de Socios se acumulan a la cuenta clínica.
 
-La recomendacion es publicar el frontend ya, pero no entregar acceso a doctores reales hasta conectar Supabase.
+### Contraseñas y seguridad
 
-## Ruta recomendada
+- Las contraseñas se guardan con hash scrypt (`password_hash`). Las cuentas antiguas en texto plano se migran automáticamente al arrancar o al iniciar sesión.
+- El API nunca devuelve contraseñas.
+- El token de admin se fija con `ADMIN_TOKEN` para que sobreviva reinicios/escala; si no existe, se genera uno aleatorio por instancia.
 
-1. Publicar el portal en un subdominio.
-2. Crear usuarios reales en Supabase Auth.
-3. Insertar perfiles de doctores en Supabase.
-4. Conectar login a Supabase Auth.
-5. Conectar nueva orden a `orders` y `order_studies`.
-6. Conectar admin a las ordenes reales.
-7. Conectar subida manual de resultados a Supabase Storage.
-8. Hacer prueba con 1 doctor de confianza.
-9. Abrir a 3-5 doctores.
-
-## Deployment en Neubox
-
-Archivo a subir:
-
-```text
-deploy/radio-imagen-operativo-v1.zip
-```
-
-Pasos:
-
-1. Entrar a Neubox.
-2. Abrir cPanel.
-3. Ir a `Administrador de archivos`.
-4. Crear subdominio recomendado:
+## Flujo operativo de una orden
 
 ```text
-doctores.radioimagendentomaxilar.com
+Doctor crea la orden           -> status: Recibida
+Admin agenda al paciente       -> status: Agendada
+Admin valida que el paciente acudió -> status: Completa  (suma +100 pts y +1 paciente referido)
+Admin sube el resultado        -> status: Lista para descargar
+Doctor descarga (una sola vez) -> el archivo se elimina del Object Storage
 ```
 
-5. Entrar a la carpeta del subdominio o `public_html`.
-6. Subir `deploy/radio-imagen-operativo-v1.zip`.
-7. Extraer el ZIP.
-8. Confirmar que `index.html` quede directamente en la raiz del sitio.
-9. Abrir el dominio.
+Los puntos de Socios se otorgan en el paso **Completa** (validación de asistencia), no al crear la orden. Detalle en [`LOGICA_PUNTOS_SOCIOS.md`](LOGICA_PUNTOS_SOCIOS.md).
 
-## Deployment en Replit
+## Resultados (subida y descarga)
 
-Pasos:
-
-1. Importar el repositorio desde GitHub:
-
-```text
-https://github.com/Danster1906/radio-imagen-dentomaxilar-demo
-```
-
-2. Confirmar que Replit detecte Node.
-3. Si solicita comando de ejecucion, usar:
-
-```text
-npm start
-```
-
-4. Presionar `Run`.
-5. Abrir el preview y probar:
-
-```text
-/index.html
-/portal.html
-```
-
-6. Crear `Autoscale Deployment`.
-7. Copiar el URL publicado de Replit.
-8. En Supabase, configurar ese URL en `Authentication > URL Configuration`.
-9. Conectar el dominio o subdominio desde Neubox si se quiere usar dominio propio.
-
-Archivos agregados para Replit:
-
-```text
-package.json
-server.js
-.replit
-```
-
-## Supabase real
-
-Proyecto activo:
-
-```text
-radio-imagen-dentomaxilar
-https://wwrfuwtvllgecjmfjfwf.supabase.co
-```
-
-Clave publica para frontend:
-
-```text
-sb_publishable_9-mqQEWpDWG4UL_rL6dxsw_uJSfXK7P
-```
-
-Nunca subir al frontend:
-
-```text
-service_role
-secret key
-```
-
-## Estado operativo actual
-
-El portal ya esta conectado a Supabase para la primera operacion real:
-
-- Login con Supabase Auth.
-- Rol desde `profiles`.
-- Perfil doctor desde `doctor_profiles`.
-- Ordenes reales desde `orders`.
-- Estudios solicitados desde `order_studies`.
-- Cambio de estatus desde admin en `orders`.
-- Historial en `order_status_events`.
-- Puntos de socio en `doctor_partner_status` y `partner_point_events`.
-- Alta segura de doctores con Edge Function:
-
-```text
-create-doctor
-```
-
-La funcion esta versionada localmente en:
-
-```text
-supabase/functions/create-doctor/index.ts
-```
-
-Esta funcion usa `SUPABASE_SERVICE_ROLE_KEY` dentro de Supabase Edge Functions y exige que la sesion sea de un usuario con `role = admin`.
-
-## Alta de usuarios
-
-### Alta desde el panel admin
-
-El flujo recomendado ahora es:
-
-1. Iniciar sesion como admin.
-2. Abrir `Admin Radio Imagen`.
-3. Entrar a `Doctores`.
-4. Llenar:
-
-```text
-Nombre
-Correo
-Contraseña inicial
-Especialidad
-Clínica
-Teléfono
-Ciudad
-Pacientes validados iniciales
-```
-
-5. Presionar `Crear doctor y asignar puntos`.
-
-El sistema crea:
-
-- Usuario en Supabase Auth.
-- Registro en `profiles`.
-- Registro en `doctor_profiles`.
-- Registro en `doctor_partner_status`.
-
-### Alta manual inicial de usuarios
-
-En Supabase Dashboard:
-
-1. Authentication.
-2. Users.
-3. Add user.
-4. Crear admin:
-
-```text
-admin@radioimagen.mx
-```
-
-5. Crear cada doctor con correo real y contrasena asignada.
-6. Copiar el `User UID` de cada usuario.
-
-Luego insertar perfil en SQL Editor.
-
-Plantilla local lista:
-
-```text
-SUPABASE_ALTA_USUARIOS.sql
-```
-
-### Admin
-
-```sql
-insert into public.profiles (id, role, full_name, email, phone)
-values (
-  'AUTH_USER_ID_AQUI',
-  'admin',
-  'Admin Radio Imagen',
-  'admin@radioimagen.mx',
-  '55 0000 0000'
-);
-```
-
-### Doctor
-
-```sql
-insert into public.profiles (id, role, full_name, email, phone)
-values (
-  'AUTH_USER_ID_AQUI',
-  'doctor',
-  'Dra. Nombre Apellido',
-  'doctor@consultorio.com',
-  '55 0000 0000'
-);
-
-insert into public.doctor_profiles (
-  profile_id,
-  doctor_code,
-  display_name,
-  specialty,
-  clinic,
-  contact_phone,
-  city
-)
-values (
-  'AUTH_USER_ID_AQUI',
-  'DR-0001',
-  'Dra. Nombre Apellido',
-  'Ortodoncia',
-  'Clinica / Consultorio',
-  '55 0000 0000',
-  'Ciudad de Mexico'
-);
-
-insert into public.doctor_partner_status (
-  doctor_id,
-  referred_patients,
-  points,
-  current_tier_id
-)
-select
-  id,
-  0,
-  0,
-  'activo'
-from public.doctor_profiles
-where profile_id = 'AUTH_USER_ID_AQUI';
-```
-
-## Configuracion de Auth
-
-En Supabase:
-
-1. Authentication.
-2. URL Configuration.
-3. Site URL:
-
-```text
-https://doctores.radioimagendentomaxilar.com
-```
-
-4. Redirect URLs:
-
-```text
-https://doctores.radioimagendentomaxilar.com/**
-http://127.0.0.1:8003/**
-```
-
-5. Para una operacion privada, desactivar signup publico si no se quiere que cualquier persona cree cuenta.
-
-## Storage
-
-Bucket existente:
-
-```text
-result-temp
-```
-
-Uso recomendado:
-
-```text
-doctor_id/order_id/result_file_id/nombre_archivo
-```
-
-Reglas:
-
-- Privado.
-- Doctor solo descarga archivos de sus ordenes.
-- Admin puede subir resultados.
-- Links firmados para descargas temporales.
-- Vigencia sugerida: 90 dias para archivos disponibles, 60 minutos para link firmado.
+- El admin sube el archivo (ZIP/DCM/PDF/STL… hasta **2.5 GB**) desde el panel **Resultados**, arrastrar-y-soltar. La subida va por **fragmentos de 15 MB** directo al Object Storage de Replit, con barra de progreso y reintentos.
+- El doctor recibe un correo de aviso (si hay SMTP configurado).
+- La descarga es **de un solo uso**: al completarse, el archivo se elimina del storage. Si el doctor lo necesita de nuevo, usa **Solicitar reenvío** y el admin lo ve marcado.
+- Si una descarga se corta a medias, el archivo **no** se borra y se puede reintentar. Las subidas abandonadas se limpian solas a las 24 h.
 
 ## Primer piloto real
 
-Para iniciar sin saturarse:
+1. Crear 1 admin real (semilla o alta) y 1 doctor real desde el panel.
+2. El doctor crea 2 órdenes.
+3. El admin cambia el estatus: `Recibida` → `Agendada` → `Completa`.
+4. El admin sube un resultado de prueba.
+5. El doctor descarga el resultado.
+6. Confirmar que el doctor **solo** ve sus propias órdenes.
 
-1. Crear 1 admin real.
-2. Crear 1 doctor real.
-3. El doctor manda 2 ordenes.
-4. Admin cambia estatus: `Recibida` -> `Agendada` -> `Completa`.
-5. Admin sube resultado.
-6. Doctor descarga resultado.
-7. Confirmar que no ve ordenes de otros doctores.
+## Criterio de "listo para operación"
 
-## Criterio para decir que ya esta listo para operacion
-
-Debe cumplirse:
-
-- Login real con Supabase Auth.
-- Ordenes se guardan en Supabase.
-- Admin ve ordenes creadas por doctores reales.
-- Doctor solo ve sus ordenes.
-- Resultados se suben a Supabase Storage.
-- Doctor descarga sin pedir apoyo manual.
+- Login real con correo + contraseña (scrypt).
+- Las órdenes se guardan en PostgreSQL y el admin ve las creadas por doctores reales.
+- Cada doctor solo ve sus órdenes.
+- Los resultados se suben al Object Storage y el doctor descarga sin apoyo manual.
 - El estatus se actualiza para doctor y admin.
+- Al validar asistencia (`Completa`), los puntos de Socios se acreditan correctamente.

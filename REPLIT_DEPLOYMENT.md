@@ -1,208 +1,101 @@
 # Deployment en Replit
 
-## Arquitectura recomendada
+> Esta guía refleja la arquitectura **real** del proyecto. Reemplaza a versiones anteriores
+> que describían un stack con Supabase y un "agente local"; ese diseño fue descartado.
+
+## Arquitectura real
 
 ```text
-Replit
--> Portal web del doctor
--> Login y llamadas a backend/API
-
-Supabase
--> Base de datos
--> Auth
--> Storage temporal
--> Solicitudes de descarga
-
-Computadora local Radio Imagen
--> Archivos maestros por 3 meses
--> Agente local
--> Sube archivos a Supabase solo bajo demanda
+Replit (una sola app Node)
+-> server.js  : servidor HTTP nativo (sin framework), sirve portal.html y el API REST
+-> db.js      : PostgreSQL integrado de Replit (DATABASE_URL)
+-> storage.js : Object Storage de Replit para los archivos de resultados
 ```
 
-## Qué va en Replit
+No hay Supabase, ni Edge Functions, ni agente local. Todo corre dentro de la misma app de Replit.
 
-Replit debe alojar:
+## Qué contiene el proyecto
 
-- `index.html`
-- `styles.css`
-- `app.js`
-- Futuro backend/API si decidimos hacerlo en Node/Express.
+Archivos que se publican y ejecutan en Replit:
 
-Para el MVP visual actual, puede ser un Static Deployment porque es HTML/CSS/JS.
+- `server.js` — servidor y API (punto de entrada).
+- `db.js` — capa de datos (PostgreSQL).
+- `storage.js` — capa de Object Storage.
+- `portal.html` — único HTML; el servidor lo entrega en la raíz `/`.
+- `app.js`, `styles.css`, `admin.css` — frontend.
+- `data/*.json` — fixtures de semilla (solo se importan si la base está vacía).
+- `.replit`, `package.json` — configuración y scripts.
 
-Replit documenta Static Deployments como una forma de hospedar archivos HTML, CSS y JavaScript en servidor cloud. También permite importar repositorios existentes desde GitHub.
+> No es un Static Deployment: la app **ejecuta `server.js`** (Node). Usa **Autoscale Deployment**.
 
-## Qué NO va en Replit
+## Ejecución
 
-No debe ir:
-
-- `SUPABASE_SERVICE_ROLE_KEY`.
-- Archivos pesados de estudios.
-- Rutas locales de la computadora de Radio Imagen visibles al usuario.
-- El agente local con acceso al disco de Radio Imagen.
-
-## Estado actual del proyecto
-
-El proyecto ya incluye configuracion para que Replit pueda correrlo como app Node estatica:
-
-```text
-package.json
-server.js
-.replit
-```
-
-Comando de ejecucion:
+Comando de arranque (definido en `package.json` y `.replit`):
 
 ```bash
 npm start
 ```
 
-Puerto interno:
+Puertos (según `.replit`):
+
+- **Puerto principal: `5000`** → se expone como `externalPort 80` en producción.
+- `8003` es solo un puerto **alternativo de desarrollo local** (fallback); no se usa en el deployment.
+
+En producción Replit define la variable `PORT` automáticamente y el servidor la respeta (`server.js`).
+
+## Variables de entorno
+
+El código lee estas variables (ninguna de Supabase):
+
+| Variable | Uso | ¿Obligatoria? |
+| --- | --- | --- |
+| `DATABASE_URL` | Conexión a PostgreSQL de Replit | Sí (la app no arranca sin ella) |
+| `ADMIN_TOKEN` | Token fijo de administrador (recomendado en producción para que sobreviva reinicios) | Recomendada |
+| `SMTP_HOST` / `SMTP_USER` / `SMTP_PASS` | Envío de correos de aviso de resultados | Opcional (sin ellas, se omite el correo) |
+| `PORTAL_URL` | URL base del portal usada en los correos | Opcional |
+| `PORT` | Puerto de escucha (lo define Replit en deploy) | La define Replit |
+
+El Object Storage usa el bucket configurado en `.replit` bajo `[objectStorage]` (`defaultBucketID`).
+
+## Pasos para desplegar
+
+1. Abrir Replit e importar desde GitHub:
+   `https://github.com/Danster1906/radio-imagen-dentomaxilar-demo`
+2. Asegurar que exista la base de datos PostgreSQL de Replit (variable `DATABASE_URL` presente).
+3. Configurar `ADMIN_TOKEN` (y `SMTP_*` / `PORTAL_URL` si se quieren correos) en los Secrets de Replit.
+4. Presionar `Run`: al arrancar, `initDb()` crea las tablas y, si la base está vacía, siembra desde `data/*.json`.
+5. Abrir el preview: la raíz `/` muestra `portal.html`.
+6. Crear el deployment como **Autoscale Deployment**.
+
+## Flujo real de resultados (subida y descarga)
 
 ```text
-8003
+Admin (panel Resultados)
+-> arrastra el archivo (ZIP/DCM/PDF/STL… hasta 2.5 GB)
+-> subida por fragmentos de 15 MB directo al Object Storage de Replit
+-> se registra en files_index; se envía correo de aviso al doctor (si hay SMTP)
+
+Doctor
+-> descarga el archivo (descarga de un solo uso)
+-> al completar la descarga, el objeto se elimina del storage
+-> si lo necesita otra vez, usa "Solicitar reenvío" y el admin lo ve marcado
 ```
 
-En Replit tambien puede usar `PORT` automaticamente cuando publique la app.
-
-## Pasos para desplegar el frontend en Replit
-
-1. Abrir Replit.
-2. Importar desde GitHub:
-
-```text
-https://github.com/Danster1906/radio-imagen-dentomaxilar-demo
-```
-
-3. Si Replit pregunta como correr la app, usar:
-
-```text
-npm start
-```
-
-4. Confirmar que carguen:
-
-```text
-index.html
-portal.html
-styles.css
-app.js
-server.js
-```
-
-5. Presionar `Run` y abrir el preview.
-6. Entrar a `portal.html` desde el boton `Portal doctores`.
-7. Crear deployment.
-
-### Tipo de deployment recomendado
-
-Para probar y operar con el frontend actual:
-
-```text
-Autoscale Deployment
-```
-
-Motivo: permite usar el servidor `server.js`, mantener una configuracion parecida a produccion y migrar mas facil a endpoints propios si despues agregamos backend.
-
-Para un sitio puramente estatico sin backend:
-
-```text
-Static Deployment
-```
-
-Tambien funciona, pero no ejecuta `server.js`.
-
-## Pasos para conectar Supabase
-
-El proyecto ya esta conectado al proyecto Supabase:
-
-```text
-https://wwrfuwtvllgecjmfjfwf.supabase.co
-```
-
-La clave publica esta en `app.js` y puede vivir en frontend. No es la llave privada.
-
-La operacion actual ya incluye:
-
-- Login real con Supabase Auth.
-- Lectura de perfiles y roles.
-- Creacion real de ordenes.
-- Cambio real de estados desde admin.
-- Edge Function `create-doctor` para alta segura de doctores.
-
-Pendiente para resultados:
-
-1. Crear o confirmar bucket privado:
-
-```text
-result-temp
-```
-
-2. Conectar subida manual a Storage.
-3. Generar signed URLs para descargas.
-
-Las tablas de operacion ya existen en Supabase.
-
-## Flujo de descarga con Replit
-
-```text
-Doctor entra a Replit app
--> click Solicitar descarga
--> Replit/Supabase crea download_request
--> agente local ve solicitud
--> agente sube archivo a Supabase Storage
--> Supabase genera signed URL
--> doctor descarga desde Supabase
-```
-
-## Primer MVP recomendado
-
-Fase 1:
-
-- Replit solo como frontend publicado.
-- Supabase como base de datos y storage temporal.
-- Agente local corriendo manualmente en la computadora de Radio Imagen.
-
-Fase 2:
-
-- Agregar backend/API.
-- Agregar Auth real.
-- Conectar órdenes y resultados reales.
-
-Fase 3:
-
-- Automatizar agente local como servicio.
-- Borrado automático de nube.
-- Limpieza local a los 3 meses.
+Los archivos de resultados son temporales por diseño y **no** forman parte de los respaldos de la base.
 
 ## Comandos útiles
 
-Para correr el frontend local:
-
 ```bash
-python3 -m http.server 8003
+npm start        # arranca la app en :5000 (inicializa/siembra la BD)
+npm run migrate  # solo crea tablas + seed (útil antes de deployar)
+npm run smoke    # smoke test de UI con Playwright (requiere el servidor corriendo)
+npm run backup   # respaldo de la BD con pg_dump → backups/backup-<fecha>.dump
 ```
 
-Para correr el agente local:
+## Respaldos y portabilidad
 
-```bash
-cd local-agent
-npm install
-cp .env.example .env
-npm run once
-npm start
-```
+La base es PostgreSQL estándar (sin dependencias del esquema hacia Replit):
 
-## Decisión importante
-
-El agente local no debe depender de Replit para acceder al disco local.
-
-Replit vive en la nube. No puede leer directamente el disco de Radio Imagen.
-
-Por eso el patrón correcto es:
-
-```text
-Replit crea solicitud
-Agente local la procesa
-Supabase entrega temporalmente
-```
+1. `npm run backup` genera `backups/backup-<fecha>.dump` (correr desde el workspace).
+2. Restaurar en cualquier proveedor: `pg_restore --clean --if-exists -d "$NUEVA_DATABASE_URL" backups/backup-....dump`.
+3. Para mover la app basta con cambiar `DATABASE_URL` (más `SMTP_*` / `PORTAL_URL` si aplican) y reimplementar `storage.js` si se cambia de proveedor de Object Storage.

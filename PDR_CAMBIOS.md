@@ -2,6 +2,32 @@
 
 Este archivo documenta los cambios funcionales y de producto. Cada cambio futuro debe registrarse aquí con fecha, objetivo, alcance y efecto en datos.
 
+## 2026-07-04 - Auditoría de documentación y registro de la arquitectura real
+
+### Objetivo
+
+Alinear toda la documentación con el código real. Las entradas históricas de este changelog y varios documentos describían un stack basado en Supabase que fue reemplazado; esta entrada deja constancia del estado vigente sin reescribir el historial.
+
+### Arquitectura vigente (reemplaza al diseño Supabase)
+
+- **Backend:** servidor HTTP nativo de Node (`server.js`), sin framework. No se usa Supabase.
+- **Base de datos:** PostgreSQL integrado de Replit (`db.js`, `DATABASE_URL`). Esquema denormalizado real: `accounts`, `clinic_doctors`, `orders` (detalle en `data` JSONB), `partner_events` (`email`, `delta`, `reason`), `files_index`, `upload_sessions`, `plus_interest`. No existen las tablas Supabase (`profiles`, `doctor_profiles`, `order_studies`, `order_status_events`, `results`, `doctor_partner_status`, `partner_point_events`).
+- **Auth:** correo autorizado + contraseña con hash scrypt; alta solo desde el panel admin con `ADMIN_TOKEN`. Se descartó Google OAuth/passwordless y la Edge Function `create-doctor`.
+- **Storage de resultados:** Object Storage de Replit (`storage.js`), con subida por fragmentos de 15 MB y descarga de un solo uso. Reemplaza al bucket `result-temp` y a los "signed URLs" pendientes; ya NO se usa disco `data/uploads/` como método principal.
+- **Puntos de Socios:** se otorgan al validar la asistencia (orden `Completa`, `reason = validation`, +100), no al crear la orden. Niveles reales: Activo 1, Plata 15, Oro 25, Diamante 50.
+- **Puerto:** 5000 (→ externalPort 80 en producción); 8003 solo fallback local. Deployment: Autoscale (cloudrun).
+
+### Cambios realizados
+
+- Se eliminó `index.html` (página pública). El único HTML servido es `portal.html`, que el servidor entrega en la raíz `/`.
+- Se actualizaron: `README.md`, `PDR_RADIO_IMAGEN.md`, `DOCUMENTO_MAESTRO.md`, `LOGICA_INFORMACION.md`, `LOGICA_PUNTOS_SOCIOS.md`, `DATA_MODEL.md`, `CLAUDE_CODE_WORKFLOW.md`.
+- Se reescribieron `REPLIT_DEPLOYMENT.md` y `DEPLOY_OPERATIVO_DOCTORES.md` para reflejar la arquitectura real (Node + PostgreSQL + Object Storage de Replit).
+- `DATA_MODEL.md` y la sección §4 de `DOCUMENTO_MAESTRO.md` se marcaron como "modelo objetivo futuro, no implementado".
+
+### Impacto en datos
+
+- No cambia el esquema ni los datos: es una alineación de documentación y el borrado de un archivo estático (`index.html`).
+
 ## 2026-06-16 - Corrección de favicon y tamaños de logo
 
 ### Objetivo

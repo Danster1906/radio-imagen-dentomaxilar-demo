@@ -10,7 +10,7 @@ El producto reemplaza la dependencia de una orden física perdida o incompleta p
 
 ### Incluido
 
-- Login del doctor con correo o Google.
+- Login del doctor con correo autorizado y contraseña (hash scrypt en el servidor). El alta de cuentas la hace el admin desde el panel.
 - Perfil profesional del doctor.
 - Imagen de perfil con ajuste de zoom y encuadre.
 - Panel del doctor.
@@ -77,13 +77,13 @@ flowchart TD
 
 | Estado | Responsable | Descripción |
 | --- | --- | --- |
-| recibida | Sistema / Radio Imagen | Orden creada por el doctor y visible para operación |
-| en_revision | Radio Imagen | Datos revisados antes de contactar/agendar |
-| agendada | Radio Imagen | Paciente ya tiene cita |
-| en_proceso | Radio Imagen | Estudio realizado o en preparación de resultado |
-| lista | Radio Imagen | Resultado disponible |
-| entregada | Sistema / Doctor | Resultado descargado o consultado |
-| cancelada | Radio Imagen | Orden no continúa |
+| Recibida | Sistema / Radio Imagen | Orden creada por el doctor y visible para operación (estado inicial por defecto) |
+| Agendada | Radio Imagen | Paciente ya tiene cita |
+| Completa | Radio Imagen | Radio Imagen valida que el paciente acudió; suma puntos de Socios (`countsForPartner`) |
+| Lista para descargar | Radio Imagen | Resultado disponible para el doctor |
+| Cancelada | Radio Imagen | Orden no continúa |
+
+> Estos son los 5 estados reales usados por `app.js`, `portal.html` y el valor por defecto `orders.status = 'Recibida'` en `db.js`.
 
 ## Reglas del producto
 

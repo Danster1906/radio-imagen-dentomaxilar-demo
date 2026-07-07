@@ -238,12 +238,15 @@ Administrador puede:
    - `Completa`
    - `Lista para descargar`
    - `Cancelada`
-5. Cada cambio crea un evento histórico.
-6. Si el paciente acudió, `Completa` valida asistencia y puntos.
-7. Si el resultado está listo, se crea un registro en `results`.
-8. El doctor ve la orden como `Lista para descargar` y puede descargar resultado.
+5. Cada cambio actualiza `orders.status`.
+6. Si el paciente acudió, `Completa` valida asistencia y otorga puntos (evento en `partner_events`).
+7. Si el resultado está listo, el admin sube los archivos: se registran en `files_index` y los binarios van al Object Storage de Replit (`storage.js`).
+8. El doctor ve la orden como `Lista para descargar` y puede descargar resultado (descarga de un solo uso).
 
 ## 4. Estructura de base de datos
+
+> ⚠️ **Modelo objetivo (futuro). NO refleja el esquema actual.**
+> El esquema descrito aquí (tablas normalizadas `users`, `patients`, `studies`, `results`, `order_status_events`, etc. con PK `uuid`) **no está implementado**. El esquema real vive en `db.js` y es denormalizado: `accounts` (doctores + admin, PK de texto tipo `DR-0001`), `clinic_doctors`, `orders` (detalle completo en la columna `data` JSONB), `partner_events` (`email`, `delta`, `reason`), `files_index`, `upload_sessions`, `plus_interest`. Los acumulados de Socios son columnas `accounts.points` / `accounts.referred_patients`. Para el detalle de este modelo objetivo ver también `DATA_MODEL.md`.
 
 ### users
 
@@ -469,12 +472,14 @@ AND status IN ('Recibida', 'Agendada', 'Completa');
 
 ## 6. Recomendación para Replit
 
-- Base de datos: PostgreSQL.
-- Auth: Google OAuth + correo mágico o passwordless.
-- Storage: bucket para PDF/resultados/fotos de perfil.
+Estado actual entre paréntesis:
+
+- Base de datos: PostgreSQL. (✅ implementado — PostgreSQL de Replit vía `DATABASE_URL`, `db.js`.)
+- Auth: correo autorizado + contraseña con hash scrypt en el servidor Node; el alta de doctores se hace desde el panel admin con token. (✅ implementado. Google OAuth/passwordless fue descartado — ver `PDR_CAMBIOS.md` "Login privado" 2026-06-15.)
+- Storage: Object Storage de Replit para archivos de resultados; subida por fragmentos de 15 MB y descarga de un solo uso (el objeto se elimina al descargarse). (✅ implementado, `storage.js`.)
 - API: endpoints separados para `auth`, `orders`, `results`, `profile`, `metrics`.
 - Seguridad doctor: cada doctor solo ve órdenes donde `orders.doctor_id = current_doctor.id`.
-- Seguridad interna: Radio Imagen ve todas las órdenes, pero los cambios de estado deben quedar auditados en `order_status_events`.
+- Seguridad interna: Radio Imagen ve todas las órdenes; hoy el estado vive en `orders.status` (aún sin tabla de auditoría de cambios de estado).
 
 ## 7. Registro resumido de cambios
 

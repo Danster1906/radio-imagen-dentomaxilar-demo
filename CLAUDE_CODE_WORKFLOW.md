@@ -17,7 +17,7 @@ Codex y Claude Code no deben editar los mismos archivos al mismo tiempo. La inte
 
 Requisitos:
 
-- Node.js 18 o superior.
+- Node.js 20 o superior (el runtime del proyecto es Node 22; `package.json` exige `engines.node >=20`).
 - Cuenta de Anthropic o acceso a Claude.
 - Este repositorio clonado localmente.
 
@@ -99,11 +99,11 @@ Claude Code:
 
 Archivos que deben leerse antes de tocar la logica:
 
+- `README.md` (arquitectura real: Node + PostgreSQL + Object Storage de Replit)
 - `DOCUMENTO_MAESTRO.md`
 - `DATA_MODEL.md`
 - `LOGICA_INFORMACION.md`
 - `LOGICA_PUNTOS_SOCIOS.md`
-- `CONFIG_SUPABASE_STORAGE_TEMPORAL.md`
 - `REPLIT_DEPLOYMENT.md`
 - `PDR_CAMBIOS.md`
 

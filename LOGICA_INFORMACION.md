@@ -62,28 +62,21 @@ Representa la clasificación del doctor dentro del programa de referidos.
 
 Reglas iniciales:
 
-- Al mandar su primer paciente, el doctor se convierte automáticamente en `Socio Radio Imagen Dentomaxilar`.
-- Cada paciente referido suma puntos.
+- Cuando Radio Imagen valida que el primer paciente referido acudió (orden `Completa`), el doctor suma su primer paciente referido y se activa como `Socio Activo`. Crear la orden por sí solo aún no otorga nivel ni puntos.
+- Cada paciente referido validado suma puntos.
 - Los pacientes referidos definen el nivel principal.
 - Los puntos acumulados funcionan como saldo complementario para recompensas.
 - Cada nivel puede desbloquear recompensas operativas o comerciales.
 - Cada movimiento de puntos debe guardarse como evento auditable.
 
-Niveles iniciales:
+Niveles reales (según `app.js` → `partnerTiers`):
 
-- `Socio Radio Imagen Dentomaxilar`: desde 1 paciente referido.
-- `Socio Activo`: desde 5 pacientes referidos.
-- `Socio Plata`: desde 10 pacientes referidos.
+- `Socio Activo`: desde 1 paciente referido.
+- `Socio Plata`: desde 15 pacientes referidos.
 - `Socio Oro`: desde 25 pacientes referidos.
 - `Socio Diamante`: desde 50 pacientes referidos.
 
-Beneficios iniciales:
-
-- `Socio Radio Imagen Dentomaxilar`: acceso a plataforma iTero, Xelis Dental Viewer, Sidexis Dental Viewer, 10% cashback en estudios de pacientes y capacitación 1 a 1.
-- `Socio Activo`: invitación preferente a pláticas/capacitaciones, presentación personalizada de estudios ortodónticos, material digital para explicar estudios, soporte para preparar casos y avisos prioritarios de resultados.
-- `Socio Plata`: prioridad en seguimiento, plantillas personalizadas, resumen mensual de pacientes referidos y revisión trimestral de estudios más solicitados.
-- `Socio Oro`: reporte mensual personalizado, sesión de KPIs, apoyo para campañas de diagnóstico y capacitación grupal para el equipo.
-- `Socio Diamante`: beneficios preferenciales, planeación conjunta, capacitaciones privadas, revisión estratégica de crecimiento y material co-brandeado.
+> El detalle de beneficios por nivel es la fuente única en [`LOGICA_PUNTOS_SOCIOS.md`](LOGICA_PUNTOS_SOCIOS.md), que coincide con los arrays `benefits` de `app.js`.
 
 ### Estudio
 
@@ -171,16 +164,14 @@ Puede:
 ## Flujo de creación de orden
 
 1. Doctor inicia sesión.
-2. Sistema carga `doctor_profile`.
+2. Sistema carga la cuenta del doctor desde `accounts`.
 3. Doctor llena datos del paciente.
-4. Sistema crea o reutiliza paciente.
-5. Doctor selecciona estudios.
-6. Sistema valida reglas especiales del estudio, por ejemplo FOV de Tomografía 3D.
-7. Sistema crea `order`.
-8. Sistema crea registros en `order_studies`.
-9. Sistema guarda configuraciones especiales en `order_studies.configuration`.
-10. Sistema crea primer evento en `order_status_events` con estado `Recibida`.
-11. Radio Imagen ve la orden en bandeja de seguimiento.
+4. Doctor selecciona estudios.
+5. Sistema valida reglas especiales del estudio, por ejemplo FOV de Tomografía 3D.
+6. Sistema crea la orden: una fila en `orders` con todo el detalle (paciente, estudios, configuraciones, indicaciones) dentro de la columna `data` (JSONB) y `status = 'Recibida'`.
+7. Radio Imagen ve la orden en bandeja de seguimiento.
+
+> Modelo real: la orden es una sola fila en `orders` (`db.js`); no existen tablas separadas `order_studies` ni `order_status_events`. Un esquema normalizado con esas tablas es diseño futuro (ver `DATA_MODEL.md`).
 
 ## Flujo de seguimiento por Radiodiagnóstico
 
@@ -193,19 +184,19 @@ Puede:
    - `Completa`
    - `Lista para descargar`
    - `Cancelada`
-5. Cada cambio crea un evento histórico.
-6. Si el paciente acudió, `Completa` valida asistencia y puntos.
-7. Si el resultado está listo, se crea un registro en `results`.
-8. El doctor ve la orden como `Lista para descargar` y puede descargar resultado.
+5. Cada cambio actualiza `orders.status` (y `updated_at`).
+6. Si el paciente acudió, `Completa` valida asistencia y otorga puntos (evento en `partner_events`).
+7. Si el resultado está listo, el admin sube los archivos: se registran en `files_index` y los binarios van al Object Storage de Replit (`storage.js`).
+8. El doctor ve la orden como `Lista para descargar` y puede descargar el resultado (descarga de un solo uso).
 
 ## Lógica de métricas
 
 Las métricas no deben guardarse como datos fijos al inicio. Se calculan desde órdenes y eventos.
 
-Ejemplos:
+> Hoy las métricas del panel se calculan en el frontend (`app.js` → `computeDoctorMetrics`) leyendo las órdenes (con su detalle en `data` JSONB). Las SQL de abajo son ilustrativas: las que consultan `orders.status` funcionan tal cual; las que usan `order_studies`/`studies` asumen un esquema normalizado que aún no existe (los estudios viven dentro de `orders.data`).
 
 ```sql
--- Órdenes activas por doctor
+-- Órdenes activas por doctor (funciona sobre el esquema real)
 SELECT COUNT(*)
 FROM orders
 WHERE doctor_id = :doctor_id
@@ -213,7 +204,8 @@ AND status IN ('Recibida', 'Agendada', 'Completa');
 ```
 
 ```sql
--- Estudios más solicitados
+-- Estudios más solicitados (requiere esquema normalizado futuro;
+-- hoy los estudios están en orders.data -> 'studies')
 SELECT studies.name, COUNT(*) AS total
 FROM order_studies
 JOIN studies ON studies.id = order_studies.study_id
@@ -224,7 +216,7 @@ ORDER BY total DESC;
 ```
 
 ```sql
--- Conversión de órdenes a resultados listos
+-- Conversión de órdenes a resultados listos (funciona sobre el esquema real)
 SELECT
   COUNT(*) FILTER (WHERE status IN ('Completa', 'Lista para descargar'))::decimal
   / NULLIF(COUNT(*), 0) AS conversion
