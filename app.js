@@ -715,6 +715,9 @@ function configureShellForRole(role) {
     document.querySelectorAll("[data-profile-handle]").forEach((node) => {
       node.textContent = adminProfile.handle;
     });
+    document.querySelectorAll(".profile-card").forEach((node) => {
+      node.dataset.initials = getInitials(adminProfile.name);
+    });
     doctorIdLabel.textContent = adminProfile.id;
   }
 }
@@ -2185,6 +2188,9 @@ function renderProfile() {
   });
   document.querySelectorAll("[data-profile-handle]").forEach((node) => {
     node.textContent = doctorProfile.handle;
+  });
+  document.querySelectorAll(".profile-card").forEach((node) => {
+    node.dataset.initials = initials;
   });
   doctorIdLabel.textContent = doctorProfile.doctorCode || doctorProfile.id;
   document.querySelector("[data-profile-contact]").textContent = doctorProfile.contactPhone;
