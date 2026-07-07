@@ -278,7 +278,10 @@ async function apiLogPartnerEvent(email, orderId, delta, reason) {
 
 async function apiLoadOrders() {
   try {
-    const res = await fetch("/api/orders");
+    const headers = currentRole === "admin"
+      ? { "x-admin-token": getAdminToken() }
+      : { "x-session-token": getSessionToken() };
+    const res = await fetch("/api/orders", { headers });
     if (!res.ok) return;
     const data = await res.json();
     setOrders(data.orders || []);
@@ -291,7 +294,7 @@ async function apiSaveOrder(order) {
   try {
     const res = await fetch("/api/orders", {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: { "Content-Type": "application/json", "x-session-token": getSessionToken() },
       body: JSON.stringify(order)
     });
     if (!res.ok) {
@@ -307,7 +310,7 @@ async function apiUpdateOrder(orderId, changes) {
   try {
     const res = await fetch(`/api/orders/${encodeURIComponent(orderId)}`, {
       method: "PUT",
-      headers: { "Content-Type": "application/json" },
+      headers: { "Content-Type": "application/json", "x-admin-token": getAdminToken() },
       body: JSON.stringify(changes)
     });
     if (!res.ok) {
@@ -1224,6 +1227,13 @@ function getAdminToken() {
   } catch { return ""; }
 }
 
+function getSessionToken() {
+  try {
+    const session = JSON.parse(localStorage.getItem(SESSION_KEY) || "{}");
+    return session.sessionToken || "";
+  } catch { return ""; }
+}
+
 async function loginAccount(email, password) {
   const normalizedEmail = email.toLowerCase();
 
@@ -1259,11 +1269,13 @@ async function loginAccount(email, password) {
         provider: "local",
         role,
         adminToken: role === "admin" ? (data.adminToken || "") : undefined,
+        sessionToken: role === "doctor" ? (data.sessionToken || "") : undefined,
         accountId: role === "admin" ? adminProfile.id : doctorProfile.id,
         handle: role === "admin" ? adminProfile.handle : doctorProfile.handle,
         signedInAt: new Date().toISOString(),
       }),
     );
+    await apiLoadOrders();
     if (role === "admin") {
       await apiLoadPartnerEvents();
       refreshDeliveredFiles();
@@ -1627,7 +1639,9 @@ async function openDownloadModal(order) {
   downloadModal.hidden = false;
 
   try {
-    const res = await fetch(`/api/files/${encodeURIComponent(order.id)}`);
+    const res = await fetch(`/api/files/${encodeURIComponent(order.id)}`, {
+      headers: { "x-session-token": getSessionToken() },
+    });
     const data = await res.json();
     const allFiles = data.files || [];
 
@@ -2319,6 +2333,10 @@ loginForm.addEventListener("submit", async (event) => {
 });
 
 logoutButton.addEventListener("click", async () => {
+  const token = getSessionToken();
+  if (token) {
+    fetch("/api/logout", { method: "POST", headers: { "x-session-token": token } }).catch(() => {});
+  }
   localStorage.removeItem(SESSION_KEY);
   showLogin();
   showToast("Sesión cerrada.");
@@ -2847,7 +2865,6 @@ renderResults();
 
 async function initializePortal() {
   await apiLoadDoctors();
-  await apiLoadOrders();
 
   const savedSession = localStorage.getItem(SESSION_KEY);
   if (savedSession) {
@@ -2864,6 +2881,7 @@ async function initializePortal() {
         applyDoctorProfile(profile);
         loadClinicRoster();
       }
+      await apiLoadOrders();
       if (currentRole === "admin") {
         await apiLoadPartnerEvents();
         refreshDeliveredFiles();

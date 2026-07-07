@@ -99,6 +99,15 @@ CREATE TABLE IF NOT EXISTS plus_interest (
   created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
   UNIQUE (email, module)
 );
+
+CREATE TABLE IF NOT EXISTS sessions (
+  token        TEXT PRIMARY KEY,
+  email        TEXT NOT NULL,
+  account_id   TEXT NOT NULL,
+  role         TEXT NOT NULL,
+  created_at   TIMESTAMPTZ NOT NULL DEFAULT now(),
+  last_seen_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
 `;
 
 const SEED_LOCK_KEY = 727201;
@@ -518,6 +527,11 @@ export async function getFileEntry(orderId, filename) {
   return (rows[0]?.files || []).find((f) => f.filename === filename) || null;
 }
 
+export async function getFilesOwner(orderId) {
+  const { rows } = await pool.query("SELECT doctor_id FROM files_index WHERE order_id = $1", [orderId]);
+  return rows[0]?.doctor_id || null;
+}
+
 export async function updateFileEntry(orderId, filename, patch) {
   const client = await pool.connect();
   try {
@@ -619,6 +633,30 @@ export async function listPlusInterest() {
 export async function getPlusInterestForEmail(email) {
   const { rows } = await pool.query("SELECT module FROM plus_interest WHERE email = $1", [email.toLowerCase()]);
   return rows.map((row) => row.module);
+}
+
+// ---------- Sesiones de doctor ----------
+
+export async function createSession(email, accountId, role) {
+  const token = randomBytes(24).toString("hex");
+  await pool.query(
+    "INSERT INTO sessions (token, email, account_id, role) VALUES ($1, $2, $3, $4)",
+    [token, email.toLowerCase(), accountId, role],
+  );
+  return token;
+}
+
+export async function getSession(token) {
+  const { rows } = await pool.query(
+    "UPDATE sessions SET last_seen_at = now() WHERE token = $1 RETURNING email, account_id, role",
+    [token],
+  );
+  if (!rows[0]) return null;
+  return { email: rows[0].email, accountId: rows[0].account_id, role: rows[0].role };
+}
+
+export async function deleteSession(token) {
+  await pool.query("DELETE FROM sessions WHERE token = $1", [token]);
 }
 
 export async function closeDb() {

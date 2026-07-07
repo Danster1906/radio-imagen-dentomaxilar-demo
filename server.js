@@ -40,6 +40,10 @@ import {
   getPlusInterestForEmail,
   verifyPassword,
   upgradePasswordHash,
+  getFilesOwner,
+  createSession,
+  getSession,
+  deleteSession,
 } from "./db.js";
 
 const rootDir = resolve(".");
@@ -208,6 +212,27 @@ function requireAdmin(req, res) {
   return true;
 }
 
+function isAdminRequest(req) {
+  const token = req.headers["x-admin-token"];
+  return Boolean(token) && token === ADMIN_TOKEN;
+}
+
+// Sesión de doctor: exige un token válido (emitido en /api/login) y lo
+// devuelve. Escribe la respuesta 401 y regresa null si falta o no es válido.
+async function requireDoctorSession(req, res) {
+  const token = req.headers["x-session-token"];
+  if (!token) {
+    json(res, 401, { error: "Sesión requerida. Vuelve a iniciar sesión." });
+    return null;
+  }
+  const session = await getSession(token);
+  if (!session) {
+    json(res, 401, { error: "Sesión inválida o expirada. Vuelve a iniciar sesión." });
+    return null;
+  }
+  return session;
+}
+
 function resolveRequestPath(urlPath) {
   const cleanPath = normalize(decodeURIComponent(urlPath.split("?")[0])).replace(/^(\.\.[/\\])+/, "");
   const requestedPath = cleanPath === "/" ? "/portal.html" : cleanPath;
@@ -340,7 +365,18 @@ function createAppServer() {
         if (safeDoc.accountType === "clinic") {
           safeDoc.clinicDoctors = await getClinicRoster(normalEmail);
         }
-        json(res, 200, { role: "doctor", email: normalEmail, doctor: safeDoc });
+        const sessionToken = await createSession(normalEmail, doctor.id, "doctor");
+        json(res, 200, { role: "doctor", email: normalEmail, doctor: safeDoc, sessionToken });
+      } catch (e) { json(res, 400, { error: e.message }); }
+      return;
+    }
+
+    // POST /api/logout — invalida el token de sesión del doctor
+    if (urlPath === "/api/logout" && req.method === "POST") {
+      try {
+        const token = req.headers["x-session-token"];
+        if (token) await deleteSession(token);
+        json(res, 200, { ok: true });
       } catch (e) { json(res, 400, { error: e.message }); }
       return;
     }
@@ -537,6 +573,15 @@ function createAppServer() {
     // GET /api/files/:orderId
     if (urlPath.startsWith("/api/files/") && req.method === "GET") {
       const orderId = decodeURIComponent(urlPath.replace("/api/files/", ""));
+      if (!isAdminRequest(req)) {
+        const session = await requireDoctorSession(req, res);
+        if (!session) return;
+        const owner = await getFilesOwner(orderId);
+        if (owner && owner !== session.accountId) {
+          json(res, 403, { error: "No autorizado para ver estos archivos" });
+          return;
+        }
+      }
       try {
         json(res, 200, { files: await getFilesForOrder(orderId), orderId });
       } catch (e) { json(res, 500, { error: e.message }); }
@@ -545,6 +590,7 @@ function createAppServer() {
 
     // GET /api/files-index  (all orders with files, for admin)
     if (urlPath === "/api/files-index" && req.method === "GET") {
+      if (!requireAdmin(req, res)) return;
       try {
         json(res, 200, await getFilesIndex());
       } catch (e) { json(res, 500, { error: e.message }); }
@@ -663,19 +709,30 @@ function createAppServer() {
       return;
     }
 
-    // GET /api/orders
+    // GET /api/orders — el admin ve todas (opcionalmente filtradas por
+    // doctorId); un doctor solo ve las suyas, sin importar qué doctorId pida.
     if (urlPath === "/api/orders" && req.method === "GET") {
       try {
-        const doctorId = new URL(req.url, "http://localhost").searchParams.get("doctorId");
-        json(res, 200, { orders: await listOrders(doctorId) });
+        if (isAdminRequest(req)) {
+          const doctorId = new URL(req.url, "http://localhost").searchParams.get("doctorId");
+          json(res, 200, { orders: await listOrders(doctorId) });
+          return;
+        }
+        const session = await requireDoctorSession(req, res);
+        if (!session) return;
+        json(res, 200, { orders: await listOrders(session.accountId) });
       } catch (e) { json(res, 500, { error: e.message }); }
       return;
     }
 
-    // POST /api/orders
+    // POST /api/orders — siempre bajo la identidad de la sesión, nunca la
+    // que mande el cliente en el cuerpo.
     if (urlPath === "/api/orders" && req.method === "POST") {
       try {
+        const session = await requireDoctorSession(req, res);
+        if (!session) return;
         const body = await readBody(req);
+        body.doctorId = session.accountId;
         if (!body.id || !body.patient || !body.doctorId) {
           json(res, 400, { error: "id, patient y doctorId son obligatorios" });
           return;
@@ -698,8 +755,9 @@ function createAppServer() {
       return;
     }
 
-    // PUT /api/orders/:id
+    // PUT /api/orders/:id — cambios de estado/agenda: solo Radio Imagen (admin)
     if (urlPath.match(/^\/api\/orders\/[^/]+$/) && req.method === "PUT") {
+      if (!requireAdmin(req, res)) return;
       try {
         const orderId = decodeURIComponent(urlPath.replace("/api/orders/", ""));
         const body = await readBody(req);
