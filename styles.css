@@ -1535,6 +1535,10 @@ label {
   font-weight: 700;
 }
 
+label[hidden] {
+  display: none;
+}
+
 .full {
   grid-column: 1 / -1;
 }
