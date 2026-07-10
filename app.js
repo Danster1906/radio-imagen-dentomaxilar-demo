@@ -745,11 +745,13 @@ function applyDoctorProfile(profile) {
   doctorProfile.metricsByPeriod = profile.metricsByPeriod || {};
   doctorProfile.partner = { referredPatients: 0, points: 0, ...profile.partner };
   doctorProfile.accountType = profile.accountType || "personal";
+  doctorProfile.notifications = profile.notifications !== false;
   if (Array.isArray(profile.clinicDoctors)) {
     doctorProfile.clinicDoctors = [...profile.clinicDoctors];
   } else if (doctorProfile.accountType !== "clinic") {
     doctorProfile.clinicDoctors = [];
   }
+  syncPhotoControls();
 }
 
 async function loadClinicRoster() {
@@ -1550,28 +1552,58 @@ function getSelectedStudiesWithDetails(formData) {
   return selectedStudies;
 }
 
+const DOCTOR_ORDERS_PAGE_SIZE = 5;
+let doctorOrdersPage = 1;
+
 function renderDoctorOrders() {
-  doctorOrderList.innerHTML = orders
-    .filter((order) => order.doctorId === doctorProfile.id)
+  const myOrders = orders.filter((order) => order.doctorId === doctorProfile.id);
+  const totalPages = Math.max(1, Math.ceil(myOrders.length / DOCTOR_ORDERS_PAGE_SIZE));
+  doctorOrdersPage = Math.min(Math.max(1, doctorOrdersPage), totalPages);
+  const start = (doctorOrdersPage - 1) * DOCTOR_ORDERS_PAGE_SIZE;
+  const pageOrders = myOrders.slice(start, start + DOCTOR_ORDERS_PAGE_SIZE);
+
+  doctorOrderList.innerHTML = pageOrders
     .map(
       (order) => `
         <article class="order-row">
-          <div class="order-name">
-            <strong>${order.patient}</strong>
-            <span class="order-meta">${order.studies.join(", ")}</span>
-            ${
-              order.treatingDoctor && order.treatingDoctor !== order.doctor
-                ? `<span class="order-meta">Atiende: ${order.treatingDoctor}</span>`
-                : ""
-            }
+          <div class="order-patient">
+            <span class="patient-avatar patient-avatar--${statusClass(order.status)}">${getInitials(order.patient)}</span>
+            <div class="order-name">
+              <strong>${order.patient}</strong>
+              <span class="order-meta">${order.studies.join(", ")}</span>
+              ${
+                order.treatingDoctor && order.treatingDoctor !== order.doctor
+                  ? `<span class="order-meta">Atiende: ${order.treatingDoctor}</span>`
+                  : ""
+              }
+            </div>
           </div>
           <span class="order-meta">${order.date}</span>
           <span class="status ${statusClass(order.status)}">${order.status}</span>
-          <button class="small-action" data-order-patient="${order.patient}" type="button">Ver orden</button>
+          <button class="order-view-link" data-order-patient="${order.patient}" type="button">Ver →</button>
         </article>
       `,
     )
     .join("");
+
+  const pagination = document.querySelector("#doctor-order-pagination");
+  if (!pagination) return;
+  if (myOrders.length <= DOCTOR_ORDERS_PAGE_SIZE) {
+    pagination.hidden = true;
+    return;
+  }
+  pagination.hidden = false;
+  pagination.querySelector(".order-pagination-info").innerHTML =
+    `Mostrando <strong>${pageOrders.length}</strong> de <strong>${myOrders.length}</strong>`;
+  const pageButtons = Array.from({ length: totalPages }, (_, i) => {
+    const page = i + 1;
+    return `<button class="pg-btn ${page === doctorOrdersPage ? "pg-active" : ""}" data-orders-page="${page}" type="button">${page}</button>`;
+  }).join("");
+  pagination.querySelector(".order-pagination-controls").innerHTML = `
+    <button class="pg-btn" data-orders-page="${doctorOrdersPage - 1}" type="button" ${doctorOrdersPage === 1 ? "disabled" : ""} aria-label="Página anterior">‹</button>
+    ${pageButtons}
+    <button class="pg-btn" data-orders-page="${doctorOrdersPage + 1}" type="button" ${doctorOrdersPage === totalPages ? "disabled" : ""} aria-label="Página siguiente">›</button>
+  `;
 }
 
 function renderResults(filter = "") {
@@ -2232,6 +2264,8 @@ function renderProfile() {
   document.querySelector("[data-profile-city]").textContent = doctorProfile.city;
   const emailNode = document.querySelector("[data-profile-email]");
   if (emailNode) emailNode.textContent = doctorProfile.email || "";
+  const notificationsToggle = document.querySelector("#notifications-toggle");
+  if (notificationsToggle) notificationsToggle.checked = doctorProfile.notifications !== false;
   profileInitials.textContent = initials;
   doctorPreviewInitials.textContent = initials;
 
@@ -2248,16 +2282,31 @@ function renderProfile() {
   });
 }
 
+function updateCropReadouts() {
+  const zoom = Number(doctorProfile.photoZoom) || 1;
+  const asPercent = (value) => `${Math.round(((Number(value) + 40) / 80) * 100)}%`;
+  const readouts = {
+    zoom: `${parseFloat(zoom.toFixed(2))}×`,
+    x: asPercent(doctorProfile.photoX),
+    y: asPercent(doctorProfile.photoY),
+  };
+  document.querySelectorAll("[data-crop-value]").forEach((node) => {
+    node.textContent = readouts[node.dataset.cropValue] || "";
+  });
+}
+
 function syncPhotoControls() {
   photoZoomInput.value = doctorProfile.photoZoom;
   photoXInput.value = doctorProfile.photoX;
   photoYInput.value = doctorProfile.photoY;
+  updateCropReadouts();
 }
 
 function updatePhotoCrop() {
   doctorProfile.photoZoom = photoZoomInput.value;
   doctorProfile.photoX = photoXInput.value;
   doctorProfile.photoY = photoYInput.value;
+  updateCropReadouts();
   renderProfile();
 }
 
@@ -2578,6 +2627,55 @@ profilePhotoInput.addEventListener("change", () => {
   profilePhotoInput.value = "";
 });
 
+const passwordForm = document.querySelector("#password-form");
+const togglePasswordFormButton = document.querySelector("#toggle-password-form");
+
+togglePasswordFormButton?.addEventListener("click", () => {
+  passwordForm.hidden = !passwordForm.hidden;
+  if (!passwordForm.hidden) {
+    passwordForm.querySelector('input[name="currentPassword"]').focus();
+  }
+});
+
+passwordForm?.addEventListener("submit", async (event) => {
+  event.preventDefault();
+  const formData = new FormData(passwordForm);
+  try {
+    const res = await fetch("/api/account/password", {
+      method: "PUT",
+      headers: { "Content-Type": "application/json", "x-session-token": getSessionToken() },
+      body: JSON.stringify({
+        currentPassword: formData.get("currentPassword"),
+        newPassword: formData.get("newPassword"),
+      }),
+    });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) {
+      showToast(data.error || "No se pudo cambiar la contraseña.");
+      return;
+    }
+    passwordForm.reset();
+    passwordForm.hidden = true;
+    showToast("✓ Contraseña actualizada.");
+  } catch {
+    showToast("No se pudo conectar al servidor. Intenta de nuevo.");
+  }
+});
+
+document.querySelector("#notifications-toggle")?.addEventListener("change", async (event) => {
+  const enabled = event.target.checked;
+  doctorProfile.notifications = enabled;
+  if (!getSessionToken()) return;
+  try {
+    await saveProfilePatch({ notifications: enabled });
+    showToast(enabled ? "✓ Notificaciones activadas." : "Notificaciones desactivadas.");
+  } catch {
+    event.target.checked = !enabled;
+    doctorProfile.notifications = !enabled;
+    showToast("No se pudo actualizar la preferencia. Intenta de nuevo.");
+  }
+});
+
 const photoHeroZone = document.querySelector(".profile-photo-hero");
 if (photoHeroZone) {
   photoHeroZone.addEventListener("dragover", (event) => {
@@ -2618,6 +2716,13 @@ centerPhotoButton.addEventListener("click", () => {
 });
 
 resultsSearch.addEventListener("input", () => renderResults(resultsSearch.value));
+
+document.querySelector("#doctor-order-pagination")?.addEventListener("click", (event) => {
+  const pageButton = event.target.closest("[data-orders-page]");
+  if (!pageButton || pageButton.disabled) return;
+  doctorOrdersPage = Number(pageButton.dataset.ordersPage);
+  renderDoctorOrders();
+});
 
 treatingDoctorSelect?.addEventListener("change", () => {
   document.querySelectorAll("[data-new-treating]").forEach((node) => {

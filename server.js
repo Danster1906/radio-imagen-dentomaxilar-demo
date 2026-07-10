@@ -372,6 +372,27 @@ function createAppServer() {
       return;
     }
 
+    // PUT /api/account/password — el doctor cambia su propia contraseña
+    if (urlPath === "/api/account/password" && req.method === "PUT") {
+      const session = await requireDoctorSession(req, res);
+      if (!session) return;
+      try {
+        const { currentPassword, newPassword } = await readBody(req);
+        if (!currentPassword || !newPassword || newPassword.length < 8) {
+          json(res, 400, { error: "La contraseña nueva debe tener al menos 8 caracteres." });
+          return;
+        }
+        const account = await getAccountByEmail(session.email);
+        if (!account?.password_hash || !verifyPassword(currentPassword, account.password_hash)) {
+          json(res, 401, { error: "La contraseña actual no es correcta." });
+          return;
+        }
+        await updatePassword(session.email, newPassword);
+        json(res, 200, { ok: true });
+      } catch (e) { json(res, 400, { error: e.message }); }
+      return;
+    }
+
     // PUT /api/profile — el doctor actualiza su propio perfil (datos, foto y encuadre)
     if (urlPath === "/api/profile" && req.method === "PUT") {
       const session = await requireDoctorSession(req, res);
@@ -381,6 +402,9 @@ function createAppServer() {
         if (typeof body.photo === "string" && body.photo.length > 1_500_000) {
           json(res, 413, { error: "La foto es demasiado grande. Usa una imagen más pequeña." });
           return;
+        }
+        if (typeof body.notifications === "boolean") {
+          await updateNotifications(session.email, body.notifications);
         }
         const doctor = await updateProfile(session.email, {
           name: typeof body.name === "string" ? body.name.trim() : undefined,
