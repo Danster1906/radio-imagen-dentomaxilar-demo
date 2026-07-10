@@ -736,9 +736,11 @@ function applyDoctorProfile(profile) {
   doctorProfile.email = profile.email;
   doctorProfile.city = profile.city;
   doctorProfile.photo = profile.photo || doctorProfile.photo || "";
-  doctorProfile.photoZoom = profile.photoZoom || doctorProfile.photoZoom || 1;
-  doctorProfile.photoX = profile.photoX || doctorProfile.photoX || 0;
-  doctorProfile.photoY = profile.photoY || doctorProfile.photoY || 0;
+  const crop = profile.photoCrop || {};
+  doctorProfile.photoZoom = crop.zoom || profile.photoZoom || doctorProfile.photoZoom || 1;
+  doctorProfile.photoX = crop.x ?? profile.photoX ?? doctorProfile.photoX ?? 0;
+  doctorProfile.photoY = crop.y ?? profile.photoY ?? doctorProfile.photoY ?? 0;
+  doctorProfile.profileNotes = profile.profileNotes ?? doctorProfile.profileNotes ?? "";
   doctorProfile.metrics = profile.metrics || {};
   doctorProfile.metricsByPeriod = profile.metricsByPeriod || {};
   doctorProfile.partner = { referredPatients: 0, points: 0, ...profile.partner };
@@ -1590,8 +1592,9 @@ function renderResults(filter = "") {
         <span class="result-meta">${order.studies.join(", ")}</span>
       </div>
       <span class="result-meta">${order.treatingDoctor || order.doctor}</span>
+      <span class="result-meta result-date">${order.date || ""}</span>
       ${isDone
-        ? `<span class="status lista">Descargado</span>
+        ? `<span class="status descargado">Descargado</span>
            <button class="download-action" data-download-order="${order.id}" type="button">Ver archivos</button>`
         : `<span class="status ${statusClass(order.status)}">${order.status}</span>
            <button class="download-action ${order.result ? "ready" : ""}" data-download-order="${order.id}" type="button" ${order.result ? "" : "disabled"}>
@@ -2217,6 +2220,7 @@ function renderProfile() {
       contactPhone: doctorProfile.contactPhone,
       email: doctorProfile.email,
       city: doctorProfile.city,
+      profileNotes: doctorProfile.profileNotes,
     };
     Object.entries(profileFields).forEach(([name, value]) => {
       const input = profileForm.querySelector(`[name="${name}"]`);
@@ -2226,6 +2230,8 @@ function renderProfile() {
     });
   }
   document.querySelector("[data-profile-city]").textContent = doctorProfile.city;
+  const emailNode = document.querySelector("[data-profile-email]");
+  if (emailNode) emailNode.textContent = doctorProfile.email || "";
   profileInitials.textContent = initials;
   doctorPreviewInitials.textContent = initials;
 
@@ -2456,6 +2462,82 @@ orderForm.addEventListener("submit", async (event) => {
   showToast("Orden enviada a Radio Imagen. Sumará puntos cuando el paciente sea atendido.");
 });
 
+async function saveProfilePatch(patch) {
+  const res = await fetch("/api/profile", {
+    method: "PUT",
+    headers: { "Content-Type": "application/json", "x-session-token": getSessionToken() },
+    body: JSON.stringify(patch),
+  });
+  if (!res.ok) {
+    const data = await res.json().catch(() => ({}));
+    throw new Error(data.error || "No se pudo guardar el perfil");
+  }
+  return (await res.json()).doctor;
+}
+
+function currentPhotoCrop() {
+  return {
+    zoom: Number(doctorProfile.photoZoom) || 1,
+    x: Number(doctorProfile.photoX) || 0,
+    y: Number(doctorProfile.photoY) || 0,
+  };
+}
+
+let cropSaveTimer = null;
+function scheduleCropSave() {
+  if (!getSessionToken()) return;
+  clearTimeout(cropSaveTimer);
+  cropSaveTimer = setTimeout(() => {
+    saveProfilePatch({ photoCrop: currentPhotoCrop() }).catch(() => {});
+  }, 700);
+}
+
+// Reduce la imagen a un cuadrado máximo de 512px para que quepa en la base
+// de datos y cargue rápido; devuelve un data URL JPEG.
+function resizeProfilePhoto(file) {
+  return new Promise((resolve, reject) => {
+    const url = URL.createObjectURL(file);
+    const img = new Image();
+    img.onload = () => {
+      URL.revokeObjectURL(url);
+      const maxSide = 512;
+      const scale = Math.min(1, maxSide / Math.max(img.width, img.height));
+      const canvas = document.createElement("canvas");
+      canvas.width = Math.round(img.width * scale);
+      canvas.height = Math.round(img.height * scale);
+      canvas.getContext("2d").drawImage(img, 0, 0, canvas.width, canvas.height);
+      resolve(canvas.toDataURL("image/jpeg", 0.85));
+    };
+    img.onerror = () => { URL.revokeObjectURL(url); reject(new Error("Imagen no válida")); };
+    img.src = url;
+  });
+}
+
+async function applyNewProfilePhoto(file) {
+  if (!file) return;
+  if (!file.type.startsWith("image/")) {
+    showToast("Selecciona una imagen en formato PNG, JPG o WebP.");
+    return;
+  }
+  try {
+    const dataUrl = await resizeProfilePhoto(file);
+    doctorProfile.photo = dataUrl;
+    doctorProfile.photoZoom = 1;
+    doctorProfile.photoX = 0;
+    doctorProfile.photoY = 0;
+    syncPhotoControls();
+    renderProfile();
+    if (getSessionToken()) {
+      await saveProfilePatch({ photo: dataUrl, photoCrop: currentPhotoCrop() });
+      showToast("✓ Foto guardada. Ajusta el encuadre si lo necesitas.");
+    } else {
+      showToast("Imagen actualizada en la vista previa.");
+    }
+  } catch {
+    showToast("No se pudo procesar la imagen. Intenta con otra.");
+  }
+}
+
 profileForm.addEventListener("submit", async (event) => {
   event.preventDefault();
   const formData = new FormData(profileForm);
@@ -2464,48 +2546,65 @@ profileForm.addEventListener("submit", async (event) => {
   doctorProfile.specialty = formData.get("specialty").trim();
   doctorProfile.clinic = formData.get("clinic").trim();
   doctorProfile.contactPhone = formData.get("contactPhone").trim();
-  doctorProfile.email = formData.get("email").trim();
   doctorProfile.city = formData.get("city").trim();
+  doctorProfile.profileNotes = (formData.get("profileNotes") || "").trim();
 
   renderProfile();
   renderDoctorOrders();
   renderResults(resultsSearch.value);
-  showToast("Perfil actualizado para las próximas órdenes.");
+
+  if (getSessionToken()) {
+    try {
+      await saveProfilePatch({
+        name: doctorProfile.name,
+        specialty: doctorProfile.specialty,
+        clinic: doctorProfile.clinic,
+        contactPhone: doctorProfile.contactPhone,
+        city: doctorProfile.city,
+        profileNotes: doctorProfile.profileNotes,
+        photoCrop: currentPhotoCrop(),
+      });
+      showToast("✓ Perfil guardado.");
+    } catch (e) {
+      showToast(e.message || "No se pudo guardar el perfil. Intenta de nuevo.");
+    }
+  } else {
+    showToast("Perfil actualizado para las próximas órdenes.");
+  }
 });
 
 profilePhotoInput.addEventListener("change", () => {
-  const file = profilePhotoInput.files[0];
-
-  if (!file) {
-    return;
-  }
-
-  if (!file.type.startsWith("image/")) {
-    showToast("Selecciona una imagen en formato PNG, JPG o WebP.");
-    profilePhotoInput.value = "";
-    return;
-  }
-
-  const reader = new FileReader();
-  reader.addEventListener("load", () => {
-    doctorProfile.photo = reader.result;
-    doctorProfile.photoZoom = 1;
-    doctorProfile.photoX = 0;
-    doctorProfile.photoY = 0;
-    syncPhotoControls();
-    renderProfile();
-    showToast("Imagen de perfil actualizada en la vista previa.");
-  });
-  reader.readAsDataURL(file);
+  applyNewProfilePhoto(profilePhotoInput.files[0]);
+  profilePhotoInput.value = "";
 });
 
+const photoHeroZone = document.querySelector(".profile-photo-hero");
+if (photoHeroZone) {
+  photoHeroZone.addEventListener("dragover", (event) => {
+    event.preventDefault();
+    photoHeroZone.classList.add("dragover");
+  });
+  photoHeroZone.addEventListener("dragleave", () => photoHeroZone.classList.remove("dragover"));
+  photoHeroZone.addEventListener("drop", (event) => {
+    event.preventDefault();
+    photoHeroZone.classList.remove("dragover");
+    applyNewProfilePhoto(event.dataTransfer?.files?.[0]);
+  });
+}
+
 [photoZoomInput, photoXInput, photoYInput].forEach((input) => {
-  input.addEventListener("input", updatePhotoCrop);
+  input.addEventListener("input", () => {
+    updatePhotoCrop();
+    scheduleCropSave();
+  });
 });
 
 editableAvatar.addEventListener("pointerdown", startPhotoDrag);
 editableAvatar.addEventListener("pointermove", movePhotoDrag);
-editableAvatar.addEventListener("pointerup", stopPhotoDrag);
+editableAvatar.addEventListener("pointerup", (event) => {
+  stopPhotoDrag(event);
+  scheduleCropSave();
+});
 editableAvatar.addEventListener("pointercancel", stopPhotoDrag);
 
 centerPhotoButton.addEventListener("click", () => {
@@ -2514,6 +2613,7 @@ centerPhotoButton.addEventListener("click", () => {
   doctorProfile.photoY = 0;
   syncPhotoControls();
   renderProfile();
+  scheduleCropSave();
   showToast("Imagen centrada en el recuadro.");
 });
 

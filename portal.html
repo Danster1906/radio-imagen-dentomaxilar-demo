@@ -406,6 +406,13 @@
               <button class="results-tab active" data-results-tab="active" type="button">Activas</button>
               <button class="results-tab" data-results-tab="done" type="button">Terminadas</button>
             </div>
+            <div class="results-cols" aria-hidden="true">
+              <span>Paciente</span>
+              <span>Doctor</span>
+              <span>Fecha</span>
+              <span>Estado</span>
+              <span></span>
+            </div>
             <div class="results-table" id="results-table" data-results-panel="active"></div>
             <div class="results-table" id="results-table-done" data-results-panel="done" hidden></div>
           </div>
@@ -480,7 +487,7 @@
                   </label>
                   <label>
                     Correo electrónico
-                    <input name="email" type="email" />
+                    <input name="email" type="email" readonly title="El correo es tu acceso al portal; para cambiarlo contacta a Radio Imagen" />
                   </label>
                   <label>
                     Ciudad
@@ -488,7 +495,7 @@
                   </label>
                   <label class="full">
                     Notas para Radio Imagen
-                    <textarea name="profileNotes">Preferencia por reportes enviados en PDF y aviso por WhatsApp cuando el estudio esté listo.</textarea>
+                    <textarea name="profileNotes" placeholder="Ej. preferencia por reportes en PDF y aviso por WhatsApp cuando el estudio esté listo."></textarea>
                   </label>
                 </div>
 
@@ -502,33 +509,34 @@
             <!-- Vista rápida -->
             <div class="profile-side">
               <section class="panel preview-card">
-                <span class="eyebrow">Vista rápida</span>
-                <div class="doctor-preview">
-                  <div class="preview-avatar-wrap">
-                    <div class="avatar preview-avatar">
-                      <img id="doctor-preview-photo" alt="" hidden />
-                      <span id="doctor-preview-initials">SH</span>
-                    </div>
+                <div class="preview-hero">
+                  <div class="avatar preview-avatar">
+                    <img id="doctor-preview-photo" alt="" hidden />
+                    <span id="doctor-preview-initials">SH</span>
                   </div>
                   <div class="preview-identity">
                     <h3 data-profile-name></h3>
                     <p data-profile-specialty>Ortodoncia y ATM</p>
                   </div>
-                  <dl class="preview-details">
-                    <div>
-                      <dt>Consultorio</dt>
-                      <dd data-profile-clinic>Clínica Herrera Dental</dd>
-                    </div>
-                    <div>
-                      <dt>Contacto</dt>
-                      <dd data-profile-contact>55 7123 8842</dd>
-                    </div>
-                    <div>
-                      <dt>Ciudad</dt>
-                      <dd data-profile-city>Ciudad de México</dd>
-                    </div>
-                  </dl>
                 </div>
+                <dl class="preview-details">
+                  <div>
+                    <dt>Consultorio</dt>
+                    <dd data-profile-clinic>Clínica Herrera Dental</dd>
+                  </div>
+                  <div>
+                    <dt>Contacto</dt>
+                    <dd data-profile-contact>55 7123 8842</dd>
+                  </div>
+                  <div>
+                    <dt>Correo</dt>
+                    <dd data-profile-email></dd>
+                  </div>
+                  <div>
+                    <dt>Ciudad</dt>
+                    <dd data-profile-city>Ciudad de México</dd>
+                  </div>
+                </dl>
               </section>
             </div>
           </div>

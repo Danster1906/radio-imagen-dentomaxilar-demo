@@ -108,6 +108,10 @@ CREATE TABLE IF NOT EXISTS sessions (
   created_at   TIMESTAMPTZ NOT NULL DEFAULT now(),
   last_seen_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
+
+ALTER TABLE accounts ADD COLUMN IF NOT EXISTS photo TEXT;
+ALTER TABLE accounts ADD COLUMN IF NOT EXISTS photo_crop JSONB;
+ALTER TABLE accounts ADD COLUMN IF NOT EXISTS profile_notes TEXT NOT NULL DEFAULT '';
 `;
 
 const SEED_LOCK_KEY = 727201;
@@ -132,6 +136,9 @@ function rowToDoctor(row) {
     city: row.city || "",
     notifications: row.notifications,
     accountType: row.account_type,
+    photo: row.photo || "",
+    photoCrop: row.photo_crop || null,
+    profileNotes: row.profile_notes || "",
     partner: {
       referredPatients: row.referred_patients,
       points: row.points,
@@ -385,6 +392,34 @@ export async function updatePartner(email, { referredPatients, points }) {
   );
   if (!rows[0]) return null;
   return { referredPatients: rows[0].referred_patients, points: rows[0].points };
+}
+
+export async function updateProfile(email, { name, specialty, clinic, contactPhone, city, photo, photoCrop, profileNotes }) {
+  const { rows } = await pool.query(
+    `UPDATE accounts SET
+       name = COALESCE($2, name),
+       specialty = COALESCE($3, specialty),
+       clinic = COALESCE($4, clinic),
+       contact_phone = COALESCE($5, contact_phone),
+       city = COALESCE($6, city),
+       photo = COALESCE($7, photo),
+       photo_crop = COALESCE($8, photo_crop),
+       profile_notes = COALESCE($9, profile_notes)
+     WHERE email = $1 AND role = 'doctor'
+     RETURNING *`,
+    [
+      email.toLowerCase(),
+      name ?? null,
+      specialty ?? null,
+      clinic ?? null,
+      contactPhone ?? null,
+      city ?? null,
+      photo ?? null,
+      photoCrop ? JSON.stringify(photoCrop) : null,
+      profileNotes ?? null,
+    ],
+  );
+  return rows[0] ? rowToDoctor(rows[0]) : null;
 }
 
 export async function updateNotifications(email, notifications) {

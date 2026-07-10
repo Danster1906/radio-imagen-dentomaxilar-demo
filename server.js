@@ -13,6 +13,7 @@ import {
   createAccount,
   updatePassword,
   updatePartner,
+  updateProfile,
   updateNotifications,
   deleteAccount,
   getClinicRoster,
@@ -367,6 +368,32 @@ function createAppServer() {
         }
         const sessionToken = await createSession(normalEmail, doctor.id, "doctor");
         json(res, 200, { role: "doctor", email: normalEmail, doctor: safeDoc, sessionToken });
+      } catch (e) { json(res, 400, { error: e.message }); }
+      return;
+    }
+
+    // PUT /api/profile — el doctor actualiza su propio perfil (datos, foto y encuadre)
+    if (urlPath === "/api/profile" && req.method === "PUT") {
+      const session = await requireDoctorSession(req, res);
+      if (!session) return;
+      try {
+        const body = await readBody(req);
+        if (typeof body.photo === "string" && body.photo.length > 1_500_000) {
+          json(res, 413, { error: "La foto es demasiado grande. Usa una imagen más pequeña." });
+          return;
+        }
+        const doctor = await updateProfile(session.email, {
+          name: typeof body.name === "string" ? body.name.trim() : undefined,
+          specialty: typeof body.specialty === "string" ? body.specialty.trim() : undefined,
+          clinic: typeof body.clinic === "string" ? body.clinic.trim() : undefined,
+          contactPhone: typeof body.contactPhone === "string" ? body.contactPhone.trim() : undefined,
+          city: typeof body.city === "string" ? body.city.trim() : undefined,
+          photo: typeof body.photo === "string" ? body.photo : undefined,
+          photoCrop: body.photoCrop && typeof body.photoCrop === "object" ? body.photoCrop : undefined,
+          profileNotes: typeof body.profileNotes === "string" ? body.profileNotes : undefined,
+        });
+        if (!doctor) { json(res, 404, { error: "Cuenta no encontrada" }); return; }
+        json(res, 200, { doctor });
       } catch (e) { json(res, 400, { error: e.message }); }
       return;
     }
