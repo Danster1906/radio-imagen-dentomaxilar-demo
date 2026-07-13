@@ -5,6 +5,13 @@ import { randomBytes, scryptSync, timingSafeEqual } from "node:crypto";
 
 const pool = new pg.Pool({ connectionString: process.env.DATABASE_URL });
 
+// Sin este manejador, una conexión inactiva que la base cierra (Neon lo hace
+// tras periodos sin uso) emite 'error' sin dueño y tumba TODO el proceso.
+// Con él, solo se registra: el pool abre una conexión nueva en el siguiente uso.
+pool.on("error", (err) => {
+  console.error("Conexión inactiva de PostgreSQL cerrada:", err.message);
+});
+
 export function hashPassword(password) {
   const salt = randomBytes(16).toString("hex");
   const hash = scryptSync(password, salt, 64).toString("hex");

@@ -136,11 +136,27 @@ async function sendNotificationEmail({ doctorEmail, doctorName, patientName, stu
   }
 }
 
+// Límite para cuerpos JSON (la foto de perfil, ya reducida, cabe de sobra).
+// Sin límite, una petición gigante se acumula en memoria y puede tirar el proceso.
+const MAX_JSON_BODY = 3 * 1024 * 1024; // 3 MB
+
 function readBody(req) {
   return new Promise((resolve, reject) => {
     let body = "";
-    req.on("data", chunk => { body += chunk; });
-    req.on("end", () => { try { resolve(JSON.parse(body)); } catch { reject(new Error("Invalid JSON")); } });
+    let tooBig = false;
+    req.on("data", chunk => {
+      if (tooBig) return;
+      body += chunk;
+      if (body.length > MAX_JSON_BODY) {
+        tooBig = true;
+        reject(new Error("El cuerpo de la petición es demasiado grande"));
+        req.destroy();
+      }
+    });
+    req.on("end", () => {
+      if (tooBig) return;
+      try { resolve(JSON.parse(body)); } catch { reject(new Error("Invalid JSON")); }
+    });
     req.on("error", reject);
   });
 }
@@ -218,6 +234,34 @@ function isAdminRequest(req) {
   return Boolean(token) && token === ADMIN_TOKEN;
 }
 
+// Freno de intentos de login: tras 8 contraseñas incorrectas seguidas para el
+// mismo correo, se bloquean nuevos intentos por 10 minutos. Evita que un robot
+// pruebe miles de contraseñas (y de paso sature el servidor).
+const LOGIN_MAX_FAILURES = 8;
+const LOGIN_BLOCK_MS = 10 * 60 * 1000;
+const loginFailures = new Map();
+
+function isLoginBlocked(email) {
+  const entry = loginFailures.get(email);
+  if (!entry) return false;
+  if (Date.now() - entry.lastAt > LOGIN_BLOCK_MS) {
+    loginFailures.delete(email);
+    return false;
+  }
+  return entry.count >= LOGIN_MAX_FAILURES;
+}
+
+function registerLoginFailure(email) {
+  const entry = loginFailures.get(email) || { count: 0, lastAt: 0 };
+  entry.count += 1;
+  entry.lastAt = Date.now();
+  loginFailures.set(email, entry);
+}
+
+function clearLoginFailures(email) {
+  loginFailures.delete(email);
+}
+
 // Sesión de doctor: exige un token válido (emitido en /api/login) y lo
 // devuelve. Escribe la respuesta 401 y regresa null si falta o no es válido.
 async function requireDoctorSession(req, res) {
@@ -244,7 +288,23 @@ function resolveRequestPath(urlPath) {
 }
 
 function createAppServer() {
-  return createServer(async (req, res) => {
+  // Red de seguridad global: si CUALQUIER ruta lanza un error no previsto
+  // (por ejemplo, la base de datos se desconecta a media petición), se
+  // responde 500 y se registra, en lugar de dejar una promesa rechazada
+  // que tumbaría el proceso completo.
+  return createServer((req, res) => {
+    handleRequest(req, res).catch((err) => {
+      console.error(`Error no manejado en ${req.method} ${req.url}:`, err);
+      if (!res.headersSent) {
+        json(res, 500, { error: "Error interno del servidor. Intenta de nuevo." });
+      } else {
+        res.destroy();
+      }
+    });
+  });
+}
+
+async function handleRequest(req, res) {
     const urlPath = (req.url || "/").split("?")[0];
 
     if (req.method === "OPTIONS") {
@@ -343,7 +403,11 @@ function createAppServer() {
     if (urlPath === "/api/login" && req.method === "POST") {
       try {
         const { email, password } = await readBody(req);
-        const normalEmail = email.toLowerCase();
+        const normalEmail = (email || "").toLowerCase();
+        if (isLoginBlocked(normalEmail)) {
+          json(res, 429, { error: "Demasiados intentos fallidos. Espera 10 minutos e intenta de nuevo." });
+          return;
+        }
         const account = await getAccountByEmail(normalEmail);
         let validCredentials = false;
         if (account?.password_hash) {
@@ -354,9 +418,11 @@ function createAppServer() {
           await upgradePasswordHash(normalEmail, password);
         }
         if (!validCredentials) {
+          registerLoginFailure(normalEmail);
           json(res, 401, { error: "Correo o contraseña incorrectos" });
           return;
         }
+        clearLoginFailures(normalEmail);
         if (account.role === "admin") {
           json(res, 200, { role: "admin", email: normalEmail, adminToken: ADMIN_TOKEN });
           return;
@@ -872,7 +938,6 @@ function createAppServer() {
     const contentType = mimeTypes[extname(filePath).toLowerCase()] || "application/octet-stream";
     res.writeHead(200, { "Content-Type": contentType, "Cache-Control": "no-store" });
     createReadStream(filePath).pipe(res);
-  });
 }
 
 function listen(port) {
