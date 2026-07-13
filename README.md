@@ -58,6 +58,7 @@ Los archivos de resultados NO forman parte del respaldo: son temporales por dise
 - `LOGICA_PUNTOS_SOCIOS.md`: reglas de puntos, niveles y auditoría del programa de socios.
 - `REPLIT_DEPLOYMENT.md`: guía para publicar el portal en Replit.
 - `PLAN_MIGRACION_HOSTING.md`: plan completo para migrar app, base y storage a un hosting propio el día que se deje Replit.
+- `MIGRACION_BASE_DATOS.md`: instrucciones comando por comando (nivel principiante) para migrar la base PostgreSQL a otro proveedor.
 - `DEPLOY_OPERATIVO_DOCTORES.md`: ruta para iniciar operación real con doctores.
 - `DATA_MODEL.md`: estructura escalable de base de datos (referencia).
 
