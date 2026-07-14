@@ -1928,7 +1928,7 @@ function countPendingDeliveries() {
 
 async function refreshDeliveredFiles() {
   try {
-    const res = await fetch("/api/files-index");
+    const res = await fetch("/api/files-index", { headers: { "x-admin-token": getAdminToken() } });
     if (res.ok) {
       deliveredFilesIndex = (await res.json()) || {};
     }
@@ -2471,8 +2471,8 @@ orderForm.addEventListener("submit", async (event) => {
     }
   }
 
+  // El folio (id) lo asigna el servidor; el cliente no lo inventa.
   const newOrder = {
-    id: `ORD-${new Date().getFullYear()}-${String(orders.length + 1).padStart(4, "0")}`,
     patient: formData.get("patientName"),
     phone: formData.get("phone")?.trim() || "",
     doctor: doctorProfile.name,
@@ -2495,8 +2495,9 @@ orderForm.addEventListener("submit", async (event) => {
       );
     }
   } catch (e) {
-    orders.unshift(newOrder);
     console.error("No se pudo persistir la orden:", e);
+    showToast("No se pudo enviar la orden. Revisa tu conexión e intenta de nuevo.");
+    return;
   }
 
   orderForm.reset();

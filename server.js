@@ -843,15 +843,17 @@ async function handleRequest(req, res) {
     }
 
     // POST /api/orders — siempre bajo la identidad de la sesión, nunca la
-    // que mande el cliente en el cuerpo.
+    // que mande el cliente en el cuerpo. El folio también lo asigna el
+    // servidor (secuencia global): un id enviado por el cliente se ignora.
     if (urlPath === "/api/orders" && req.method === "POST") {
       try {
         const session = await requireDoctorSession(req, res);
         if (!session) return;
         const body = await readBody(req);
         body.doctorId = session.accountId;
-        if (!body.id || !body.patient || !body.doctorId) {
-          json(res, 400, { error: "id, patient y doctorId son obligatorios" });
+        delete body.id;
+        if (!body.patient || !body.doctorId) {
+          json(res, 400, { error: "patient y doctorId son obligatorios" });
           return;
         }
         const account = await findDoctorByIdOrEmail(body.doctorId);

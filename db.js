@@ -66,6 +66,9 @@ CREATE TABLE IF NOT EXISTS orders (
 );
 CREATE INDEX IF NOT EXISTS orders_doctor_idx ON orders (doctor_id);
 
+-- Folio consecutivo global de órdenes; el servidor lo asigna, nunca el cliente.
+CREATE SEQUENCE IF NOT EXISTS orders_folio_seq;
+
 CREATE TABLE IF NOT EXISTS partner_events (
   id         BIGSERIAL PRIMARY KEY,
   email      TEXT NOT NULL,
@@ -287,6 +290,15 @@ export async function initDb() {
   try {
     await client.query("SELECT 1");
     await client.query(DDL);
+    // La secuencia nunca debe quedar por debajo del folio más alto ya
+    // registrado (órdenes sembradas o creadas antes de que existiera).
+    await client.query(`
+      SELECT setval('orders_folio_seq', GREATEST(
+        (SELECT COALESCE(MAX(substring(id FROM '(\\d+)$')::bigint), 0)
+           FROM orders WHERE id ~ '^ORD-\\d{4}-\\d+$'),
+        (SELECT last_value FROM orders_folio_seq)
+      ))
+    `);
     await client.query("SELECT pg_advisory_lock($1)", [SEED_LOCK_KEY]);
     try {
       await client.query("BEGIN");
@@ -474,12 +486,24 @@ export async function listOrders(doctorId) {
 }
 
 export async function createOrder(body) {
-  const { rows } = await pool.query(
-    `INSERT INTO orders (id, doctor_id, treating_doctor, status, data)
-     VALUES ($1, $2, $3, $4, $5) RETURNING *`,
-    [body.id, body.doctorId, body.treatingDoctor || body.doctor || "", body.status || "Recibida", JSON.stringify(body)],
-  );
-  return rowToOrder(rows[0]);
+  // El folio lo asigna el servidor con la secuencia global; si un folio ya
+  // existe (órdenes viejas creadas fuera de la secuencia), se toma el
+  // siguiente hasta encontrar uno libre.
+  for (let attempt = 0; attempt < 20; attempt += 1) {
+    const { rows: seq } = await pool.query("SELECT nextval('orders_folio_seq') AS n");
+    const folio = `ORD-${new Date().getFullYear()}-${String(seq[0].n).padStart(4, "0")}`;
+    try {
+      const { rows } = await pool.query(
+        `INSERT INTO orders (id, doctor_id, treating_doctor, status, data)
+         VALUES ($1, $2, $3, $4, $5) RETURNING *`,
+        [folio, body.doctorId, body.treatingDoctor || body.doctor || "", body.status || "Recibida", JSON.stringify({ ...body, id: folio })],
+      );
+      return rowToOrder(rows[0]);
+    } catch (err) {
+      if (err.code !== "23505") throw err;
+    }
+  }
+  throw new Error("No se pudo asignar un folio libre a la orden");
 }
 
 export async function updateOrder(orderId, patch) {
