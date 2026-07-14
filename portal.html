@@ -5,7 +5,13 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Radio Imagen | Órdenes Digitales</title>
     <link rel="icon" type="image/png" href="img/favicon.png" />
-    <link rel="stylesheet" href="styles.css?v=login-grid-fix-2" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      rel="stylesheet"
+      href="https://fonts.googleapis.com/css2?family=Schibsted+Grotesk:wght@400;500;600;700;800&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap"
+    />
+    <link rel="stylesheet" href="styles.css?v=ui-doctor-admin-1" />
     <link rel="stylesheet" href="admin.css?v=deploy-v1" />
   </head>
   <body>
@@ -233,7 +239,17 @@
                 </div>
                 <button class="ghost-action" data-view="results" type="button">Ver resultados</button>
               </div>
+              <div class="order-cols" aria-hidden="true">
+                <span>Paciente</span>
+                <span>Fecha</span>
+                <span>Estado</span>
+                <span></span>
+              </div>
               <div class="order-list" id="doctor-order-list"></div>
+              <div class="order-pagination" id="doctor-order-pagination" hidden>
+                <p class="order-pagination-info"></p>
+                <div class="order-pagination-controls"></div>
+              </div>
             </section>
 
             <div class="dashboard-side">
@@ -400,6 +416,13 @@
               <button class="results-tab active" data-results-tab="active" type="button">Activas</button>
               <button class="results-tab" data-results-tab="done" type="button">Terminadas</button>
             </div>
+            <div class="results-cols" aria-hidden="true">
+              <span>Paciente</span>
+              <span>Doctor</span>
+              <span>Fecha</span>
+              <span>Estado</span>
+              <span></span>
+            </div>
             <div class="results-table" id="results-table" data-results-panel="active"></div>
             <div class="results-table" id="results-table-done" data-results-panel="done" hidden></div>
           </div>
@@ -435,15 +458,15 @@
                   </div>
                   <div class="crop-panel" aria-label="Ajustar encuadre de imagen de perfil">
                     <label class="crop-item">
-                      <span>Zoom</span>
+                      <span class="crop-item-head">Zoom <em data-crop-value="zoom">1×</em></span>
                       <input name="photoZoom" type="range" min="1" max="2.4" step="0.05" value="1" />
                     </label>
                     <label class="crop-item">
-                      <span>Horizontal</span>
+                      <span class="crop-item-head">Horizontal <em data-crop-value="x">50%</em></span>
                       <input name="photoX" type="range" min="-40" max="40" step="1" value="0" />
                     </label>
                     <label class="crop-item">
-                      <span>Vertical</span>
+                      <span class="crop-item-head">Vertical <em data-crop-value="y">50%</em></span>
                       <input name="photoY" type="range" min="-40" max="40" step="1" value="0" />
                     </label>
                     <button class="ghost-action crop-reset-btn" id="center-photo" type="button">Centrar</button>
@@ -474,7 +497,7 @@
                   </label>
                   <label>
                     Correo electrónico
-                    <input name="email" type="email" />
+                    <input name="email" type="email" readonly title="El correo es tu acceso al portal; para cambiarlo contacta a Radio Imagen" />
                   </label>
                   <label>
                     Ciudad
@@ -482,7 +505,7 @@
                   </label>
                   <label class="full">
                     Notas para Radio Imagen
-                    <textarea name="profileNotes">Preferencia por reportes enviados en PDF y aviso por WhatsApp cuando el estudio esté listo.</textarea>
+                    <textarea name="profileNotes" placeholder="Ej. preferencia por reportes en PDF y aviso por WhatsApp cuando el estudio esté listo."></textarea>
                   </label>
                 </div>
 
@@ -496,32 +519,69 @@
             <!-- Vista rápida -->
             <div class="profile-side">
               <section class="panel preview-card">
-                <span class="eyebrow">Vista rápida</span>
-                <div class="doctor-preview">
-                  <div class="preview-avatar-wrap">
-                    <div class="avatar preview-avatar">
-                      <img id="doctor-preview-photo" alt="" hidden />
-                      <span id="doctor-preview-initials">SH</span>
-                    </div>
+                <div class="preview-hero">
+                  <div class="avatar preview-avatar">
+                    <img id="doctor-preview-photo" alt="" hidden />
+                    <span id="doctor-preview-initials">SH</span>
                   </div>
                   <div class="preview-identity">
                     <h3 data-profile-name></h3>
                     <p data-profile-specialty>Ortodoncia y ATM</p>
                   </div>
-                  <dl class="preview-details">
-                    <div>
-                      <dt>Consultorio</dt>
-                      <dd data-profile-clinic>Clínica Herrera Dental</dd>
-                    </div>
-                    <div>
-                      <dt>Contacto</dt>
-                      <dd data-profile-contact>55 7123 8842</dd>
-                    </div>
-                    <div>
-                      <dt>Ciudad</dt>
-                      <dd data-profile-city>Ciudad de México</dd>
-                    </div>
-                  </dl>
+                </div>
+                <dl class="preview-details">
+                  <div>
+                    <dt>Consultorio</dt>
+                    <dd data-profile-clinic>Clínica Herrera Dental</dd>
+                  </div>
+                  <div>
+                    <dt>Contacto</dt>
+                    <dd data-profile-contact>55 7123 8842</dd>
+                  </div>
+                  <div>
+                    <dt>Correo</dt>
+                    <dd data-profile-email></dd>
+                  </div>
+                  <div>
+                    <dt>Ciudad</dt>
+                    <dd data-profile-city>Ciudad de México</dd>
+                  </div>
+                </dl>
+              </section>
+
+              <section class="panel security-card">
+                <div>
+                  <span class="eyebrow">Acceso</span>
+                  <h2>Seguridad de la cuenta</h2>
+                </div>
+                <div class="security-row">
+                  <div>
+                    <strong>Contraseña</strong>
+                    <span>Tu acceso privado al portal</span>
+                  </div>
+                  <button class="ghost-action security-change-btn" id="toggle-password-form" type="button">Cambiar</button>
+                </div>
+                <form class="security-password-form" id="password-form" hidden>
+                  <label>
+                    Contraseña actual
+                    <input name="currentPassword" type="password" autocomplete="current-password" required />
+                  </label>
+                  <label>
+                    Contraseña nueva
+                    <input name="newPassword" type="password" autocomplete="new-password" minlength="8" required />
+                  </label>
+                  <button class="primary-action" type="submit">Guardar contraseña</button>
+                </form>
+                <div class="security-divider"></div>
+                <div class="security-row">
+                  <div>
+                    <strong>Notificaciones</strong>
+                    <span>Aviso por correo cuando tu estudio esté listo</span>
+                  </div>
+                  <label class="switch">
+                    <input id="notifications-toggle" type="checkbox" checked />
+                    <span class="switch-track" aria-hidden="true"></span>
+                  </label>
                 </div>
               </section>
             </div>
@@ -533,39 +593,40 @@
             <section class="panel wide">
               <div class="panel-heading">
                 <div>
-                  <span class="eyebrow">Servicio premium futuro</span>
-                  <h2>Consulta plus para doctores</h2>
+                  <span class="eyebrow">Extensión de tu consultorio</span>
+                  <h2>Consulta plus para doctores aliados</h2>
                 </div>
               </div>
               <div class="feature-grid">
                 <article>
                   <strong>Agenda</strong>
-                  <span>Citas, recordatorios y seguimiento de pacientes.</span>
+                  <span>Citas, recordatorios y seguimiento de tus pacientes.</span>
                   <button class="small-action plus-interest-action" data-plus-module="agenda" type="button">Me interesa</button>
                 </article>
                 <article>
                   <strong>Finanzas</strong>
-                  <span>Ingresos, gastos, no-shows y ticket promedio.</span>
+                  <span>Ingresos, gastos, inasistencias y ticket promedio de tu consultorio.</span>
                   <button class="small-action plus-interest-action" data-plus-module="finanzas" type="button">Me interesa</button>
                 </article>
                 <article>
                   <strong>KPIs</strong>
-                  <span>Pacientes nuevos, referidos, crecimiento y conversión.</span>
+                  <span>Pacientes nuevos, referidos, crecimiento y conversión de tu consultorio.</span>
                   <button class="small-action plus-interest-action" data-plus-module="kpis" type="button">Me interesa</button>
                 </article>
                 <article>
                   <strong>Coach</strong>
-                  <span>Recomendaciones mensuales para mejorar la consulta.</span>
+                  <span>Recomendaciones mensuales para hacer crecer tu consultorio.</span>
                   <button class="small-action plus-interest-action" data-plus-module="coach" type="button">Me interesa</button>
                 </article>
               </div>
             </section>
             <section class="panel">
-              <span class="eyebrow">Principio de producto</span>
+              <span class="eyebrow">Cómo crece Consulta plus</span>
               <h2>Primero hábito, luego expansión</h2>
               <p>
-                El doctor entra para mandar órdenes a Radio Imagen. Cuando ese hábito existe,
-                se puede ofrecer agenda, finanzas y métricas como un módulo aparte.
+                Primero remites tu paciente para el estudio. Tu diagnóstico y tu paciente,
+                en un solo sistema. Cuando ese hábito existe, sumamos agenda, finanzas y
+                métricas como un módulo aparte.
               </p>
               <p>
                 Tu interés nos ayuda a decidir qué módulo construir primero. Marca los que
@@ -898,7 +959,6 @@
     </div>
 
     <div class="toast" id="toast" role="status" aria-live="polite"></div>
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="app.js?v=deploy-v1"></script>
   </body>
 </html>

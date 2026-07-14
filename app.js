@@ -278,7 +278,10 @@ async function apiLogPartnerEvent(email, orderId, delta, reason) {
 
 async function apiLoadOrders() {
   try {
-    const res = await fetch("/api/orders");
+    const headers = currentRole === "admin"
+      ? { "x-admin-token": getAdminToken() }
+      : { "x-session-token": getSessionToken() };
+    const res = await fetch("/api/orders", { headers });
     if (!res.ok) return;
     const data = await res.json();
     setOrders(data.orders || []);
@@ -291,7 +294,7 @@ async function apiSaveOrder(order) {
   try {
     const res = await fetch("/api/orders", {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: { "Content-Type": "application/json", "x-session-token": getSessionToken() },
       body: JSON.stringify(order)
     });
     if (!res.ok) {
@@ -307,7 +310,7 @@ async function apiUpdateOrder(orderId, changes) {
   try {
     const res = await fetch(`/api/orders/${encodeURIComponent(orderId)}`, {
       method: "PUT",
-      headers: { "Content-Type": "application/json" },
+      headers: { "Content-Type": "application/json", "x-admin-token": getAdminToken() },
       body: JSON.stringify(changes)
     });
     if (!res.ok) {
@@ -715,6 +718,9 @@ function configureShellForRole(role) {
     document.querySelectorAll("[data-profile-handle]").forEach((node) => {
       node.textContent = adminProfile.handle;
     });
+    document.querySelectorAll(".profile-card").forEach((node) => {
+      node.dataset.initials = getInitials(adminProfile.name);
+    });
     doctorIdLabel.textContent = adminProfile.id;
   }
 }
@@ -730,18 +736,22 @@ function applyDoctorProfile(profile) {
   doctorProfile.email = profile.email;
   doctorProfile.city = profile.city;
   doctorProfile.photo = profile.photo || doctorProfile.photo || "";
-  doctorProfile.photoZoom = profile.photoZoom || doctorProfile.photoZoom || 1;
-  doctorProfile.photoX = profile.photoX || doctorProfile.photoX || 0;
-  doctorProfile.photoY = profile.photoY || doctorProfile.photoY || 0;
+  const crop = profile.photoCrop || {};
+  doctorProfile.photoZoom = crop.zoom || profile.photoZoom || doctorProfile.photoZoom || 1;
+  doctorProfile.photoX = crop.x ?? profile.photoX ?? doctorProfile.photoX ?? 0;
+  doctorProfile.photoY = crop.y ?? profile.photoY ?? doctorProfile.photoY ?? 0;
+  doctorProfile.profileNotes = profile.profileNotes ?? doctorProfile.profileNotes ?? "";
   doctorProfile.metrics = profile.metrics || {};
   doctorProfile.metricsByPeriod = profile.metricsByPeriod || {};
   doctorProfile.partner = { referredPatients: 0, points: 0, ...profile.partner };
   doctorProfile.accountType = profile.accountType || "personal";
+  doctorProfile.notifications = profile.notifications !== false;
   if (Array.isArray(profile.clinicDoctors)) {
     doctorProfile.clinicDoctors = [...profile.clinicDoctors];
   } else if (doctorProfile.accountType !== "clinic") {
     doctorProfile.clinicDoctors = [];
   }
+  syncPhotoControls();
 }
 
 async function loadClinicRoster() {
@@ -1221,6 +1231,13 @@ function getAdminToken() {
   } catch { return ""; }
 }
 
+function getSessionToken() {
+  try {
+    const session = JSON.parse(localStorage.getItem(SESSION_KEY) || "{}");
+    return session.sessionToken || "";
+  } catch { return ""; }
+}
+
 async function loginAccount(email, password) {
   const normalizedEmail = email.toLowerCase();
 
@@ -1256,11 +1273,13 @@ async function loginAccount(email, password) {
         provider: "local",
         role,
         adminToken: role === "admin" ? (data.adminToken || "") : undefined,
+        sessionToken: role === "doctor" ? (data.sessionToken || "") : undefined,
         accountId: role === "admin" ? adminProfile.id : doctorProfile.id,
         handle: role === "admin" ? adminProfile.handle : doctorProfile.handle,
         signedInAt: new Date().toISOString(),
       }),
     );
+    await apiLoadOrders();
     if (role === "admin") {
       await apiLoadPartnerEvents();
       refreshDeliveredFiles();
@@ -1533,28 +1552,58 @@ function getSelectedStudiesWithDetails(formData) {
   return selectedStudies;
 }
 
+const DOCTOR_ORDERS_PAGE_SIZE = 5;
+let doctorOrdersPage = 1;
+
 function renderDoctorOrders() {
-  doctorOrderList.innerHTML = orders
-    .filter((order) => order.doctorId === doctorProfile.id)
+  const myOrders = orders.filter((order) => order.doctorId === doctorProfile.id);
+  const totalPages = Math.max(1, Math.ceil(myOrders.length / DOCTOR_ORDERS_PAGE_SIZE));
+  doctorOrdersPage = Math.min(Math.max(1, doctorOrdersPage), totalPages);
+  const start = (doctorOrdersPage - 1) * DOCTOR_ORDERS_PAGE_SIZE;
+  const pageOrders = myOrders.slice(start, start + DOCTOR_ORDERS_PAGE_SIZE);
+
+  doctorOrderList.innerHTML = pageOrders
     .map(
       (order) => `
         <article class="order-row">
-          <div class="order-name">
-            <strong>${order.patient}</strong>
-            <span class="order-meta">${order.studies.join(", ")}</span>
-            ${
-              order.treatingDoctor && order.treatingDoctor !== order.doctor
-                ? `<span class="order-meta">Atiende: ${order.treatingDoctor}</span>`
-                : ""
-            }
+          <div class="order-patient">
+            <span class="patient-avatar patient-avatar--${statusClass(order.status)}">${getInitials(order.patient)}</span>
+            <div class="order-name">
+              <strong>${order.patient}</strong>
+              <span class="order-meta">${order.studies.join(", ")}</span>
+              ${
+                order.treatingDoctor && order.treatingDoctor !== order.doctor
+                  ? `<span class="order-meta">Atiende: ${order.treatingDoctor}</span>`
+                  : ""
+              }
+            </div>
           </div>
           <span class="order-meta">${order.date}</span>
           <span class="status ${statusClass(order.status)}">${order.status}</span>
-          <button class="small-action" data-order-patient="${order.patient}" type="button">Ver orden</button>
+          <button class="order-view-link" data-order-patient="${order.patient}" type="button">Ver →</button>
         </article>
       `,
     )
     .join("");
+
+  const pagination = document.querySelector("#doctor-order-pagination");
+  if (!pagination) return;
+  if (myOrders.length <= DOCTOR_ORDERS_PAGE_SIZE) {
+    pagination.hidden = true;
+    return;
+  }
+  pagination.hidden = false;
+  pagination.querySelector(".order-pagination-info").innerHTML =
+    `Mostrando <strong>${pageOrders.length}</strong> de <strong>${myOrders.length}</strong>`;
+  const pageButtons = Array.from({ length: totalPages }, (_, i) => {
+    const page = i + 1;
+    return `<button class="pg-btn ${page === doctorOrdersPage ? "pg-active" : ""}" data-orders-page="${page}" type="button">${page}</button>`;
+  }).join("");
+  pagination.querySelector(".order-pagination-controls").innerHTML = `
+    <button class="pg-btn" data-orders-page="${doctorOrdersPage - 1}" type="button" ${doctorOrdersPage === 1 ? "disabled" : ""} aria-label="Página anterior">‹</button>
+    ${pageButtons}
+    <button class="pg-btn" data-orders-page="${doctorOrdersPage + 1}" type="button" ${doctorOrdersPage === totalPages ? "disabled" : ""} aria-label="Página siguiente">›</button>
+  `;
 }
 
 function renderResults(filter = "") {
@@ -1575,8 +1624,9 @@ function renderResults(filter = "") {
         <span class="result-meta">${order.studies.join(", ")}</span>
       </div>
       <span class="result-meta">${order.treatingDoctor || order.doctor}</span>
+      <span class="result-meta result-date">${order.date || ""}</span>
       ${isDone
-        ? `<span class="status lista">Descargado</span>
+        ? `<span class="status descargado">Descargado</span>
            <button class="download-action" data-download-order="${order.id}" type="button">Ver archivos</button>`
         : `<span class="status ${statusClass(order.status)}">${order.status}</span>
            <button class="download-action ${order.result ? "ready" : ""}" data-download-order="${order.id}" type="button" ${order.result ? "" : "disabled"}>
@@ -1624,7 +1674,9 @@ async function openDownloadModal(order) {
   downloadModal.hidden = false;
 
   try {
-    const res = await fetch(`/api/files/${encodeURIComponent(order.id)}`);
+    const res = await fetch(`/api/files/${encodeURIComponent(order.id)}`, {
+      headers: { "x-session-token": getSessionToken() },
+    });
     const data = await res.json();
     const allFiles = data.files || [];
 
@@ -2186,6 +2238,9 @@ function renderProfile() {
   document.querySelectorAll("[data-profile-handle]").forEach((node) => {
     node.textContent = doctorProfile.handle;
   });
+  document.querySelectorAll(".profile-card").forEach((node) => {
+    node.dataset.initials = initials;
+  });
   doctorIdLabel.textContent = doctorProfile.doctorCode || doctorProfile.id;
   document.querySelector("[data-profile-contact]").textContent = doctorProfile.contactPhone;
 
@@ -2197,6 +2252,7 @@ function renderProfile() {
       contactPhone: doctorProfile.contactPhone,
       email: doctorProfile.email,
       city: doctorProfile.city,
+      profileNotes: doctorProfile.profileNotes,
     };
     Object.entries(profileFields).forEach(([name, value]) => {
       const input = profileForm.querySelector(`[name="${name}"]`);
@@ -2206,6 +2262,10 @@ function renderProfile() {
     });
   }
   document.querySelector("[data-profile-city]").textContent = doctorProfile.city;
+  const emailNode = document.querySelector("[data-profile-email]");
+  if (emailNode) emailNode.textContent = doctorProfile.email || "";
+  const notificationsToggle = document.querySelector("#notifications-toggle");
+  if (notificationsToggle) notificationsToggle.checked = doctorProfile.notifications !== false;
   profileInitials.textContent = initials;
   doctorPreviewInitials.textContent = initials;
 
@@ -2222,16 +2282,31 @@ function renderProfile() {
   });
 }
 
+function updateCropReadouts() {
+  const zoom = Number(doctorProfile.photoZoom) || 1;
+  const asPercent = (value) => `${Math.round(((Number(value) + 40) / 80) * 100)}%`;
+  const readouts = {
+    zoom: `${parseFloat(zoom.toFixed(2))}×`,
+    x: asPercent(doctorProfile.photoX),
+    y: asPercent(doctorProfile.photoY),
+  };
+  document.querySelectorAll("[data-crop-value]").forEach((node) => {
+    node.textContent = readouts[node.dataset.cropValue] || "";
+  });
+}
+
 function syncPhotoControls() {
   photoZoomInput.value = doctorProfile.photoZoom;
   photoXInput.value = doctorProfile.photoX;
   photoYInput.value = doctorProfile.photoY;
+  updateCropReadouts();
 }
 
 function updatePhotoCrop() {
   doctorProfile.photoZoom = photoZoomInput.value;
   doctorProfile.photoX = photoXInput.value;
   doctorProfile.photoY = photoYInput.value;
+  updateCropReadouts();
   renderProfile();
 }
 
@@ -2313,6 +2388,10 @@ loginForm.addEventListener("submit", async (event) => {
 });
 
 logoutButton.addEventListener("click", async () => {
+  const token = getSessionToken();
+  if (token) {
+    fetch("/api/logout", { method: "POST", headers: { "x-session-token": token } }).catch(() => {});
+  }
   localStorage.removeItem(SESSION_KEY);
   showLogin();
   showToast("Sesión cerrada.");
@@ -2432,6 +2511,82 @@ orderForm.addEventListener("submit", async (event) => {
   showToast("Orden enviada a Radio Imagen. Sumará puntos cuando el paciente sea atendido.");
 });
 
+async function saveProfilePatch(patch) {
+  const res = await fetch("/api/profile", {
+    method: "PUT",
+    headers: { "Content-Type": "application/json", "x-session-token": getSessionToken() },
+    body: JSON.stringify(patch),
+  });
+  if (!res.ok) {
+    const data = await res.json().catch(() => ({}));
+    throw new Error(data.error || "No se pudo guardar el perfil");
+  }
+  return (await res.json()).doctor;
+}
+
+function currentPhotoCrop() {
+  return {
+    zoom: Number(doctorProfile.photoZoom) || 1,
+    x: Number(doctorProfile.photoX) || 0,
+    y: Number(doctorProfile.photoY) || 0,
+  };
+}
+
+let cropSaveTimer = null;
+function scheduleCropSave() {
+  if (!getSessionToken()) return;
+  clearTimeout(cropSaveTimer);
+  cropSaveTimer = setTimeout(() => {
+    saveProfilePatch({ photoCrop: currentPhotoCrop() }).catch(() => {});
+  }, 700);
+}
+
+// Reduce la imagen a un cuadrado máximo de 512px para que quepa en la base
+// de datos y cargue rápido; devuelve un data URL JPEG.
+function resizeProfilePhoto(file) {
+  return new Promise((resolve, reject) => {
+    const url = URL.createObjectURL(file);
+    const img = new Image();
+    img.onload = () => {
+      URL.revokeObjectURL(url);
+      const maxSide = 512;
+      const scale = Math.min(1, maxSide / Math.max(img.width, img.height));
+      const canvas = document.createElement("canvas");
+      canvas.width = Math.round(img.width * scale);
+      canvas.height = Math.round(img.height * scale);
+      canvas.getContext("2d").drawImage(img, 0, 0, canvas.width, canvas.height);
+      resolve(canvas.toDataURL("image/jpeg", 0.85));
+    };
+    img.onerror = () => { URL.revokeObjectURL(url); reject(new Error("Imagen no válida")); };
+    img.src = url;
+  });
+}
+
+async function applyNewProfilePhoto(file) {
+  if (!file) return;
+  if (!file.type.startsWith("image/")) {
+    showToast("Selecciona una imagen en formato PNG, JPG o WebP.");
+    return;
+  }
+  try {
+    const dataUrl = await resizeProfilePhoto(file);
+    doctorProfile.photo = dataUrl;
+    doctorProfile.photoZoom = 1;
+    doctorProfile.photoX = 0;
+    doctorProfile.photoY = 0;
+    syncPhotoControls();
+    renderProfile();
+    if (getSessionToken()) {
+      await saveProfilePatch({ photo: dataUrl, photoCrop: currentPhotoCrop() });
+      showToast("✓ Foto guardada. Ajusta el encuadre si lo necesitas.");
+    } else {
+      showToast("Imagen actualizada en la vista previa.");
+    }
+  } catch {
+    showToast("No se pudo procesar la imagen. Intenta con otra.");
+  }
+}
+
 profileForm.addEventListener("submit", async (event) => {
   event.preventDefault();
   const formData = new FormData(profileForm);
@@ -2440,48 +2595,114 @@ profileForm.addEventListener("submit", async (event) => {
   doctorProfile.specialty = formData.get("specialty").trim();
   doctorProfile.clinic = formData.get("clinic").trim();
   doctorProfile.contactPhone = formData.get("contactPhone").trim();
-  doctorProfile.email = formData.get("email").trim();
   doctorProfile.city = formData.get("city").trim();
+  doctorProfile.profileNotes = (formData.get("profileNotes") || "").trim();
 
   renderProfile();
   renderDoctorOrders();
   renderResults(resultsSearch.value);
-  showToast("Perfil actualizado para las próximas órdenes.");
+
+  if (getSessionToken()) {
+    try {
+      await saveProfilePatch({
+        name: doctorProfile.name,
+        specialty: doctorProfile.specialty,
+        clinic: doctorProfile.clinic,
+        contactPhone: doctorProfile.contactPhone,
+        city: doctorProfile.city,
+        profileNotes: doctorProfile.profileNotes,
+        photoCrop: currentPhotoCrop(),
+      });
+      showToast("✓ Perfil guardado.");
+    } catch (e) {
+      showToast(e.message || "No se pudo guardar el perfil. Intenta de nuevo.");
+    }
+  } else {
+    showToast("Perfil actualizado para las próximas órdenes.");
+  }
 });
 
 profilePhotoInput.addEventListener("change", () => {
-  const file = profilePhotoInput.files[0];
-
-  if (!file) {
-    return;
-  }
-
-  if (!file.type.startsWith("image/")) {
-    showToast("Selecciona una imagen en formato PNG, JPG o WebP.");
-    profilePhotoInput.value = "";
-    return;
-  }
-
-  const reader = new FileReader();
-  reader.addEventListener("load", () => {
-    doctorProfile.photo = reader.result;
-    doctorProfile.photoZoom = 1;
-    doctorProfile.photoX = 0;
-    doctorProfile.photoY = 0;
-    syncPhotoControls();
-    renderProfile();
-    showToast("Imagen de perfil actualizada en la vista previa.");
-  });
-  reader.readAsDataURL(file);
+  applyNewProfilePhoto(profilePhotoInput.files[0]);
+  profilePhotoInput.value = "";
 });
 
+const passwordForm = document.querySelector("#password-form");
+const togglePasswordFormButton = document.querySelector("#toggle-password-form");
+
+togglePasswordFormButton?.addEventListener("click", () => {
+  passwordForm.hidden = !passwordForm.hidden;
+  if (!passwordForm.hidden) {
+    passwordForm.querySelector('input[name="currentPassword"]').focus();
+  }
+});
+
+passwordForm?.addEventListener("submit", async (event) => {
+  event.preventDefault();
+  const formData = new FormData(passwordForm);
+  try {
+    const res = await fetch("/api/account/password", {
+      method: "PUT",
+      headers: { "Content-Type": "application/json", "x-session-token": getSessionToken() },
+      body: JSON.stringify({
+        currentPassword: formData.get("currentPassword"),
+        newPassword: formData.get("newPassword"),
+      }),
+    });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) {
+      showToast(data.error || "No se pudo cambiar la contraseña.");
+      return;
+    }
+    passwordForm.reset();
+    passwordForm.hidden = true;
+    showToast("✓ Contraseña actualizada.");
+  } catch {
+    showToast("No se pudo conectar al servidor. Intenta de nuevo.");
+  }
+});
+
+document.querySelector("#notifications-toggle")?.addEventListener("change", async (event) => {
+  const enabled = event.target.checked;
+  doctorProfile.notifications = enabled;
+  if (!getSessionToken()) return;
+  try {
+    await saveProfilePatch({ notifications: enabled });
+    showToast(enabled ? "✓ Notificaciones activadas." : "Notificaciones desactivadas.");
+  } catch {
+    event.target.checked = !enabled;
+    doctorProfile.notifications = !enabled;
+    showToast("No se pudo actualizar la preferencia. Intenta de nuevo.");
+  }
+});
+
+const photoHeroZone = document.querySelector(".profile-photo-hero");
+if (photoHeroZone) {
+  photoHeroZone.addEventListener("dragover", (event) => {
+    event.preventDefault();
+    photoHeroZone.classList.add("dragover");
+  });
+  photoHeroZone.addEventListener("dragleave", () => photoHeroZone.classList.remove("dragover"));
+  photoHeroZone.addEventListener("drop", (event) => {
+    event.preventDefault();
+    photoHeroZone.classList.remove("dragover");
+    applyNewProfilePhoto(event.dataTransfer?.files?.[0]);
+  });
+}
+
 [photoZoomInput, photoXInput, photoYInput].forEach((input) => {
-  input.addEventListener("input", updatePhotoCrop);
+  input.addEventListener("input", () => {
+    updatePhotoCrop();
+    scheduleCropSave();
+  });
 });
 
 editableAvatar.addEventListener("pointerdown", startPhotoDrag);
 editableAvatar.addEventListener("pointermove", movePhotoDrag);
-editableAvatar.addEventListener("pointerup", stopPhotoDrag);
+editableAvatar.addEventListener("pointerup", (event) => {
+  stopPhotoDrag(event);
+  scheduleCropSave();
+});
 editableAvatar.addEventListener("pointercancel", stopPhotoDrag);
 
 centerPhotoButton.addEventListener("click", () => {
@@ -2490,10 +2711,18 @@ centerPhotoButton.addEventListener("click", () => {
   doctorProfile.photoY = 0;
   syncPhotoControls();
   renderProfile();
+  scheduleCropSave();
   showToast("Imagen centrada en el recuadro.");
 });
 
 resultsSearch.addEventListener("input", () => renderResults(resultsSearch.value));
+
+document.querySelector("#doctor-order-pagination")?.addEventListener("click", (event) => {
+  const pageButton = event.target.closest("[data-orders-page]");
+  if (!pageButton || pageButton.disabled) return;
+  doctorOrdersPage = Number(pageButton.dataset.ordersPage);
+  renderDoctorOrders();
+});
 
 treatingDoctorSelect?.addEventListener("change", () => {
   document.querySelectorAll("[data-new-treating]").forEach((node) => {
@@ -2841,7 +3070,6 @@ renderResults();
 
 async function initializePortal() {
   await apiLoadDoctors();
-  await apiLoadOrders();
 
   const savedSession = localStorage.getItem(SESSION_KEY);
   if (savedSession) {
@@ -2858,6 +3086,7 @@ async function initializePortal() {
         applyDoctorProfile(profile);
         loadClinicRoster();
       }
+      await apiLoadOrders();
       if (currentRole === "admin") {
         await apiLoadPartnerEvents();
         refreshDeliveredFiles();

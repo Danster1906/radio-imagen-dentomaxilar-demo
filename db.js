@@ -5,6 +5,13 @@ import { randomBytes, scryptSync, timingSafeEqual } from "node:crypto";
 
 const pool = new pg.Pool({ connectionString: process.env.DATABASE_URL });
 
+// Sin este manejador, una conexión inactiva que la base cierra (Neon lo hace
+// tras periodos sin uso) emite 'error' sin dueño y tumba TODO el proceso.
+// Con él, solo se registra: el pool abre una conexión nueva en el siguiente uso.
+pool.on("error", (err) => {
+  console.error("Conexión inactiva de PostgreSQL cerrada:", err.message);
+});
+
 export function hashPassword(password) {
   const salt = randomBytes(16).toString("hex");
   const hash = scryptSync(password, salt, 64).toString("hex");
@@ -99,6 +106,19 @@ CREATE TABLE IF NOT EXISTS plus_interest (
   created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
   UNIQUE (email, module)
 );
+
+CREATE TABLE IF NOT EXISTS sessions (
+  token        TEXT PRIMARY KEY,
+  email        TEXT NOT NULL,
+  account_id   TEXT NOT NULL,
+  role         TEXT NOT NULL,
+  created_at   TIMESTAMPTZ NOT NULL DEFAULT now(),
+  last_seen_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+ALTER TABLE accounts ADD COLUMN IF NOT EXISTS photo TEXT;
+ALTER TABLE accounts ADD COLUMN IF NOT EXISTS photo_crop JSONB;
+ALTER TABLE accounts ADD COLUMN IF NOT EXISTS profile_notes TEXT NOT NULL DEFAULT '';
 `;
 
 const SEED_LOCK_KEY = 727201;
@@ -123,6 +143,9 @@ function rowToDoctor(row) {
     city: row.city || "",
     notifications: row.notifications,
     accountType: row.account_type,
+    photo: row.photo || "",
+    photoCrop: row.photo_crop || null,
+    profileNotes: row.profile_notes || "",
     partner: {
       referredPatients: row.referred_patients,
       points: row.points,
@@ -378,6 +401,34 @@ export async function updatePartner(email, { referredPatients, points }) {
   return { referredPatients: rows[0].referred_patients, points: rows[0].points };
 }
 
+export async function updateProfile(email, { name, specialty, clinic, contactPhone, city, photo, photoCrop, profileNotes }) {
+  const { rows } = await pool.query(
+    `UPDATE accounts SET
+       name = COALESCE($2, name),
+       specialty = COALESCE($3, specialty),
+       clinic = COALESCE($4, clinic),
+       contact_phone = COALESCE($5, contact_phone),
+       city = COALESCE($6, city),
+       photo = COALESCE($7, photo),
+       photo_crop = COALESCE($8, photo_crop),
+       profile_notes = COALESCE($9, profile_notes)
+     WHERE email = $1 AND role = 'doctor'
+     RETURNING *`,
+    [
+      email.toLowerCase(),
+      name ?? null,
+      specialty ?? null,
+      clinic ?? null,
+      contactPhone ?? null,
+      city ?? null,
+      photo ?? null,
+      photoCrop ? JSON.stringify(photoCrop) : null,
+      profileNotes ?? null,
+    ],
+  );
+  return rows[0] ? rowToDoctor(rows[0]) : null;
+}
+
 export async function updateNotifications(email, notifications) {
   const { rowCount } = await pool.query(
     "UPDATE accounts SET notifications = $2 WHERE email = $1 AND role = 'doctor'",
@@ -518,6 +569,11 @@ export async function getFileEntry(orderId, filename) {
   return (rows[0]?.files || []).find((f) => f.filename === filename) || null;
 }
 
+export async function getFilesOwner(orderId) {
+  const { rows } = await pool.query("SELECT doctor_id FROM files_index WHERE order_id = $1", [orderId]);
+  return rows[0]?.doctor_id || null;
+}
+
 export async function updateFileEntry(orderId, filename, patch) {
   const client = await pool.connect();
   try {
@@ -619,6 +675,30 @@ export async function listPlusInterest() {
 export async function getPlusInterestForEmail(email) {
   const { rows } = await pool.query("SELECT module FROM plus_interest WHERE email = $1", [email.toLowerCase()]);
   return rows.map((row) => row.module);
+}
+
+// ---------- Sesiones de doctor ----------
+
+export async function createSession(email, accountId, role) {
+  const token = randomBytes(24).toString("hex");
+  await pool.query(
+    "INSERT INTO sessions (token, email, account_id, role) VALUES ($1, $2, $3, $4)",
+    [token, email.toLowerCase(), accountId, role],
+  );
+  return token;
+}
+
+export async function getSession(token) {
+  const { rows } = await pool.query(
+    "UPDATE sessions SET last_seen_at = now() WHERE token = $1 RETURNING email, account_id, role",
+    [token],
+  );
+  if (!rows[0]) return null;
+  return { email: rows[0].email, accountId: rows[0].account_id, role: rows[0].role };
+}
+
+export async function deleteSession(token) {
+  await pool.query("DELETE FROM sessions WHERE token = $1", [token]);
 }
 
 export async function closeDb() {

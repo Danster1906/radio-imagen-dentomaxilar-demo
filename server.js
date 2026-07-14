@@ -13,6 +13,7 @@ import {
   createAccount,
   updatePassword,
   updatePartner,
+  updateProfile,
   updateNotifications,
   deleteAccount,
   getClinicRoster,
@@ -40,6 +41,10 @@ import {
   getPlusInterestForEmail,
   verifyPassword,
   upgradePasswordHash,
+  getFilesOwner,
+  createSession,
+  getSession,
+  deleteSession,
 } from "./db.js";
 
 const rootDir = resolve(".");
@@ -131,11 +136,27 @@ async function sendNotificationEmail({ doctorEmail, doctorName, patientName, stu
   }
 }
 
+// Límite para cuerpos JSON (la foto de perfil, ya reducida, cabe de sobra).
+// Sin límite, una petición gigante se acumula en memoria y puede tirar el proceso.
+const MAX_JSON_BODY = 3 * 1024 * 1024; // 3 MB
+
 function readBody(req) {
   return new Promise((resolve, reject) => {
     let body = "";
-    req.on("data", chunk => { body += chunk; });
-    req.on("end", () => { try { resolve(JSON.parse(body)); } catch { reject(new Error("Invalid JSON")); } });
+    let tooBig = false;
+    req.on("data", chunk => {
+      if (tooBig) return;
+      body += chunk;
+      if (body.length > MAX_JSON_BODY) {
+        tooBig = true;
+        reject(new Error("El cuerpo de la petición es demasiado grande"));
+        req.destroy();
+      }
+    });
+    req.on("end", () => {
+      if (tooBig) return;
+      try { resolve(JSON.parse(body)); } catch { reject(new Error("Invalid JSON")); }
+    });
     req.on("error", reject);
   });
 }
@@ -208,6 +229,55 @@ function requireAdmin(req, res) {
   return true;
 }
 
+function isAdminRequest(req) {
+  const token = req.headers["x-admin-token"];
+  return Boolean(token) && token === ADMIN_TOKEN;
+}
+
+// Freno de intentos de login: tras 8 contraseñas incorrectas seguidas para el
+// mismo correo, se bloquean nuevos intentos por 10 minutos. Evita que un robot
+// pruebe miles de contraseñas (y de paso sature el servidor).
+const LOGIN_MAX_FAILURES = 8;
+const LOGIN_BLOCK_MS = 10 * 60 * 1000;
+const loginFailures = new Map();
+
+function isLoginBlocked(email) {
+  const entry = loginFailures.get(email);
+  if (!entry) return false;
+  if (Date.now() - entry.lastAt > LOGIN_BLOCK_MS) {
+    loginFailures.delete(email);
+    return false;
+  }
+  return entry.count >= LOGIN_MAX_FAILURES;
+}
+
+function registerLoginFailure(email) {
+  const entry = loginFailures.get(email) || { count: 0, lastAt: 0 };
+  entry.count += 1;
+  entry.lastAt = Date.now();
+  loginFailures.set(email, entry);
+}
+
+function clearLoginFailures(email) {
+  loginFailures.delete(email);
+}
+
+// Sesión de doctor: exige un token válido (emitido en /api/login) y lo
+// devuelve. Escribe la respuesta 401 y regresa null si falta o no es válido.
+async function requireDoctorSession(req, res) {
+  const token = req.headers["x-session-token"];
+  if (!token) {
+    json(res, 401, { error: "Sesión requerida. Vuelve a iniciar sesión." });
+    return null;
+  }
+  const session = await getSession(token);
+  if (!session) {
+    json(res, 401, { error: "Sesión inválida o expirada. Vuelve a iniciar sesión." });
+    return null;
+  }
+  return session;
+}
+
 function resolveRequestPath(urlPath) {
   const cleanPath = normalize(decodeURIComponent(urlPath.split("?")[0])).replace(/^(\.\.[/\\])+/, "");
   const requestedPath = cleanPath === "/" ? "/portal.html" : cleanPath;
@@ -218,7 +288,23 @@ function resolveRequestPath(urlPath) {
 }
 
 function createAppServer() {
-  return createServer(async (req, res) => {
+  // Red de seguridad global: si CUALQUIER ruta lanza un error no previsto
+  // (por ejemplo, la base de datos se desconecta a media petición), se
+  // responde 500 y se registra, en lugar de dejar una promesa rechazada
+  // que tumbaría el proceso completo.
+  return createServer((req, res) => {
+    handleRequest(req, res).catch((err) => {
+      console.error(`Error no manejado en ${req.method} ${req.url}:`, err);
+      if (!res.headersSent) {
+        json(res, 500, { error: "Error interno del servidor. Intenta de nuevo." });
+      } else {
+        res.destroy();
+      }
+    });
+  });
+}
+
+async function handleRequest(req, res) {
     const urlPath = (req.url || "/").split("?")[0];
 
     if (req.method === "OPTIONS") {
@@ -317,7 +403,11 @@ function createAppServer() {
     if (urlPath === "/api/login" && req.method === "POST") {
       try {
         const { email, password } = await readBody(req);
-        const normalEmail = email.toLowerCase();
+        const normalEmail = (email || "").toLowerCase();
+        if (isLoginBlocked(normalEmail)) {
+          json(res, 429, { error: "Demasiados intentos fallidos. Espera 10 minutos e intenta de nuevo." });
+          return;
+        }
         const account = await getAccountByEmail(normalEmail);
         let validCredentials = false;
         if (account?.password_hash) {
@@ -328,9 +418,11 @@ function createAppServer() {
           await upgradePasswordHash(normalEmail, password);
         }
         if (!validCredentials) {
+          registerLoginFailure(normalEmail);
           json(res, 401, { error: "Correo o contraseña incorrectos" });
           return;
         }
+        clearLoginFailures(normalEmail);
         if (account.role === "admin") {
           json(res, 200, { role: "admin", email: normalEmail, adminToken: ADMIN_TOKEN });
           return;
@@ -340,7 +432,68 @@ function createAppServer() {
         if (safeDoc.accountType === "clinic") {
           safeDoc.clinicDoctors = await getClinicRoster(normalEmail);
         }
-        json(res, 200, { role: "doctor", email: normalEmail, doctor: safeDoc });
+        const sessionToken = await createSession(normalEmail, doctor.id, "doctor");
+        json(res, 200, { role: "doctor", email: normalEmail, doctor: safeDoc, sessionToken });
+      } catch (e) { json(res, 400, { error: e.message }); }
+      return;
+    }
+
+    // PUT /api/account/password — el doctor cambia su propia contraseña
+    if (urlPath === "/api/account/password" && req.method === "PUT") {
+      const session = await requireDoctorSession(req, res);
+      if (!session) return;
+      try {
+        const { currentPassword, newPassword } = await readBody(req);
+        if (!currentPassword || !newPassword || newPassword.length < 8) {
+          json(res, 400, { error: "La contraseña nueva debe tener al menos 8 caracteres." });
+          return;
+        }
+        const account = await getAccountByEmail(session.email);
+        if (!account?.password_hash || !verifyPassword(currentPassword, account.password_hash)) {
+          json(res, 401, { error: "La contraseña actual no es correcta." });
+          return;
+        }
+        await updatePassword(session.email, newPassword);
+        json(res, 200, { ok: true });
+      } catch (e) { json(res, 400, { error: e.message }); }
+      return;
+    }
+
+    // PUT /api/profile — el doctor actualiza su propio perfil (datos, foto y encuadre)
+    if (urlPath === "/api/profile" && req.method === "PUT") {
+      const session = await requireDoctorSession(req, res);
+      if (!session) return;
+      try {
+        const body = await readBody(req);
+        if (typeof body.photo === "string" && body.photo.length > 1_500_000) {
+          json(res, 413, { error: "La foto es demasiado grande. Usa una imagen más pequeña." });
+          return;
+        }
+        if (typeof body.notifications === "boolean") {
+          await updateNotifications(session.email, body.notifications);
+        }
+        const doctor = await updateProfile(session.email, {
+          name: typeof body.name === "string" ? body.name.trim() : undefined,
+          specialty: typeof body.specialty === "string" ? body.specialty.trim() : undefined,
+          clinic: typeof body.clinic === "string" ? body.clinic.trim() : undefined,
+          contactPhone: typeof body.contactPhone === "string" ? body.contactPhone.trim() : undefined,
+          city: typeof body.city === "string" ? body.city.trim() : undefined,
+          photo: typeof body.photo === "string" ? body.photo : undefined,
+          photoCrop: body.photoCrop && typeof body.photoCrop === "object" ? body.photoCrop : undefined,
+          profileNotes: typeof body.profileNotes === "string" ? body.profileNotes : undefined,
+        });
+        if (!doctor) { json(res, 404, { error: "Cuenta no encontrada" }); return; }
+        json(res, 200, { doctor });
+      } catch (e) { json(res, 400, { error: e.message }); }
+      return;
+    }
+
+    // POST /api/logout — invalida el token de sesión del doctor
+    if (urlPath === "/api/logout" && req.method === "POST") {
+      try {
+        const token = req.headers["x-session-token"];
+        if (token) await deleteSession(token);
+        json(res, 200, { ok: true });
       } catch (e) { json(res, 400, { error: e.message }); }
       return;
     }
@@ -537,6 +690,15 @@ function createAppServer() {
     // GET /api/files/:orderId
     if (urlPath.startsWith("/api/files/") && req.method === "GET") {
       const orderId = decodeURIComponent(urlPath.replace("/api/files/", ""));
+      if (!isAdminRequest(req)) {
+        const session = await requireDoctorSession(req, res);
+        if (!session) return;
+        const owner = await getFilesOwner(orderId);
+        if (owner && owner !== session.accountId) {
+          json(res, 403, { error: "No autorizado para ver estos archivos" });
+          return;
+        }
+      }
       try {
         json(res, 200, { files: await getFilesForOrder(orderId), orderId });
       } catch (e) { json(res, 500, { error: e.message }); }
@@ -545,6 +707,7 @@ function createAppServer() {
 
     // GET /api/files-index  (all orders with files, for admin)
     if (urlPath === "/api/files-index" && req.method === "GET") {
+      if (!requireAdmin(req, res)) return;
       try {
         json(res, 200, await getFilesIndex());
       } catch (e) { json(res, 500, { error: e.message }); }
@@ -663,19 +826,30 @@ function createAppServer() {
       return;
     }
 
-    // GET /api/orders
+    // GET /api/orders — el admin ve todas (opcionalmente filtradas por
+    // doctorId); un doctor solo ve las suyas, sin importar qué doctorId pida.
     if (urlPath === "/api/orders" && req.method === "GET") {
       try {
-        const doctorId = new URL(req.url, "http://localhost").searchParams.get("doctorId");
-        json(res, 200, { orders: await listOrders(doctorId) });
+        if (isAdminRequest(req)) {
+          const doctorId = new URL(req.url, "http://localhost").searchParams.get("doctorId");
+          json(res, 200, { orders: await listOrders(doctorId) });
+          return;
+        }
+        const session = await requireDoctorSession(req, res);
+        if (!session) return;
+        json(res, 200, { orders: await listOrders(session.accountId) });
       } catch (e) { json(res, 500, { error: e.message }); }
       return;
     }
 
-    // POST /api/orders
+    // POST /api/orders — siempre bajo la identidad de la sesión, nunca la
+    // que mande el cliente en el cuerpo.
     if (urlPath === "/api/orders" && req.method === "POST") {
       try {
+        const session = await requireDoctorSession(req, res);
+        if (!session) return;
         const body = await readBody(req);
+        body.doctorId = session.accountId;
         if (!body.id || !body.patient || !body.doctorId) {
           json(res, 400, { error: "id, patient y doctorId son obligatorios" });
           return;
@@ -698,8 +872,9 @@ function createAppServer() {
       return;
     }
 
-    // PUT /api/orders/:id
+    // PUT /api/orders/:id — cambios de estado/agenda: solo Radio Imagen (admin)
     if (urlPath.match(/^\/api\/orders\/[^/]+$/) && req.method === "PUT") {
+      if (!requireAdmin(req, res)) return;
       try {
         const orderId = decodeURIComponent(urlPath.replace("/api/orders/", ""));
         const body = await readBody(req);
@@ -763,7 +938,6 @@ function createAppServer() {
     const contentType = mimeTypes[extname(filePath).toLowerCase()] || "application/octet-stream";
     res.writeHead(200, { "Content-Type": contentType, "Cache-Control": "no-store" });
     createReadStream(filePath).pipe(res);
-  });
 }
 
 function listen(port) {
