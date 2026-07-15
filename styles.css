@@ -442,14 +442,18 @@ button {
 }
 
 .sidebar {
-  position: relative;
+  /* Pegada al viewport: la tarjeta de cuenta queda siempre abajo a la vista,
+     sin subir ni bajar con el largo del contenido de la página. */
+  position: sticky;
+  top: 0;
+  height: 100vh;
   display: flex;
   flex-direction: column;
   gap: 28px;
   padding: 28px 20px;
   color: #ffffff;
   background: linear-gradient(165deg, var(--rid-red) 0%, var(--rid-red-darker) 100%);
-  overflow: hidden;
+  overflow: hidden auto;
 }
 
 .sidebar::before {
@@ -664,10 +668,34 @@ button {
   align-items: center;
   gap: 10px;
   margin-top: auto;
-  padding: 10px 12px;
+  padding: 12px 12px 4px;
   background: transparent;
   border: none;
-  border-radius: 8px;
+  border-top: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 0;
+}
+
+.profile-card-info {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+}
+
+.profile-card-info strong {
+  font-size: 0.86rem;
+  font-weight: 600;
+  line-height: 1.3;
+  overflow-wrap: anywhere;
+}
+
+.profile-card-info .profile-meta {
+  margin: 0;
+  color: rgba(255, 255, 255, 0.5);
+  font-size: 0.74rem;
+  font-weight: 600;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .profile-card::before {
@@ -2465,6 +2493,47 @@ textarea:focus {
   outline-offset: 2px;
 }
 
+.clinic-team-card {
+  display: grid;
+  gap: 14px;
+  margin-top: 16px;
+}
+
+.clinic-team-card[hidden] {
+  display: none;
+}
+
+.clinic-team-list {
+  display: grid;
+  gap: 0;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.clinic-team-list li {
+  padding: 11px 0;
+  border-bottom: 1px solid var(--rid-cream-border);
+  color: var(--rid-navy);
+  font-size: 0.9rem;
+  font-weight: 600;
+}
+
+.clinic-team-list li:last-child {
+  border-bottom: none;
+}
+
+.clinic-team-list .clinic-team-empty {
+  color: var(--rid-text-faint);
+  font-weight: 500;
+}
+
+.clinic-team-hint {
+  color: var(--rid-text-faint);
+  font-size: 0.78rem;
+  line-height: 1.5;
+}
+
 .toast {
   position: fixed;
   right: 24px;
@@ -2647,6 +2716,7 @@ textarea:focus {
 
   .sidebar {
     position: static;
+    height: auto;
     padding: 18px;
   }
 

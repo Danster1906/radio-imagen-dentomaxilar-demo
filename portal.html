@@ -140,10 +140,10 @@
         </nav>
 
         <div class="profile-card">
-          <span class="eyebrow">Cuenta activa</span>
-          <strong data-profile-name></strong>
-          <span data-profile-specialty>Ortodoncia y ATM</span>
-          <small class="profile-handle" data-profile-handle>@sofia-herrera</small>
+          <div class="profile-card-info">
+            <strong data-profile-name></strong>
+            <small class="profile-meta" data-profile-meta>DR-0001</small>
+          </div>
         </div>
       </aside>
 
@@ -571,6 +571,15 @@
                     <span class="switch-track" aria-hidden="true"></span>
                   </label>
                 </div>
+              </section>
+
+              <section class="panel clinic-team-card" id="clinic-team-card" hidden>
+                <div>
+                  <span class="eyebrow">Cuenta clínica</span>
+                  <h2>Doctores de la clínica</h2>
+                </div>
+                <ul class="clinic-team-list" id="clinic-team-list"></ul>
+                <p class="clinic-team-hint">Cada doctor se agrega solo la primera vez que la clínica crea una orden a su nombre.</p>
               </section>
             </div>
           </div>
