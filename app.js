@@ -1207,14 +1207,15 @@ function showApp(useLoader = false, initialView = currentRole === "admin" ? "adm
   };
 
   if (useLoader) {
-    // El esqueleto cubre la pantalla mientras la app se pinta debajo; su
-    // propio CSS lo desvanece a los ~0.8s y aquí se retira del todo.
+    // Tiempos del componente RidSkeleton: visible 0.7s + fade 0.55s.
+    // La app se pinta debajo a los 0.6s (aún cubierta) y el esqueleto se
+    // retira del DOM visual a los ~1.3s, cuando su fade ya terminó.
     appShell.hidden = true;
     loadingScreen.hidden = false;
-    window.setTimeout(reveal, 350);
+    window.setTimeout(reveal, 600);
     window.setTimeout(() => {
       loadingScreen.hidden = true;
-    }, 900);
+    }, 1300);
   } else {
     loadingScreen.hidden = true;
     reveal();
