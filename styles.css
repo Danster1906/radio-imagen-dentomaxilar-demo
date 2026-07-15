@@ -256,122 +256,115 @@ button {
   display: none;
 }
 
+/* ── Pantalla de carga: esqueleto del layout con brillo (diseño RID) ──
+   Al mostrarse, imita la app (barra lateral oscura + tarjetas) con un
+   shimmer; a los 0.25s empieza a desvanecerse sola y app.js la oculta
+   al terminar. Reabrirse (hidden → visible) reinicia las animaciones. */
 .loading-screen {
   position: fixed;
   inset: 0;
   z-index: 40;
-  display: grid;
-  place-items: center;
+  display: flex;
   overflow: hidden;
-  padding: 24px;
-  background:
-    radial-gradient(ellipse at 20% 30%, rgba(220, 38, 38, 0.08), transparent 40%),
-    #fefefe;
+  background: #f5f0ee;
+  animation: ri-skel-out 0.55s cubic-bezier(0.4, 0, 0.2, 1) 0.25s forwards;
 }
 
-.particle-field {
-  position: absolute;
-  inset: 0;
-  overflow: hidden;
-}
-
-.particle-field span {
-  position: absolute;
-  width: 8px;
-  height: 8px;
-  background: rgba(220, 38, 38, 0.28);
-  border-radius: 50%;
-  animation: particleFloat 5.5s linear infinite;
-}
-
-.particle-field span:nth-child(1) { left: 12%; top: 18%; animation-delay: 0s; }
-.particle-field span:nth-child(2) { left: 28%; top: 72%; animation-delay: 0.8s; }
-.particle-field span:nth-child(3) { left: 42%; top: 30%; animation-delay: 1.3s; }
-.particle-field span:nth-child(4) { left: 62%; top: 76%; animation-delay: 0.4s; }
-.particle-field span:nth-child(5) { left: 78%; top: 20%; animation-delay: 1.8s; }
-.particle-field span:nth-child(6) { left: 88%; top: 58%; animation-delay: 2.4s; }
-.particle-field span:nth-child(7) { left: 8%; top: 82%; animation-delay: 3s; }
-.particle-field span:nth-child(8) { left: 54%; top: 12%; animation-delay: 2.1s; }
-
-@keyframes particleFloat {
-  0% {
-    transform: translate3d(0, 0, 0) scale(1);
-    opacity: 0.22;
-  }
-  50% {
-    transform: translate3d(18px, -28px, 0) scale(1.7);
-    opacity: 0.55;
-  }
-  100% {
-    transform: translate3d(-16px, -54px, 0) scale(1);
-    opacity: 0.12;
+@keyframes ri-skel-out {
+  to {
+    opacity: 0;
+    visibility: hidden;
   }
 }
 
-.loading-card {
-  position: relative;
-  display: grid;
-  gap: 22px;
-  width: min(560px, 100%);
-  padding: 28px;
-  background: rgba(255, 255, 255, 0.86);
-  border: 1px solid rgba(226, 232, 240, 0.9);
+@keyframes ri-shimmer {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
+.loading-screen .sk,
+.loading-screen .skd {
+  display: block;
+  background-size: 200% 100%;
+  animation: ri-shimmer 1.3s linear infinite;
   border-radius: 8px;
-  box-shadow: 0 24px 70px rgba(15, 23, 42, 0.14);
-  backdrop-filter: blur(18px);
 }
 
-.loading-card p {
-  color: var(--muted);
+.loading-screen .sk {
+  background-image: linear-gradient(90deg, #e6e1de 25%, #f2efec 50%, #e6e1de 75%);
 }
 
-.skeleton-stack {
-  display: grid;
+.loading-screen .skd {
+  background-image: linear-gradient(90deg, rgba(255, 255, 255, 0.05) 25%, rgba(255, 255, 255, 0.12) 50%, rgba(255, 255, 255, 0.05) 75%);
+}
+
+.skel-side {
+  width: 256px;
+  flex: none;
+  background: #0f1729;
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
   gap: 14px;
 }
 
-.skeleton-row {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 12px;
-}
-
-.skeleton {
-  position: relative;
+.skel-main {
+  flex: 1;
+  padding: 34px;
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
   overflow: hidden;
-  background: #eef2f7;
-  border-radius: 8px;
 }
 
-.skeleton::after {
-  position: absolute;
-  inset: 0;
-  content: "";
-  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.72), transparent);
-  transform: translateX(-100%);
-  animation: skeletonSweep 1.35s ease-in-out infinite;
+.skel-cards {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 18px;
 }
 
-.skeleton-title {
-  width: 70%;
-  height: 28px;
+@media (max-width: 760px) {
+  .skel-side { display: none; }
+  .skel-cards { grid-template-columns: repeat(2, 1fr); }
 }
 
-.skeleton.metric {
-  height: 88px;
+/* ── Transición de pestañas: entrada escalonada (diseño RID) ──
+   Cada vez que una vista o sección del admin pasa a visible, sus bloques
+   directos entran con fade-up en cascada. Mostrar/ocultar reinicia la
+   animación, así que aplica en cada cambio de pestaña. */
+@keyframes fade-up {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
 }
 
-.skeleton-line {
-  height: 18px;
+.view.active > *,
+.admin-section:not([hidden]) > * {
+  animation: fade-up 0.4s ease both;
 }
 
-.skeleton-line.short {
-  width: 56%;
-}
+.view.active > *:nth-child(1),
+.admin-section:not([hidden]) > *:nth-child(1) { animation-delay: 0.04s; }
+.view.active > *:nth-child(2),
+.admin-section:not([hidden]) > *:nth-child(2) { animation-delay: 0.1s; }
+.view.active > *:nth-child(3),
+.admin-section:not([hidden]) > *:nth-child(3) { animation-delay: 0.16s; }
+.view.active > *:nth-child(4),
+.admin-section:not([hidden]) > *:nth-child(4) { animation-delay: 0.22s; }
+.view.active > *:nth-child(5),
+.admin-section:not([hidden]) > *:nth-child(5) { animation-delay: 0.28s; }
 
-@keyframes skeletonSweep {
-  to {
-    transform: translateX(100%);
+@media (prefers-reduced-motion: reduce) {
+  .loading-screen,
+  .loading-screen .sk,
+  .loading-screen .skd,
+  .view.active > *,
+  .admin-section:not([hidden]) > * {
+    animation: none !important;
+  }
+
+  .loading-screen {
+    opacity: 0;
+    visibility: hidden;
   }
 }
 
