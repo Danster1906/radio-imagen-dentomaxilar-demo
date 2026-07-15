@@ -2654,23 +2654,6 @@ textarea:focus {
 }
 
 @media (max-width: 980px) {
-  .login-screen {
-    padding: 20px;
-  }
-
-  .login-panel {
-    width: min(100%, 440px);
-    padding: 24px;
-  }
-
-  .login-copy h1 {
-    max-width: none;
-  }
-
-  .login-showcase {
-    display: none;
-  }
-
   .workspace {
     padding: 20px;
   }
@@ -2734,41 +2717,6 @@ textarea:focus {
 }
 
 @media (max-width: 680px) {
-  .login-screen {
-    padding: 14px;
-    overflow-x: hidden;
-    justify-items: center;
-  }
-
-  .login-panel {
-    width: calc(100vw - 28px);
-    max-width: 362px;
-    padding: 18px;
-  }
-
-  .login-copy h1 {
-    max-width: none;
-    font-size: 1.34rem;
-    line-height: 1.08;
-  }
-
-  .login-copy p,
-  .login-note {
-    font-size: 0.86rem;
-  }
-
-  .login-showcase {
-    display: none;
-  }
-
-  .loading-card {
-    padding: 22px;
-  }
-
-  .skeleton-row {
-    grid-template-columns: 1fr;
-  }
-
   .topbar-actions,
   .internal-clock {
     width: 100%;
