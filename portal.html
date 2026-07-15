@@ -102,36 +102,24 @@
       </aside>
     </section>
 
-    <section class="loading-screen" id="loading-screen" hidden>
-      <div class="particle-field" aria-hidden="true">
-        <span></span>
-        <span></span>
-        <span></span>
-        <span></span>
-        <span></span>
-        <span></span>
-        <span></span>
-        <span></span>
+    <section class="loading-screen" id="loading-screen" role="status" aria-label="Cargando portal" hidden>
+      <div class="skel-side" aria-hidden="true">
+        <span class="skd" style="height: 56px; width: 72%; margin-bottom: 18px;"></span>
+        <span class="skd" style="height: 38px;"></span>
+        <span class="skd" style="height: 38px;"></span>
+        <span class="skd" style="height: 38px;"></span>
+        <span class="skd" style="height: 38px;"></span>
+        <span class="skd" style="height: 38px; margin-top: auto;"></span>
       </div>
-      <div class="loading-card" role="status" aria-live="polite">
-        <div class="brand login-brand">
-          <img class="brand-logo" src="img/brand/radio-imagen-logo-white.png" alt="Radio Imagen Dentomaxilar" />
-          <div>
-            <strong>Cargando portal</strong>
-            <span id="loading-handle">@doctor</span>
-          </div>
+      <div class="skel-main" aria-hidden="true">
+        <span class="sk" style="height: 32px; width: 280px;"></span>
+        <div class="skel-cards">
+          <span class="sk" style="height: 96px;"></span>
+          <span class="sk" style="height: 96px;"></span>
+          <span class="sk" style="height: 96px;"></span>
+          <span class="sk" style="height: 96px;"></span>
         </div>
-        <div class="skeleton-stack" aria-label="Preparando datos del doctor">
-          <div class="skeleton skeleton-title"></div>
-          <div class="skeleton-row">
-            <div class="skeleton metric"></div>
-            <div class="skeleton metric"></div>
-            <div class="skeleton metric"></div>
-          </div>
-          <div class="skeleton skeleton-line"></div>
-          <div class="skeleton skeleton-line short"></div>
-        </div>
-        <p>Preparando perfil, métricas y órdenes del doctor autenticado.</p>
+        <span class="sk" style="height: 340px;"></span>
       </div>
     </section>
 

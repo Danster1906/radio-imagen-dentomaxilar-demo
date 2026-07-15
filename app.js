@@ -355,7 +355,6 @@ const loadingScreen = document.querySelector("#loading-screen");
 const appShell = document.querySelector("#app-shell");
 const loginForm = document.querySelector("#login-form");
 const logoutButton = document.querySelector("#logout-button");
-const loadingHandle = document.querySelector("#loading-handle");
 const doctorIdLabel = document.querySelector("#doctor-id-label");
 const navButtons = document.querySelectorAll("[data-view]");
 const periodButtons = document.querySelectorAll("[data-period]");
@@ -1199,12 +1198,8 @@ function renderDoctorScopedData() {
 
 function showApp(useLoader = false, initialView = currentRole === "admin" ? "admin" : "dashboard") {
   loginScreen.hidden = true;
-  appShell.hidden = true;
-  loadingScreen.hidden = !useLoader;
-  loadingHandle.textContent = currentRole === "admin" ? adminProfile.handle : doctorProfile.handle;
 
   const reveal = () => {
-    loadingScreen.hidden = true;
     appShell.hidden = false;
     configureShellForRole(currentRole);
     renderDoctorScopedData();
@@ -1212,8 +1207,16 @@ function showApp(useLoader = false, initialView = currentRole === "admin" ? "adm
   };
 
   if (useLoader) {
-    window.setTimeout(reveal, 1100);
+    // El esqueleto cubre la pantalla mientras la app se pinta debajo; su
+    // propio CSS lo desvanece a los ~0.8s y aquí se retira del todo.
+    appShell.hidden = true;
+    loadingScreen.hidden = false;
+    window.setTimeout(reveal, 350);
+    window.setTimeout(() => {
+      loadingScreen.hidden = true;
+    }, 900);
   } else {
+    loadingScreen.hidden = true;
     reveal();
   }
 }
