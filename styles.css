@@ -257,9 +257,10 @@ button {
 }
 
 /* ── Pantalla de carga: esqueleto del layout con brillo (diseño RID) ──
-   Al mostrarse, imita la app (barra lateral oscura + tarjetas) con un
-   shimmer; a los 0.25s empieza a desvanecerse sola y app.js la oculta
-   al terminar. Reabrirse (hidden → visible) reinicia las animaciones. */
+   Tiempos del componente RidSkeleton: visible 0.7s, luego se desvanece en
+   0.55s (app.js la retira del todo a los ~1.3s). Reabrirse (hidden →
+   visible) reinicia las animaciones. En móvil, la barra lateral se vuelve
+   una franja superior y las tarjetas se reacomodan solas. */
 .loading-screen {
   position: fixed;
   inset: 0;
@@ -267,7 +268,7 @@ button {
   display: flex;
   overflow: hidden;
   background: #f5f0ee;
-  animation: ri-skel-out 0.55s cubic-bezier(0.4, 0, 0.2, 1) 0.25s forwards;
+  animation: ri-skel-out 0.55s cubic-bezier(0.4, 0, 0.2, 1) 0.7s forwards;
 }
 
 @keyframes ri-skel-out {
@@ -308,8 +309,23 @@ button {
   gap: 14px;
 }
 
+.skd-logo {
+  height: 56px;
+  width: 72%;
+  margin-bottom: 18px;
+}
+
+.skd-item {
+  height: 38px;
+}
+
+.skd-last {
+  margin-top: auto;
+}
+
 .skel-main {
   flex: 1;
+  min-width: 0;
   padding: 34px;
   display: flex;
   flex-direction: column;
@@ -317,15 +333,72 @@ button {
   overflow: hidden;
 }
 
+.sk-title {
+  height: 32px;
+  width: min(280px, 70%);
+}
+
+.sk-card {
+  height: 96px;
+}
+
+/* El bloque grande crece hasta llenar la altura disponible del dispositivo */
+.sk-block {
+  flex: 1;
+  min-height: 160px;
+  max-height: 420px;
+}
+
+/* Las tarjetas se reacomodan solas según el ancho disponible */
 .skel-cards {
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
   gap: 18px;
 }
 
+/* Móvil: la barra lateral se convierte en franja superior, como la app real */
 @media (max-width: 760px) {
-  .skel-side { display: none; }
-  .skel-cards { grid-template-columns: repeat(2, 1fr); }
+  .loading-screen {
+    flex-direction: column;
+  }
+
+  .skel-side {
+    width: 100%;
+    flex-direction: row;
+    align-items: center;
+    gap: 12px;
+    padding: 16px 20px;
+  }
+
+  .skd-logo {
+    height: 46px;
+    width: 110px;
+    flex: none;
+    margin-bottom: 0;
+  }
+
+  .skd-item {
+    height: 30px;
+    flex: 1;
+  }
+
+  .skel-side > :nth-child(n + 4) {
+    display: none;
+  }
+
+  .skel-main {
+    padding: 20px;
+    gap: 16px;
+  }
+
+  .sk-card {
+    height: 84px;
+  }
+
+  .skel-cards {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 12px;
+  }
 }
 
 /* ── Transición de pestañas: entrada escalonada (diseño RID) ──
