@@ -720,6 +720,10 @@ function configureShellForRole(role) {
     document.querySelectorAll(".profile-card").forEach((node) => {
       node.dataset.initials = getInitials(adminProfile.name);
     });
+    const profileMeta = document.querySelector("[data-profile-meta]");
+    if (profileMeta) {
+      profileMeta.textContent = `${adminProfile.id} · Operación`;
+    }
     doctorIdLabel.textContent = adminProfile.id;
   }
 }
@@ -763,6 +767,7 @@ async function loadClinicRoster() {
     const data = await res.json();
     doctorProfile.clinicDoctors = data.doctors || [];
     renderTreatingDoctorField();
+    renderProfile();
   } catch (e) {
     console.error("loadClinicRoster:", e);
   }
@@ -2245,6 +2250,22 @@ function renderProfile() {
   document.querySelectorAll(".profile-card").forEach((node) => {
     node.dataset.initials = initials;
   });
+  const isClinicAccount = doctorProfile.accountType === "clinic";
+  const profileMeta = document.querySelector("[data-profile-meta]");
+  if (profileMeta) {
+    profileMeta.textContent = `${doctorProfile.doctorCode || doctorProfile.id || ""} · ${isClinicAccount ? "Cuenta clínica" : "Doctor"}`;
+  }
+  const teamCard = document.querySelector("#clinic-team-card");
+  if (teamCard) {
+    teamCard.hidden = !isClinicAccount;
+    if (isClinicAccount) {
+      const teamList = teamCard.querySelector("#clinic-team-list");
+      const teamDoctors = doctorProfile.clinicDoctors || [];
+      teamList.innerHTML = teamDoctors.length
+        ? teamDoctors.map((name) => `<li>${name}</li>`).join("")
+        : '<li class="clinic-team-empty">Aún no hay doctores registrados.</li>';
+    }
+  }
   doctorIdLabel.textContent = doctorProfile.doctorCode || doctorProfile.id;
   document.querySelector("[data-profile-contact]").textContent = doctorProfile.contactPhone;
 
