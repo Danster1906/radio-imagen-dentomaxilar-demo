@@ -18,8 +18,12 @@
     "playwright": "^1.61.0"
   },
   "dependencies": {
+    "@replit/connectors-sdk": "^0.4.1",
     "@replit/object-storage": "^1.0.0",
     "nodemailer": "^9.0.1",
     "pg": "^8.22.0"
+  },
+  "overrides": {
+    "uuid": "^11.1.1"
   }
 }
