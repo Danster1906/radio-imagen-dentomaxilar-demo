@@ -319,13 +319,21 @@ async function handleRequest(req, res) {
       return;
     }
 
-    // GET /api/doctors — requiere sesión de doctor o token admin
+    // GET /api/profile — perfil del doctor autenticado (uso propio)
+    if (urlPath === "/api/profile" && req.method === "GET") {
+      const session = await requireDoctorSession(req, res);
+      if (!session) return;
+      try {
+        const doctor = await findDoctorByIdOrEmail(session.email);
+        if (!doctor) { json(res, 404, { error: "Cuenta no encontrada" }); return; }
+        json(res, 200, { doctor });
+      } catch (e) { json(res, 500, { error: e.message }); }
+      return;
+    }
+
+    // GET /api/doctors — solo administradores
     if (urlPath === "/api/doctors" && req.method === "GET") {
-      const adminOk = isAdminRequest(req);
-      if (!adminOk) {
-        const session = await requireDoctorSession(req, res);
-        if (!session) return;
-      }
+      if (!requireAdmin(req, res)) return;
       try {
         const { doctors, admin } = await getAccounts();
         json(res, 200, { doctors, admin: { email: admin?.email || "" } });
@@ -659,19 +667,42 @@ async function handleRequest(req, res) {
 
     // POST /api/request-resend  — el doctor pide que se vuelva a subir un archivo
     if (urlPath === "/api/request-resend" && req.method === "POST") {
-      try {
-        const { orderId, filename } = await readBody(req);
-        if (!orderId || !filename) {
-          json(res, 400, { error: "orderId y filename son obligatorios" });
-          return;
-        }
-        const entry = await updateFileEntry(orderId, filename, {
-          resendRequested: true,
-          resendRequestedAt: new Date().toISOString(),
-        });
-        if (!entry) { json(res, 404, { error: "Archivo no encontrado" }); return; }
-        json(res, 200, { ok: true });
-      } catch (e) { json(res, 400, { error: e.message }); }
+      if (!isAdminRequest(req)) {
+        const session = await requireDoctorSession(req, res);
+        if (!session) return;
+        try {
+          const { orderId, filename } = await readBody(req);
+          if (!orderId || !filename) {
+            json(res, 400, { error: "orderId y filename son obligatorios" });
+            return;
+          }
+          const owner = await getFilesOwner(orderId);
+          if (!owner || owner !== session.accountId) {
+            json(res, 403, { error: "No autorizado para solicitar reenvío de este archivo" });
+            return;
+          }
+          const entry = await updateFileEntry(orderId, filename, {
+            resendRequested: true,
+            resendRequestedAt: new Date().toISOString(),
+          });
+          if (!entry) { json(res, 404, { error: "Archivo no encontrado" }); return; }
+          json(res, 200, { ok: true });
+        } catch (e) { json(res, 400, { error: e.message }); }
+      } else {
+        try {
+          const { orderId, filename } = await readBody(req);
+          if (!orderId || !filename) {
+            json(res, 400, { error: "orderId y filename son obligatorios" });
+            return;
+          }
+          const entry = await updateFileEntry(orderId, filename, {
+            resendRequested: true,
+            resendRequestedAt: new Date().toISOString(),
+          });
+          if (!entry) { json(res, 404, { error: "Archivo no encontrado" }); return; }
+          json(res, 200, { ok: true });
+        } catch (e) { json(res, 400, { error: e.message }); }
+      }
       return;
     }
 
@@ -724,6 +755,17 @@ async function handleRequest(req, res) {
     // GET /api/uploads/:orderId/:filename  — descarga de un solo uso: al
     // completarse, el archivo se elimina del storage.
     if (urlPath.startsWith("/api/uploads/") && req.method === "GET") {
+      if (!isAdminRequest(req)) {
+        const session = await requireDoctorSession(req, res);
+        if (!session) return;
+        const parts = urlPath.replace("/api/uploads/", "").split("/");
+        const orderId = decodeURIComponent(parts[0] || "");
+        const owner = await getFilesOwner(orderId);
+        if (!owner || owner !== session.accountId) {
+          json(res, 403, { error: "No autorizado para descargar este archivo" });
+          return;
+        }
+      }
       const parts = urlPath.replace("/api/uploads/", "").split("/");
       const orderId = decodeURIComponent(parts[0] || "");
       const filename = decodeURIComponent(parts[1] || "");
@@ -897,6 +939,14 @@ async function handleRequest(req, res) {
     // GET /api/clinic-doctors/:email  (roster de doctores de una cuenta clínica)
     if (urlPath.startsWith("/api/clinic-doctors/") && req.method === "GET") {
       const email = decodeURIComponent(urlPath.replace("/api/clinic-doctors/", ""));
+      if (!isAdminRequest(req)) {
+        const session = await requireDoctorSession(req, res);
+        if (!session) return;
+        if (session.email.toLowerCase() !== email.toLowerCase()) {
+          json(res, 403, { error: "No autorizado para acceder a datos de otra cuenta." });
+          return;
+        }
+      }
       try {
         json(res, 200, { doctors: await getClinicRoster(email) });
       } catch (e) { json(res, 500, { error: e.message }); }
@@ -905,10 +955,16 @@ async function handleRequest(req, res) {
 
     // POST /api/plus-interest  — registrar interés en un módulo de Consulta plus
     if (urlPath === "/api/plus-interest" && req.method === "POST") {
+      const session = isAdminRequest(req) ? null : await requireDoctorSession(req, res);
+      if (!isAdminRequest(req) && !session) return;
       try {
         const { email, module } = await readBody(req);
         if (!email || !PLUS_MODULES.includes(module)) {
           json(res, 400, { error: "email y module (agenda/finanzas/kpis/coach) son obligatorios" });
+          return;
+        }
+        if (session && session.email.toLowerCase() !== email.toLowerCase()) {
+          json(res, 403, { error: "No autorizado para registrar interés en nombre de otra cuenta." });
           return;
         }
         const doctor = await findDoctorByIdOrEmail(email);
@@ -931,6 +987,14 @@ async function handleRequest(req, res) {
     // GET /api/plus-interest/:email — módulos registrados por una cuenta
     if (urlPath.startsWith("/api/plus-interest/") && req.method === "GET") {
       const email = decodeURIComponent(urlPath.replace("/api/plus-interest/", ""));
+      if (!isAdminRequest(req)) {
+        const session = await requireDoctorSession(req, res);
+        if (!session) return;
+        if (session.email.toLowerCase() !== email.toLowerCase()) {
+          json(res, 403, { error: "No autorizado para acceder a datos de otra cuenta." });
+          return;
+        }
+      }
       try {
         json(res, 200, { modules: await getPlusInterestForEmail(email) });
       } catch (e) { json(res, 500, { error: e.message }); }
@@ -945,12 +1009,16 @@ async function handleRequest(req, res) {
       return;
     }
     const contentType = mimeTypes[extname(filePath).toLowerCase()] || "application/octet-stream";
+    const extraHeaders = contentType === "text/html; charset=utf-8" ? {
+      "Content-Security-Policy": "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; connect-src 'self'; font-src 'self'; object-src 'none'; frame-ancestors 'none'"
+    } : {};
     res.writeHead(200, {
       "Content-Type": contentType,
       "Cache-Control": "no-store",
       "X-Content-Type-Options": "nosniff",
       "X-Frame-Options": "SAMEORIGIN",
-      "X-XSS-Protection": "1; mode=block"
+      "X-XSS-Protection": "1; mode=block",
+      ...extraHeaders
     });
     createReadStream(filePath).pipe(res);
 }
