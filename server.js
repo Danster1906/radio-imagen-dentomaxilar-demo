@@ -16,6 +16,9 @@ import {
   updateProfile,
   updateNotifications,
   deleteAccount,
+  restoreAccount,
+  listOwnershipReviews,
+  resolveOwnershipReview,
   getClinicRoster,
   addClinicDoctor,
   listOrders,
@@ -335,8 +338,8 @@ async function handleRequest(req, res) {
     if (urlPath === "/api/doctors" && req.method === "GET") {
       if (!requireAdmin(req, res)) return;
       try {
-        const { doctors, admin } = await getAccounts();
-        json(res, 200, { doctors, admin: { email: admin?.email || "" } });
+        const { doctors, archivedDoctors, admin } = await getAccounts();
+        json(res, 200, { doctors, archivedDoctors, admin: { email: admin?.email || "" } });
       } catch (e) { json(res, 500, { error: e.message }); }
       return;
     }
@@ -347,7 +350,7 @@ async function handleRequest(req, res) {
       try {
         const body = await readBody(req);
         const { email, name, password, specialty, clinic, contactPhone, city, validatedPatients, accountType } = body;
-        if (!email || !name || !password) { json(res, 400, { error: "email, name y password son obligatorios" }); return; }
+        if (!email || !name || !password || password.length < 8) { json(res, 400, { error: "email, name y una contraseña de al menos 8 caracteres son obligatorios" }); return; }
         const doctor = await createAccount({ email, name, password, specialty, clinic, contactPhone, city, validatedPatients, accountType });
         json(res, 201, { doctor });
       } catch (e) {
@@ -364,7 +367,7 @@ async function handleRequest(req, res) {
         const email = decodeURIComponent(urlPath.replace("/api/doctors/", "").replace("/password", ""));
         const body = await readBody(req);
         const { password } = body;
-        if (!password) { json(res, 400, { error: "La contraseña no puede estar vacía" }); return; }
+        if (!password || password.length < 8) { json(res, 400, { error: "La contraseña debe tener al menos 8 caracteres" }); return; }
         const updated = await updatePassword(email, password);
         if (!updated) { json(res, 404, { error: "Doctor no encontrado" }); return; }
         json(res, 200, { ok: true });
@@ -414,6 +417,39 @@ async function handleRequest(req, res) {
       return;
     }
 
+    // PUT /api/doctors/:email/restore — restaura una cuenta archivada
+    if (urlPath.match(/^\/api\/doctors\/[^/]+\/restore$/) && req.method === "PUT") {
+      if (!requireAdmin(req, res)) return;
+      const email = decodeURIComponent(urlPath.replace("/api/doctors/", "").replace("/restore", ""));
+      try {
+        const doctor = await restoreAccount(email);
+        if (!doctor) { json(res, 404, { error: "Doctor archivado no encontrado" }); return; }
+        json(res, 200, { ok: true, doctor });
+      } catch (e) { json(res, 500, { error: e.message }); }
+      return;
+    }
+
+    // GET /api/ownership-reviews — asociaciones históricas que requieren revisión
+    if (urlPath === "/api/ownership-reviews" && req.method === "GET") {
+      if (!requireAdmin(req, res)) return;
+      try { json(res, 200, { reviews: await listOwnershipReviews() }); }
+      catch (e) { json(res, 500, { error: e.message }); }
+      return;
+    }
+
+    if (urlPath.match(/^\/api\/ownership-reviews\/[^/]+$/) && req.method === "PUT") {
+      if (!requireAdmin(req, res)) return;
+      const orderId = decodeURIComponent(urlPath.replace("/api/ownership-reviews/", ""));
+      try {
+        const { action, targetEmail } = await readBody(req);
+        if (!['confirm', 'reassign'].includes(action)) { json(res, 400, { error: "Acción inválida" }); return; }
+        const updated = await resolveOwnershipReview(orderId, action, targetEmail);
+        if (!updated) { json(res, 404, { error: "Revisión no encontrada" }); return; }
+        json(res, 200, { ok: true });
+      } catch (e) { json(res, 400, { error: e.message }); }
+      return;
+    }
+
     // POST /api/login
     if (urlPath === "/api/login" && req.method === "POST") {
       try {
@@ -432,7 +468,7 @@ async function handleRequest(req, res) {
           validCredentials = true;
           await upgradePasswordHash(normalEmail, password);
         }
-        if (!validCredentials) {
+        if (!validCredentials || account?.active === false) {
           registerLoginFailure(normalEmail);
           json(res, 401, { error: "Correo o contraseña incorrectos" });
           return;
@@ -449,27 +485,6 @@ async function handleRequest(req, res) {
         }
         const sessionToken = await createSession(normalEmail, doctor.id, "doctor");
         json(res, 200, { role: "doctor", email: normalEmail, doctor: safeDoc, sessionToken });
-      } catch (e) { json(res, 400, { error: e.message }); }
-      return;
-    }
-
-    // PUT /api/account/password — el doctor cambia su propia contraseña
-    if (urlPath === "/api/account/password" && req.method === "PUT") {
-      const session = await requireDoctorSession(req, res);
-      if (!session) return;
-      try {
-        const { currentPassword, newPassword } = await readBody(req);
-        if (!currentPassword || !newPassword || newPassword.length < 8) {
-          json(res, 400, { error: "La contraseña nueva debe tener al menos 8 caracteres." });
-          return;
-        }
-        const account = await getAccountByEmail(session.email);
-        if (!account?.password_hash || !verifyPassword(currentPassword, account.password_hash)) {
-          json(res, 401, { error: "La contraseña actual no es correcta." });
-          return;
-        }
-        await updatePassword(session.email, newPassword);
-        json(res, 200, { ok: true });
       } catch (e) { json(res, 400, { error: e.message }); }
       return;
     }

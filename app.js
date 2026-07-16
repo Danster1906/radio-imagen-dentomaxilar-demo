@@ -339,12 +339,19 @@ async function apiLoadDoctors() {
     const res = await fetch("/api/doctors", { headers: { "x-admin-token": saved.adminToken } });
     if (!res.ok) return;
     const data = await res.json();
+    Object.keys(doctorDirectory).forEach((email) => delete doctorDirectory[email]);
+    Object.keys(archivedDoctorDirectory).forEach((email) => delete archivedDoctorDirectory[email]);
     for (const [email, doc] of Object.entries(data.doctors || {})) {
       doctorDirectory[email] = {
         ...doctorDirectory[email],
         ...doc,
       };
     }
+    for (const [email, doc] of Object.entries(data.archivedDoctors || {})) {
+      archivedDoctorDirectory[email] = { ...doc };
+    }
+    const reviewRes = await fetch("/api/ownership-reviews", { headers: { "x-admin-token": saved.adminToken } });
+    ownershipReviews = reviewRes.ok ? (await reviewRes.json()).reviews || [] : [];
   } catch (e) {
     console.error("apiLoadDoctors:", e);
   }
@@ -369,6 +376,8 @@ async function apiLoadMyProfile() {
 }
 
 const doctorDirectory = {};
+const archivedDoctorDirectory = {};
+let ownershipReviews = [];
 
 const viewTitles = {
   dashboard: "Panel doctor",
@@ -397,6 +406,8 @@ const resultsSearch = document.querySelector("#results-search");
 const adminStatusFilter = document.querySelector("#admin-status-filter");
 const adminOrderTable = document.querySelector("#admin-order-table");
 const adminDoctorList = document.querySelector("#admin-doctor-list");
+const adminArchivedList = document.querySelector("#admin-archived-list");
+const adminReviewList = document.querySelector("#admin-review-list");
 const adminDoctorForm = document.querySelector("#admin-doctor-form");
 const focusNewDoctorButton = document.querySelector("#focus-new-doctor");
 const adminSectionButtons = document.querySelectorAll("[data-admin-section]");
@@ -1208,13 +1219,14 @@ async function createDoctorFromAdmin(formData) {
 }
 
 async function deleteDoctorFromAdmin(email) {
-  if (!confirm(`¿Eliminar al doctor ${email}?`)) return;
+  if (!confirm(`¿Archivar al doctor ${email}? Se bloqueará su acceso, pero sus datos se conservarán.`)) return;
   try {
     const res = await fetch(`/api/doctors/${encodeURIComponent(email)}`, { method: "DELETE", headers: { "x-admin-token": getAdminToken() } });
     if (!res.ok) { showToast("No se pudo eliminar el doctor."); return; }
+    archivedDoctorDirectory[email] = { ...doctorDirectory[email], active: false };
     delete doctorDirectory[email];
     renderAdmin();
-    showToast("Doctor eliminado.");
+    showToast("Doctor archivado. Sus datos se conservaron.");
   } catch (e) {
     showToast("Error de conexión al eliminar doctor.");
   }
@@ -1325,6 +1337,7 @@ async function loginAccount(email, password) {
     );
     await apiLoadOrders();
     if (role === "admin") {
+      await apiLoadDoctors();
       await apiLoadPartnerEvents();
       refreshDeliveredFiles();
       refreshPlusInterestAdmin();
@@ -1923,9 +1936,11 @@ function renderAdmin() {
           </header>
           <span>${escapeHtml(doctor.specialty || "Sin especialidad")}</span>
           <small class="admin-credential-line">Correo: <strong>${escapeHtml(doctor.email)}</strong></small>
-          <div class="admin-pw-row" style="display:flex;gap:6px;margin-top:8px;">
-            <input class="admin-pw-input" type="text" placeholder="Nueva contraseña" data-pw-email="${escapeHtml(doctor.email)}"
-              style="flex:1;font-size:0.8rem;padding:4px 8px;border:1px solid #ccc;border-radius:6px;" />
+          <div class="admin-pw-row">
+            <div class="password-field">
+              <input class="admin-pw-input" type="password" minlength="8" autocomplete="new-password" placeholder="Nueva contraseña" data-pw-email="${escapeHtml(doctor.email)}" />
+              <button class="password-toggle" type="button" data-password-toggle aria-label="Mostrar contraseña" aria-pressed="false">Ver</button>
+            </div>
             <button class="small-action admin-reset-password" data-email="${escapeHtml(doctor.email)}" type="button">Cambiar</button>
           </div>
           <div class="admin-notif-row" style="display:flex;align-items:center;gap:8px;margin-top:10px;">
@@ -1941,12 +1956,34 @@ function renderAdmin() {
               ${historyRows}
             </ul>
           </details>
-          <button class="ghost-action admin-delete-doctor" data-email="${escapeHtml(doctor.email)}" type="button" style="margin-top:8px;color:var(--brand);font-size:0.8rem;">Eliminar doctor</button>
+          <button class="ghost-action admin-delete-doctor" data-email="${escapeHtml(doctor.email)}" type="button" style="margin-top:8px;color:var(--brand);font-size:0.8rem;">Archivar doctor</button>
         </article>
       `;
     })
     .join("");
 
+  if (adminArchivedList) {
+    const archived = Object.values(archivedDoctorDirectory);
+    adminArchivedList.innerHTML = archived.length ? archived.map((doctor) => `
+      <article class="admin-doctor-card admin-doctor-card--archived">
+        <header><strong>${escapeHtml(doctor.name)}</strong><span class="admin-chip">Archivado</span></header>
+        <span>${escapeHtml(doctor.email)}</span>
+        <small>${doctor.archivedAt ? new Date(doctor.archivedAt).toLocaleString("es-MX") : "Acceso bloqueado"}</small>
+        <button class="small-action admin-restore-doctor" data-email="${escapeHtml(doctor.email)}" type="button">Restaurar perfil</button>
+      </article>`).join("") : '<p class="admin-helper">No hay perfiles archivados.</p>';
+  }
+  if (adminReviewList) {
+    adminReviewList.innerHTML = ownershipReviews.length ? ownershipReviews.map((review) => `
+      <article class="admin-review-card" data-review-order="${escapeHtml(review.orderId)}">
+        <div><strong>${escapeHtml(review.patient || review.orderId)}</strong><span>${escapeHtml(review.orderId)} · actualmente: ${escapeHtml(review.currentName)}</span></div>
+        <select class="review-target" aria-label="Doctor de destino">
+          <option value="">Selecciona doctor para reasignar</option>
+          ${Object.values(doctorDirectory).map((doctor) => `<option value="${escapeHtml(doctor.email)}">${escapeHtml(doctor.name)} (${escapeHtml(doctor.id)})</option>`).join("")}
+        </select>
+        <button class="small-action review-confirm" type="button">Conservar aquí</button>
+        <button class="ghost-action review-reassign" type="button">Reasignar</button>
+      </article>`).join("") : '<p class="admin-helper">No hay asociaciones pendientes de revisión.</p>';
+  }
   renderDeliveredFiles();
 }
 
@@ -2703,41 +2740,6 @@ profilePhotoInput.addEventListener("change", () => {
   profilePhotoInput.value = "";
 });
 
-const passwordForm = document.querySelector("#password-form");
-const togglePasswordFormButton = document.querySelector("#toggle-password-form");
-
-togglePasswordFormButton?.addEventListener("click", () => {
-  passwordForm.hidden = !passwordForm.hidden;
-  if (!passwordForm.hidden) {
-    passwordForm.querySelector('input[name="currentPassword"]').focus();
-  }
-});
-
-passwordForm?.addEventListener("submit", async (event) => {
-  event.preventDefault();
-  const formData = new FormData(passwordForm);
-  try {
-    const res = await fetch("/api/account/password", {
-      method: "PUT",
-      headers: { "Content-Type": "application/json", "x-session-token": getSessionToken() },
-      body: JSON.stringify({
-        currentPassword: formData.get("currentPassword"),
-        newPassword: formData.get("newPassword"),
-      }),
-    });
-    const data = await res.json().catch(() => ({}));
-    if (!res.ok) {
-      showToast(data.error || "No se pudo cambiar la contraseña.");
-      return;
-    }
-    passwordForm.reset();
-    passwordForm.hidden = true;
-    showToast("✓ Contraseña actualizada.");
-  } catch {
-    showToast("No se pudo conectar al servidor. Intenta de nuevo.");
-  }
-});
-
 document.querySelector("#notifications-toggle")?.addEventListener("change", async (event) => {
   const enabled = event.target.checked;
   doctorProfile.notifications = enabled;
@@ -2960,6 +2962,18 @@ adminDoctorForm?.addEventListener("submit", async (event) => {
   await createDoctorFromAdmin(new FormData(adminDoctorForm));
 });
 
+document.addEventListener("click", (event) => {
+  const button = event.target.closest("[data-password-toggle]");
+  if (!button) return;
+  const input = button.closest(".password-field")?.querySelector("input");
+  if (!input) return;
+  const show = input.type === "password";
+  input.type = show ? "text" : "password";
+  button.textContent = show ? "Ocultar" : "Ver";
+  button.setAttribute("aria-label", show ? "Ocultar contraseña" : "Mostrar contraseña");
+  button.setAttribute("aria-pressed", String(show));
+});
+
 adminDoctorList?.addEventListener("click", async (event) => {
   const deleteBtn = event.target.closest(".admin-delete-doctor");
   if (deleteBtn) {
@@ -2986,6 +3000,34 @@ adminDoctorList?.addEventListener("click", async (event) => {
     } catch { showToast("Error de conexión."); }
     return;
   }
+});
+
+adminArchivedList?.addEventListener("click", async (event) => {
+  const button = event.target.closest(".admin-restore-doctor");
+  if (!button) return;
+  const res = await fetch(`/api/doctors/${encodeURIComponent(button.dataset.email)}/restore`, { method: "PUT", headers: { "x-admin-token": getAdminToken() } });
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) { showToast(data.error || "No se pudo restaurar el perfil."); return; }
+  doctorDirectory[data.doctor.email] = data.doctor;
+  delete archivedDoctorDirectory[button.dataset.email];
+  renderAdmin();
+  showToast("Perfil restaurado.");
+});
+
+adminReviewList?.addEventListener("click", async (event) => {
+  const card = event.target.closest("[data-review-order]");
+  if (!card) return;
+  const action = event.target.closest(".review-confirm") ? "confirm" : event.target.closest(".review-reassign") ? "reassign" : "";
+  if (!action) return;
+  const targetEmail = card.querySelector(".review-target")?.value || "";
+  if (action === "reassign" && !targetEmail) { showToast("Selecciona el doctor de destino."); return; }
+  const res = await fetch(`/api/ownership-reviews/${encodeURIComponent(card.dataset.reviewOrder)}`, { method: "PUT", headers: { "Content-Type": "application/json", "x-admin-token": getAdminToken() }, body: JSON.stringify({ action, targetEmail }) });
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) { showToast(data.error || "No se pudo resolver la revisión."); return; }
+  ownershipReviews = ownershipReviews.filter((item) => item.orderId !== card.dataset.reviewOrder);
+  if (action === "reassign") await apiLoadOrders();
+  renderAdmin();
+  showToast(action === "confirm" ? "Asociación confirmada." : "Paciente reasignado.");
 });
 
 adminDoctorList?.addEventListener("change", async (event) => {

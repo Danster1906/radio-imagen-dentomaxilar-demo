@@ -141,6 +141,35 @@ button {
   width: 100%;
 }
 
+.password-field {
+  position: relative;
+  min-width: 0;
+}
+
+.password-field input {
+  width: 100%;
+  padding-right: 64px;
+}
+
+.password-toggle {
+  position: absolute;
+  top: 50%;
+  right: 8px;
+  min-width: 44px;
+  padding: 5px 7px;
+  color: var(--rid-red, #d62b2b);
+  background: transparent;
+  border: 0;
+  border-radius: 6px;
+  font: inherit;
+  font-size: .74rem;
+  font-weight: 800;
+  transform: translateY(-50%);
+  cursor: pointer;
+}
+
+.password-toggle:hover, .password-toggle:focus-visible { background: #fef1f1; outline: none; }
+
 .google-action {
   display: flex;
   min-height: 46px;

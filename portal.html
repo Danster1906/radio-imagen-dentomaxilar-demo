@@ -11,8 +11,8 @@
       rel="stylesheet"
       href="https://fonts.googleapis.com/css2?family=Schibsted+Grotesk:wght@400;500;600;700;800&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap"
     />
-    <link rel="stylesheet" href="styles.css?v=ui-doctor-admin-1" />
-    <link rel="stylesheet" href="admin.css?v=deploy-v1" />
+    <link rel="stylesheet" href="styles.css?v=archive-results-2" />
+    <link rel="stylesheet" href="admin.css?v=archive-results-2" />
   </head>
   <body>
     <section class="login-screen" id="login-screen">
@@ -89,7 +89,10 @@
                 <span>Contraseña</span>
                 <a class="login-forgot-link" href="#">¿La olvidaste?</a>
               </span>
-              <input name="loginPassword" type="password" placeholder="Contraseña asignada" autocomplete="current-password" required />
+              <div class="password-field">
+                <input name="loginPassword" type="password" placeholder="Contraseña asignada" autocomplete="current-password" required />
+                <button class="password-toggle" type="button" data-password-toggle aria-label="Mostrar contraseña" aria-pressed="false">Ver</button>
+              </div>
             </label>
             <button class="primary-action" type="submit">Iniciar sesión</button>
           </form>
@@ -544,22 +547,10 @@
                 </div>
                 <div class="security-row">
                   <div>
-                    <strong>Contraseña</strong>
-                    <span>Tu acceso privado al portal</span>
+                    <strong>Contraseña administrada</strong>
+                    <span>Contacta a Radio Imagen si necesitas restablecer tu acceso</span>
                   </div>
-                  <button class="ghost-action security-change-btn" id="toggle-password-form" type="button">Cambiar</button>
                 </div>
-                <form class="security-password-form" id="password-form" hidden>
-                  <label>
-                    Contraseña actual
-                    <input name="currentPassword" type="password" autocomplete="current-password" required />
-                  </label>
-                  <label>
-                    Contraseña nueva
-                    <input name="newPassword" type="password" autocomplete="new-password" minlength="8" required />
-                  </label>
-                  <button class="primary-action" type="submit">Guardar contraseña</button>
-                </form>
                 <div class="security-divider"></div>
                 <div class="security-row">
                   <div>
@@ -819,6 +810,17 @@
             </section>
 
             <section class="panel admin-panel wide">
+              <div class="panel-heading"><div><span class="eyebrow">Integridad de datos</span><h2>Pacientes por revisar</h2></div></div>
+              <p class="admin-helper">Confirma o reasigna asociaciones históricas detectadas antes de la creación del perfil actual.</p>
+              <div class="admin-review-list" id="admin-review-list"></div>
+            </section>
+
+            <section class="panel admin-panel wide">
+              <div class="panel-heading"><div><span class="eyebrow">Acceso bloqueado</span><h2>Perfiles archivados</h2></div></div>
+              <div class="admin-doctor-list" id="admin-archived-list"></div>
+            </section>
+
+            <section class="panel admin-panel wide">
               <div class="panel-heading">
                 <div>
                   <span class="eyebrow">Nuevo doctor</span>
@@ -843,7 +845,10 @@
                 </label>
                 <label>
                   Contraseña inicial
-                  <input name="doctorPassword" type="text" autocomplete="new-password" required />
+                  <div class="password-field">
+                    <input name="doctorPassword" type="password" autocomplete="new-password" minlength="8" required />
+                    <button class="password-toggle" type="button" data-password-toggle aria-label="Mostrar contraseña" aria-pressed="false">Ver</button>
+                  </div>
                 </label>
                 <label>
                   Especialidad
@@ -956,6 +961,6 @@
     </div>
 
     <div class="toast" id="toast" role="status" aria-live="polite"></div>
-    <script src="app.js?v=folio-servidor-1"></script>
+    <script src="app.js?v=archive-results-2"></script>
   </body>
 </html>

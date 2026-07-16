@@ -44,8 +44,12 @@ CREATE TABLE IF NOT EXISTS accounts (
   notifications     BOOLEAN NOT NULL DEFAULT TRUE,
   referred_patients INTEGER NOT NULL DEFAULT 0,
   points            INTEGER NOT NULL DEFAULT 0,
+  active            BOOLEAN NOT NULL DEFAULT TRUE,
+  archived_at       TIMESTAMPTZ,
   created_at        TIMESTAMPTZ NOT NULL DEFAULT now()
 );
+
+CREATE SEQUENCE IF NOT EXISTS doctor_id_seq;
 
 CREATE TABLE IF NOT EXISTS clinic_doctors (
   id            BIGSERIAL PRIMARY KEY,
@@ -122,6 +126,9 @@ CREATE TABLE IF NOT EXISTS sessions (
 ALTER TABLE accounts ADD COLUMN IF NOT EXISTS photo TEXT;
 ALTER TABLE accounts ADD COLUMN IF NOT EXISTS photo_crop JSONB;
 ALTER TABLE accounts ADD COLUMN IF NOT EXISTS profile_notes TEXT NOT NULL DEFAULT '';
+ALTER TABLE accounts ADD COLUMN IF NOT EXISTS active BOOLEAN NOT NULL DEFAULT TRUE;
+ALTER TABLE accounts ADD COLUMN IF NOT EXISTS archived_at TIMESTAMPTZ;
+ALTER TABLE orders ADD COLUMN IF NOT EXISTS ownership_review_status TEXT;
 `;
 
 const SEED_LOCK_KEY = 727201;
@@ -153,6 +160,9 @@ function rowToDoctor(row) {
       referredPatients: row.referred_patients,
       points: row.points,
     },
+    active: row.active !== false,
+    archivedAt: row.archived_at || null,
+    createdAt: row.created_at || null,
   };
 }
 
@@ -311,6 +321,19 @@ export async function initDb() {
       await client.query("SELECT pg_advisory_unlock($1)", [SEED_LOCK_KEY]);
     }
     await hashPlaintextPasswords(client);
+    await client.query(`
+      SELECT setval('doctor_id_seq', GREATEST(
+        (SELECT COALESCE(MAX(NULLIF(regexp_replace(id, '\\D', '', 'g'), '')::bigint), 0)
+           FROM accounts WHERE role = 'doctor'),
+        (SELECT last_value FROM doctor_id_seq), 1
+      ))
+    `);
+    await client.query(`
+      UPDATE orders o SET ownership_review_status = 'pending'
+        FROM accounts a
+       WHERE a.role = 'doctor' AND a.id = o.doctor_id
+         AND o.created_at < a.created_at AND o.ownership_review_status IS NULL
+    `);
   } finally {
     client.release();
   }
@@ -321,15 +344,17 @@ export async function initDb() {
 export async function getAccounts() {
   const { rows } = await pool.query("SELECT * FROM accounts ORDER BY id");
   const doctors = {};
+  const archivedDoctors = {};
   let admin = null;
   for (const row of rows) {
     if (row.role === "admin") {
       admin = { email: row.email };
     } else {
-      doctors[row.email] = rowToDoctor(row);
+      const target = row.active === false ? archivedDoctors : doctors;
+      target[row.email] = rowToDoctor(row);
     }
   }
-  return { doctors, admin };
+  return { doctors, archivedDoctors, admin };
 }
 
 export async function getAccountByEmail(email) {
@@ -339,7 +364,7 @@ export async function getAccountByEmail(email) {
 
 export async function findDoctorByIdOrEmail(idOrEmail) {
   const { rows } = await pool.query(
-    "SELECT * FROM accounts WHERE role = 'doctor' AND (id = $1 OR email = lower($1))",
+    "SELECT * FROM accounts WHERE role = 'doctor' AND active = TRUE AND (id = $1 OR email = lower($1))",
     [idOrEmail],
   );
   return rows[0] ? rowToDoctor(rows[0]) : null;
@@ -349,10 +374,7 @@ export async function createAccount({ email, name, password, specialty, clinic, 
   const client = await pool.connect();
   try {
     await client.query("BEGIN");
-    const { rows } = await client.query(
-      `SELECT COALESCE(MAX(NULLIF(regexp_replace(id, '\\D', '', 'g'), '')::int), 0) + 1 AS next
-       FROM accounts WHERE role = 'doctor'`,
-    );
+    const { rows } = await client.query("SELECT nextval('doctor_id_seq') AS next");
     const id = `DR-${String(rows[0].next).padStart(4, "0")}`;
     const points = (validatedPatients || 0) * 100;
     const { rows: inserted } = await client.query(
@@ -450,11 +472,68 @@ export async function updateNotifications(email, notifications) {
 }
 
 export async function deleteAccount(email) {
-  const { rowCount } = await pool.query(
-    "DELETE FROM accounts WHERE email = $1 AND role = 'doctor'",
-    [email.toLowerCase()],
-  );
-  return rowCount > 0;
+  const client = await pool.connect();
+  try {
+    await client.query("BEGIN");
+    const { rowCount } = await client.query(
+      `UPDATE accounts SET active = FALSE, archived_at = now()
+        WHERE email = $1 AND role = 'doctor' AND active = TRUE`, [email.toLowerCase()]);
+    if (rowCount) await client.query("DELETE FROM sessions WHERE email = $1", [email.toLowerCase()]);
+    await client.query("COMMIT");
+    return rowCount > 0;
+  } catch (err) {
+    await client.query("ROLLBACK");
+    throw err;
+  } finally { client.release(); }
+}
+
+export async function restoreAccount(email) {
+  const { rows } = await pool.query(
+    `UPDATE accounts SET active = TRUE, archived_at = NULL
+      WHERE email = $1 AND role = 'doctor' AND active = FALSE RETURNING *`, [email.toLowerCase()]);
+  return rows[0] ? rowToDoctor(rows[0]) : null;
+}
+
+export async function listOwnershipReviews() {
+  const { rows } = await pool.query(
+    `SELECT o.id AS order_id, o.doctor_id, o.created_at, o.data,
+            a.email AS current_email, a.name AS current_name
+       FROM orders o JOIN accounts a ON a.id = o.doctor_id
+      WHERE o.ownership_review_status = 'pending' ORDER BY o.created_at DESC`);
+  return rows.map((row) => ({ orderId: row.order_id, doctorId: row.doctor_id,
+    patient: row.data?.patient || "", createdAt: row.created_at,
+    currentEmail: row.current_email, currentName: row.current_name }));
+}
+
+export async function resolveOwnershipReview(orderId, action, targetEmail) {
+  const client = await pool.connect();
+  try {
+    await client.query("BEGIN");
+    if (action === "confirm") {
+      const { rowCount } = await client.query(
+        "UPDATE orders SET ownership_review_status = 'confirmed' WHERE id = $1 AND ownership_review_status = 'pending'", [orderId]);
+      await client.query("COMMIT");
+      return rowCount > 0;
+    }
+    const { rows: targets } = await client.query(
+      "SELECT id, email, name FROM accounts WHERE email = $1 AND role = 'doctor' AND active = TRUE",
+      [(targetEmail || "").toLowerCase()]);
+    if (!targets[0]) throw new Error("El doctor de destino no existe o está archivado");
+    const target = targets[0];
+    const { rows: updated } = await client.query(
+      `UPDATE orders SET doctor_id = $2, ownership_review_status = 'reassigned',
+              data = jsonb_set(jsonb_set(data, '{doctorId}', to_jsonb($2::text), true), '{doctor}', to_jsonb($3::text), true)
+        WHERE id = $1 AND ownership_review_status = 'pending' RETURNING id`, [orderId, target.id, target.name]);
+    if (!updated[0]) throw new Error("La orden ya fue revisada o no existe");
+    await client.query("UPDATE files_index SET doctor_id = $2 WHERE order_id = $1", [orderId, target.id]);
+    await client.query("UPDATE upload_sessions SET doctor_id = $2 WHERE order_id = $1", [orderId, target.id]);
+    await client.query("UPDATE partner_events SET email = $2 WHERE order_id = $1", [orderId, target.email]);
+    await client.query("COMMIT");
+    return true;
+  } catch (err) {
+    await client.query("ROLLBACK");
+    throw err;
+  } finally { client.release(); }
 }
 
 // ---------- Roster de clínicas ----------
@@ -714,7 +793,10 @@ export async function createSession(email, accountId, role) {
 
 export async function getSession(token) {
   const { rows } = await pool.query(
-    "UPDATE sessions SET last_seen_at = now() WHERE token = $1 RETURNING email, account_id, role",
+    `UPDATE sessions s SET last_seen_at = now()
+       FROM accounts a
+      WHERE s.token = $1 AND a.email = s.email AND a.active = TRUE
+      RETURNING s.email, s.account_id, s.role`,
     [token],
   );
   if (!rows[0]) return null;
