@@ -164,7 +164,9 @@ function readBody(req) {
 function json(res, code, data) {
   res.writeHead(code, {
     "Content-Type": "application/json; charset=utf-8",
-    "Access-Control-Allow-Origin": "*"
+    "X-Content-Type-Options": "nosniff",
+    "X-Frame-Options": "SAMEORIGIN",
+    "X-XSS-Protection": "1; mode=block"
   });
   res.end(JSON.stringify(data));
 }
@@ -311,14 +313,19 @@ async function handleRequest(req, res) {
       res.writeHead(204, {
         "Access-Control-Allow-Origin": "*",
         "Access-Control-Allow-Methods": "GET,POST,PUT,DELETE",
-        "Access-Control-Allow-Headers": "Content-Type,x-admin-token"
+        "Access-Control-Allow-Headers": "Content-Type,x-admin-token,x-session-token"
       });
       res.end();
       return;
     }
 
-    // GET /api/doctors
+    // GET /api/doctors — requiere sesión de doctor o token admin
     if (urlPath === "/api/doctors" && req.method === "GET") {
+      const adminOk = isAdminRequest(req);
+      if (!adminOk) {
+        const session = await requireDoctorSession(req, res);
+        if (!session) return;
+      }
       try {
         const { doctors, admin } = await getAccounts();
         json(res, 200, { doctors, admin: { email: admin?.email || "" } });
@@ -938,7 +945,13 @@ async function handleRequest(req, res) {
       return;
     }
     const contentType = mimeTypes[extname(filePath).toLowerCase()] || "application/octet-stream";
-    res.writeHead(200, { "Content-Type": contentType, "Cache-Control": "no-store" });
+    res.writeHead(200, {
+      "Content-Type": contentType,
+      "Cache-Control": "no-store",
+      "X-Content-Type-Options": "nosniff",
+      "X-Frame-Options": "SAMEORIGIN",
+      "X-XSS-Protection": "1; mode=block"
+    });
     createReadStream(filePath).pipe(res);
 }
 
