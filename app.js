@@ -149,6 +149,16 @@ const cephalometricStudies = studies.filter((study) => study.category === "Anál
 const orders = [];
 
 const SESSION_KEY = "radioImagenDoctorSession";
+
+function escapeHtml(str) {
+  if (str == null) return "";
+  return String(str)
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
+}
 const ADMIN_EMAIL = "admin@radioimagen.mx";
 const adminProfile = {
   id: "ADM-0001",
@@ -324,11 +334,9 @@ async function apiUpdateOrder(orderId, changes) {
 
 async function apiLoadDoctors() {
   try {
-    const saved = JSON.parse(localStorage.getItem(SESSION_KEY) || "{}");
-    const headers = {};
-    if (saved.adminToken) headers["x-admin-token"] = saved.adminToken;
-    else if (saved.sessionToken) headers["x-session-token"] = saved.sessionToken;
-    const res = await fetch("/api/doctors", { headers });
+    const saved = JSON.parse(sessionStorage.getItem(SESSION_KEY) || "{}");
+    if (!saved.adminToken) return;
+    const res = await fetch("/api/doctors", { headers: { "x-admin-token": saved.adminToken } });
     if (!res.ok) return;
     const data = await res.json();
     for (const [email, doc] of Object.entries(data.doctors || {})) {
@@ -339,6 +347,24 @@ async function apiLoadDoctors() {
     }
   } catch (e) {
     console.error("apiLoadDoctors:", e);
+  }
+}
+
+async function apiLoadMyProfile() {
+  try {
+    const res = await fetch("/api/profile", {
+      headers: { "x-session-token": getSessionToken() },
+    });
+    if (!res.ok) return null;
+    const data = await res.json();
+    const doc = data.doctor;
+    if (doc && doc.email) {
+      doctorDirectory[doc.email.toLowerCase()] = doc;
+    }
+    return doc || null;
+  } catch (e) {
+    console.error("apiLoadMyProfile:", e);
+    return null;
   }
 }
 
@@ -638,7 +664,9 @@ async function loadPlusInterestState() {
     return;
   }
   try {
-    const res = await fetch(`/api/plus-interest/${encodeURIComponent(doctorProfile.email)}`);
+    const res = await fetch(`/api/plus-interest/${encodeURIComponent(doctorProfile.email)}`, {
+      headers: { "x-session-token": getSessionToken() },
+    });
     if (!res.ok) return;
     const data = await res.json();
     applyPlusInterestState(data.modules || []);
@@ -766,7 +794,9 @@ async function loadClinicRoster() {
     return;
   }
   try {
-    const res = await fetch(`/api/clinic-doctors/${encodeURIComponent(doctorProfile.email)}`);
+    const res = await fetch(`/api/clinic-doctors/${encodeURIComponent(doctorProfile.email)}`, {
+      headers: { "x-session-token": getSessionToken() },
+    });
     if (!res.ok) return;
     const data = await res.json();
     doctorProfile.clinicDoctors = data.doctors || [];
@@ -925,8 +955,8 @@ function renderPartnerProgram() {
       .map(
         (o) => `
           <li class="partner-history-row">
-            <span class="partner-history-patient">${o.patient}</span>
-            <span class="partner-history-meta">${o.validatedAt || ""}</span>
+            <span class="partner-history-patient">${escapeHtml(o.patient)}</span>
+            <span class="partner-history-meta">${escapeHtml(o.validatedAt || "")}</span>
             <span class="partner-history-pts">+${POINTS_PER_REFERRED_PATIENT} pts</span>
           </li>
         `,
@@ -945,7 +975,7 @@ function getOrderOperationalCopy(order) {
   }
 
   if (order.status === "Agendada") {
-    return order.scheduledAt ? `Agendado ${order.scheduledAt}` : "Paciente agendado";
+    return order.scheduledAt ? `Agendado ${escapeHtml(order.scheduledAt)}` : "Paciente agendado";
   }
 
   if (order.status === "Lista para descargar") {
@@ -957,7 +987,7 @@ function getOrderOperationalCopy(order) {
   }
 
   if (order.countsForPartner) {
-    return `Validado ${order.validatedAt} · ${order.validatedBy}`;
+    return `Validado ${escapeHtml(order.validatedAt)} · ${escapeHtml(order.validatedBy)}`;
   }
 
   return "Pendiente de validar asistencia";
@@ -1239,7 +1269,7 @@ function showLogin() {
 
 function getAdminToken() {
   try {
-    const session = JSON.parse(localStorage.getItem(SESSION_KEY) || "{}");
+    const session = JSON.parse(sessionStorage.getItem(SESSION_KEY) || "{}");
     return session.adminToken || "";
   } catch { return ""; }
 }
@@ -1279,7 +1309,8 @@ async function loginAccount(email, password) {
       loadClinicRoster();
     }
 
-    localStorage.setItem(
+    const sessionStore = role === "admin" ? sessionStorage : localStorage;
+    sessionStore.setItem(
       SESSION_KEY,
       JSON.stringify({
         email: normalizedEmail,
@@ -1580,20 +1611,20 @@ function renderDoctorOrders() {
       (order) => `
         <article class="order-row">
           <div class="order-patient">
-            <span class="patient-avatar patient-avatar--${statusClass(order.status)}">${getInitials(order.patient)}</span>
+            <span class="patient-avatar patient-avatar--${statusClass(order.status)}">${escapeHtml(getInitials(order.patient))}</span>
             <div class="order-name">
-              <strong>${order.patient}</strong>
-              <span class="order-meta">${order.studies.join(", ")}</span>
+              <strong>${escapeHtml(order.patient)}</strong>
+              <span class="order-meta">${escapeHtml(order.studies.join(", "))}</span>
               ${
                 order.treatingDoctor && order.treatingDoctor !== order.doctor
-                  ? `<span class="order-meta">Atiende: ${order.treatingDoctor}</span>`
+                  ? `<span class="order-meta">Atiende: ${escapeHtml(order.treatingDoctor)}</span>`
                   : ""
               }
             </div>
           </div>
-          <span class="order-meta">${order.date}</span>
-          <span class="status ${statusClass(order.status)}">${order.status}</span>
-          <button class="order-view-link" data-order-patient="${order.patient}" type="button">Ver →</button>
+          <span class="order-meta">${escapeHtml(order.date || "")}</span>
+          <span class="status ${statusClass(order.status)}">${escapeHtml(order.status)}</span>
+          <button class="order-view-link" data-order-patient="${escapeHtml(order.patient)}" type="button">Ver →</button>
         </article>
       `,
     )
@@ -1633,15 +1664,15 @@ function renderResults(filter = "") {
   const buildRow = (order, isDone) => `
     <article class="result-row ${isDone ? "result-row--done" : ""}">
       <div class="result-name">
-        <strong>${order.patient}</strong>
-        <span class="result-meta">${order.studies.join(", ")}</span>
+        <strong>${escapeHtml(order.patient)}</strong>
+        <span class="result-meta">${escapeHtml(order.studies.join(", "))}</span>
       </div>
-      <span class="result-meta">${order.treatingDoctor || order.doctor}</span>
-      <span class="result-meta result-date">${order.date || ""}</span>
+      <span class="result-meta">${escapeHtml(order.treatingDoctor || order.doctor)}</span>
+      <span class="result-meta result-date">${escapeHtml(order.date || "")}</span>
       ${isDone
         ? `<span class="status descargado">Descargado</span>
            <button class="download-action" data-download-order="${order.id}" type="button">Ver archivos</button>`
-        : `<span class="status ${statusClass(order.status)}">${order.status}</span>
+        : `<span class="status ${statusClass(order.status)}">${escapeHtml(order.status)}</span>
            <button class="download-action ${order.result ? "ready" : ""}" data-download-order="${order.id}" type="button" ${order.result ? "" : "disabled"}>
              ${order.result ? "Descargar" : "Pendiente"}
            </button>`
@@ -1745,18 +1776,32 @@ function closeDownloadModal() {
   activeDownloadOrder = null;
 }
 
-function realDownload(orderId, filename, label = "archivo") {
+async function realDownload(orderId, filename, label = "archivo") {
   if (!orderId || !filename) {
     showToast("Archivo no disponible.");
     return;
   }
   const url = `/api/uploads/${encodeURIComponent(orderId)}/${encodeURIComponent(filename)}`;
-  const a = document.createElement("a");
-  a.href = url;
-  a.download = filename;
-  document.body.appendChild(a);
-  a.click();
-  document.body.removeChild(a);
+  try {
+    const resp = await fetch(url, { headers: { "x-session-token": getSessionToken() } });
+    if (!resp.ok) {
+      const data = await resp.json().catch(() => ({}));
+      showToast(data.error || "No se pudo descargar el archivo.");
+      return;
+    }
+    const blob = await resp.blob();
+    const blobUrl = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = blobUrl;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    setTimeout(() => URL.revokeObjectURL(blobUrl), 10000);
+  } catch {
+    showToast("No se pudo descargar el archivo. Intenta de nuevo.");
+    return;
+  }
 
   markOrderDownloaded(orderId);
 
@@ -1807,27 +1852,27 @@ function renderAdmin() {
       return `
         <article class="admin-row" data-admin-order="${order.id}">
           <div>
-            <strong>${order.patient}</strong>
+            <strong>${escapeHtml(order.patient)}</strong>
             ${rawPhone ? `<span class="admin-patient-phone">
               <a href="${waLink}" target="_blank" rel="noopener" class="phone-wa-link" title="Abrir WhatsApp">
                 <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/><path d="M12 0C5.373 0 0 5.373 0 12c0 2.117.554 4.103 1.523 5.824L0 24l6.356-1.498A11.94 11.94 0 0 0 12 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 21.818a9.8 9.8 0 0 1-5.001-1.367l-.358-.213-3.724.877.91-3.617-.234-.372A9.787 9.787 0 0 1 2.182 12C2.182 6.57 6.57 2.182 12 2.182S21.818 6.57 21.818 12 17.43 21.818 12 21.818z"/></svg>
-                ${rawPhone}
+                ${escapeHtml(rawPhone)}
               </a>
               <a href="tel:${digits}" class="phone-call-link" title="Llamar">Llamar</a>
             </span>` : `<small class="no-phone-hint">Sin teléfono</small>`}
-            <small>${order.studies.join(", ")}</small>
+            <small>${escapeHtml(order.studies.join(", "))}</small>
             <small class="validation-copy">
               ${getOrderOperationalCopy(order)}
             </small>
           </div>
-          <span>${order.doctor}${
+          <span>${escapeHtml(order.doctor)}${
             order.treatingDoctor && order.treatingDoctor !== order.doctor
-              ? `<br /><small class="treating-doctor-label">Atiende: ${order.treatingDoctor}</small>`
+              ? `<br /><small class="treating-doctor-label">Atiende: ${escapeHtml(order.treatingDoctor)}</small>`
               : ""
           }</span>
           <label class="admin-status-control">
             <span>Estatus</span>
-            <select data-admin-status="${order.id}" aria-label="Cambiar estatus de ${order.patient}">
+            <select data-admin-status="${order.id}" aria-label="Cambiar estatus de ${escapeHtml(order.patient)}">
               ${adminOrderStatuses
                 .map((status) => `<option value="${status}" ${order.status === status ? "selected" : ""}>${status}</option>`)
                 .join("")}
@@ -1861,10 +1906,10 @@ function renderAdmin() {
             const date = new Date(e.timestamp).toLocaleDateString("es-MX", { day: "2-digit", month: "short", year: "numeric" });
             const time = new Date(e.timestamp).toLocaleTimeString("es-MX", { hour: "2-digit", minute: "2-digit" });
             const sign = e.delta > 0 ? "+" : "";
-            const reasonLabel = e.reason === "validation" ? "Validación" : e.reason === "reversal" ? "Reversión" : e.reason;
+            const reasonLabel = e.reason === "validation" ? "Validación" : e.reason === "reversal" ? "Reversión" : escapeHtml(e.reason);
             return `<li style="display:flex;justify-content:space-between;align-items:center;padding:4px 0;border-bottom:1px solid #f0f0f0;font-size:0.78rem;">
-              <span style="color:#555;">${date} ${time} · ${reasonLabel}${e.orderId ? " · " + e.orderId : ""}</span>
-              <strong style="color:${e.delta > 0 ? "#1a7a3a" : "#c0392b"};">${sign}${e.delta} pts</strong>
+              <span style="color:#555;">${escapeHtml(date)} ${escapeHtml(time)} · ${reasonLabel}${e.orderId ? " · " + escapeHtml(e.orderId) : ""}</span>
+              <strong style="color:${e.delta > 0 ? "#1a7a3a" : "#c0392b"};">${sign}${Number(e.delta)} pts</strong>
             </li>`;
           }).join("")
         : `<li style="font-size:0.78rem;color:#999;padding:4px 0;">Sin eventos registrados aún.</li>`;
@@ -1872,31 +1917,31 @@ function renderAdmin() {
       return `
         <article class="admin-doctor-card">
           <header>
-            <strong>${doctor.name}</strong>
+            <strong>${escapeHtml(doctor.name)}</strong>
             <span class="admin-chip">${doctor.accountType === "clinic" ? "Clínica" : "Personal"}</span>
-            <span class="admin-chip">${tier.shortName}</span>
+            <span class="admin-chip">${escapeHtml(tier.shortName)}</span>
           </header>
-          <span>${doctor.specialty || "Sin especialidad"}</span>
-          <small class="admin-credential-line">Correo: <strong>${doctor.email}</strong></small>
+          <span>${escapeHtml(doctor.specialty || "Sin especialidad")}</span>
+          <small class="admin-credential-line">Correo: <strong>${escapeHtml(doctor.email)}</strong></small>
           <div class="admin-pw-row" style="display:flex;gap:6px;margin-top:8px;">
-            <input class="admin-pw-input" type="text" placeholder="Nueva contraseña" data-pw-email="${doctor.email}"
+            <input class="admin-pw-input" type="text" placeholder="Nueva contraseña" data-pw-email="${escapeHtml(doctor.email)}"
               style="flex:1;font-size:0.8rem;padding:4px 8px;border:1px solid #ccc;border-radius:6px;" />
-            <button class="small-action admin-reset-password" data-email="${doctor.email}" type="button">Cambiar</button>
+            <button class="small-action admin-reset-password" data-email="${escapeHtml(doctor.email)}" type="button">Cambiar</button>
           </div>
           <div class="admin-notif-row" style="display:flex;align-items:center;gap:8px;margin-top:10px;">
             <label class="admin-notif-label" style="display:flex;align-items:center;gap:6px;font-size:0.8rem;cursor:pointer;">
-              <input type="checkbox" class="admin-notif-toggle" data-email="${doctor.email}" ${notificationsOn ? "checked" : ""} style="width:16px;height:16px;cursor:pointer;" />
+              <input type="checkbox" class="admin-notif-toggle" data-email="${escapeHtml(doctor.email)}" ${notificationsOn ? "checked" : ""} style="width:16px;height:16px;cursor:pointer;" />
               Notificar por correo al subir resultados
             </label>
           </div>
-          <small style="margin-top:4px;display:block;">${doctor.partner.referredPatients} pacientes validados · ${doctor.partner.points.toLocaleString("es-MX")} pts</small>
+          <small style="margin-top:4px;display:block;">${Number(doctor.partner.referredPatients)} pacientes validados · ${Number(doctor.partner.points).toLocaleString("es-MX")} pts</small>
           <details style="margin-top:8px;">
             <summary style="cursor:pointer;font-size:0.8rem;color:var(--brand);user-select:none;">Historial de puntos (${doctorEvents.length})</summary>
             <ul id="${historyId}" style="list-style:none;margin:6px 0 0;padding:0;">
               ${historyRows}
             </ul>
           </details>
-          <button class="ghost-action admin-delete-doctor" data-email="${doctor.email}" type="button" style="margin-top:8px;color:var(--brand);font-size:0.8rem;">Eliminar doctor</button>
+          <button class="ghost-action admin-delete-doctor" data-email="${escapeHtml(doctor.email)}" type="button" style="margin-top:8px;color:var(--brand);font-size:0.8rem;">Eliminar doctor</button>
         </article>
       `;
     })
@@ -1921,7 +1966,7 @@ function renderManualUploadOptions() {
   manualUploadOrder.innerHTML = eligibleOrders
     .map((order) => {
       const studiesLabel = order.studies.join(", ");
-      const label = `${order.patient} · ${studiesLabel} · ${order.status}`;
+      const label = escapeHtml(`${order.patient} · ${studiesLabel} · ${order.status}`);
       return `<option value="${order.id}" ${order.id === currentValue ? "selected" : ""}>${label}</option>`;
     })
     .join("");
@@ -1986,12 +2031,12 @@ function renderDeliveredFiles() {
       return `
         <article class="download-card">
           <header>
-            <strong>${patient}</strong>
+            <strong>${escapeHtml(patient)}</strong>
             ${chip}
           </header>
-          <span>${file.label || "Archivo"} · ${file.filename}</span>
+          <span>${escapeHtml(file.label || "Archivo")} · ${escapeHtml(file.filename)}</span>
           <small>${file.size ? `${formatBytes(file.size)} · ` : ""}${when ? new Date(when).toLocaleString("es-MX") : ""}</small>
-          ${canDelete ? `<button class="ghost-action admin-delete-file" data-order-id="${orderId}" data-filename="${file.filename}" type="button">Eliminar del almacenamiento</button>` : ""}
+          ${canDelete ? `<button class="ghost-action admin-delete-file" data-order-id="${orderId}" data-filename="${escapeHtml(file.filename)}" type="button">Eliminar del almacenamiento</button>` : ""}
         </article>
       `;
     })
@@ -2023,9 +2068,9 @@ function renderUploadQueue() {
       (item) => `
         <article class="upload-item upload-item--${item.status}" data-upload-item="${item.id}">
           <div class="upload-item-info">
-            <strong>${item.file.name}</strong>
-            <span>${formatBytes(item.file.size)} · ${item.order.patient}</span>
-            <small class="upload-item-status">${item.statusText}</small>
+            <strong>${escapeHtml(item.file.name)}</strong>
+            <span>${formatBytes(item.file.size)} · ${escapeHtml(item.order.patient)}</span>
+            <small class="upload-item-status">${escapeHtml(item.statusText)}</small>
           </div>
           <div class="upload-item-progress">
             <div class="upload-item-bar" style="width:${Math.round(item.progress * 100)}%"></div>
@@ -2266,7 +2311,7 @@ function renderProfile() {
       const teamList = teamCard.querySelector("#clinic-team-list");
       const teamDoctors = doctorProfile.clinicDoctors || [];
       teamList.innerHTML = teamDoctors.length
-        ? teamDoctors.map((name) => `<li>${name}</li>`).join("")
+        ? teamDoctors.map((name) => `<li>${escapeHtml(name)}</li>`).join("")
         : '<li class="clinic-team-empty">Aún no hay doctores registrados.</li>';
     }
   }
@@ -2421,6 +2466,7 @@ logoutButton.addEventListener("click", async () => {
   if (token) {
     fetch("/api/logout", { method: "POST", headers: { "x-session-token": token } }).catch(() => {});
   }
+  sessionStorage.removeItem(SESSION_KEY);
   localStorage.removeItem(SESSION_KEY);
   showLogin();
   showToast("Sesión cerrada.");
@@ -3020,7 +3066,7 @@ document.addEventListener("click", async (event) => {
     try {
       const res = await fetch("/api/request-resend", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: { "Content-Type": "application/json", "x-session-token": getSessionToken() },
         body: JSON.stringify({ orderId: activeDownloadOrder.id, filename: resendButton.dataset.requestResend }),
       });
       if (!res.ok) {
@@ -3040,7 +3086,7 @@ document.addEventListener("click", async (event) => {
     try {
       const res = await fetch("/api/plus-interest", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: { "Content-Type": "application/json", "x-session-token": getSessionToken() },
         body: JSON.stringify({ email: doctorProfile.email, module: plusButton.dataset.plusModule }),
       });
       if (!res.ok) {
@@ -3099,39 +3145,41 @@ renderDoctorOrders();
 renderResults();
 
 async function initializePortal() {
-  await apiLoadDoctors();
-
-  const savedSession = localStorage.getItem(SESSION_KEY);
-  if (savedSession) {
-    try {
-      const session = JSON.parse(savedSession);
-      currentRole = session.role || getAccountRole(session.email);
-      if (currentRole === "doctor") {
-        const profile = findDoctorByEmail(session.email);
-        if (!profile) {
-          localStorage.removeItem(SESSION_KEY);
-          showLogin();
-          return;
-        }
-        applyDoctorProfile(profile);
-        loadClinicRoster();
+  const savedSession = sessionStorage.getItem(SESSION_KEY) || localStorage.getItem(SESSION_KEY);
+  if (!savedSession) {
+    showLogin();
+    return;
+  }
+  try {
+    const session = JSON.parse(savedSession);
+    currentRole = session.role || getAccountRole(session.email);
+    if (currentRole === "admin") {
+      await apiLoadDoctors();
+    } else {
+      const profile = await apiLoadMyProfile();
+      if (!profile) {
+        sessionStorage.removeItem(SESSION_KEY);
+        localStorage.removeItem(SESSION_KEY);
+        showLogin();
+        return;
       }
-      await apiLoadOrders();
-      if (currentRole === "admin") {
-        await apiLoadPartnerEvents();
-        refreshDeliveredFiles();
-        refreshPlusInterestAdmin();
-      }
-      const gotoView = new URLSearchParams(window.location.search).get("goto");
-      showApp(
-        false,
-        currentRole === "admin" ? "admin" : gotoView === "results" ? "results" : "dashboard",
-      );
-    } catch {
-      localStorage.removeItem(SESSION_KEY);
-      showLogin();
+      applyDoctorProfile(profile);
+      loadClinicRoster();
     }
-  } else {
+    await apiLoadOrders();
+    if (currentRole === "admin") {
+      await apiLoadPartnerEvents();
+      refreshDeliveredFiles();
+      refreshPlusInterestAdmin();
+    }
+    const gotoView = new URLSearchParams(window.location.search).get("goto");
+    showApp(
+      false,
+      currentRole === "admin" ? "admin" : gotoView === "results" ? "results" : "dashboard",
+    );
+  } catch {
+    sessionStorage.removeItem(SESSION_KEY);
+    localStorage.removeItem(SESSION_KEY);
     showLogin();
   }
 }
