@@ -324,7 +324,11 @@ async function apiUpdateOrder(orderId, changes) {
 
 async function apiLoadDoctors() {
   try {
-    const res = await fetch("/api/doctors");
+    const saved = JSON.parse(localStorage.getItem(SESSION_KEY) || "{}");
+    const headers = {};
+    if (saved.adminToken) headers["x-admin-token"] = saved.adminToken;
+    else if (saved.sessionToken) headers["x-session-token"] = saved.sessionToken;
+    const res = await fetch("/api/doctors", { headers });
     if (!res.ok) return;
     const data = await res.json();
     for (const [email, doc] of Object.entries(data.doctors || {})) {
