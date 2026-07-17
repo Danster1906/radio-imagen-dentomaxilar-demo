@@ -369,11 +369,17 @@ async function handleRequest(req, res) {
         if (!body.name || !body.name.trim()) { json(res, 400, { error: "El nombre es obligatorio" }); return; }
         const currentDoctor = await findDoctorByIdOrEmail(email);
         if (!currentDoctor) { json(res, 404, { error: "Doctor activo no encontrado" }); return; }
+        if (typeof body.photo === "string" && body.photo.length > 1_500_000) {
+          json(res, 413, { error: "La foto es demasiado grande. Usa una imagen más pequeña." });
+          return;
+        }
         const doctor = await updateProfile(email, {
           name: body.name.trim(), specialty: String(body.specialty || "").trim(),
           clinic: String(body.clinic || "").trim(), contactPhone: String(body.contactPhone || "").trim(),
           city: String(body.city || "").trim(), accountType: body.accountType,
           notifications: body.notifications,
+          photo: typeof body.photo === "string" ? body.photo : undefined,
+          photoCrop: body.photoCrop && typeof body.photoCrop === "object" ? body.photoCrop : undefined,
         });
         if (!doctor) { json(res, 404, { error: "Doctor activo no encontrado" }); return; }
         json(res, 200, { ok: true, doctor });
@@ -510,16 +516,12 @@ async function handleRequest(req, res) {
       return;
     }
 
-    // PUT /api/profile — el doctor actualiza su propio perfil (datos, foto y encuadre)
+    // PUT /api/profile — el doctor actualiza sus datos; la foto sólo la gestiona el administrador
     if (urlPath === "/api/profile" && req.method === "PUT") {
       const session = await requireDoctorSession(req, res);
       if (!session) return;
       try {
         const body = await readBody(req);
-        if (typeof body.photo === "string" && body.photo.length > 1_500_000) {
-          json(res, 413, { error: "La foto es demasiado grande. Usa una imagen más pequeña." });
-          return;
-        }
         if (typeof body.notifications === "boolean") {
           await updateNotifications(session.email, body.notifications);
         }
@@ -529,8 +531,6 @@ async function handleRequest(req, res) {
           clinic: typeof body.clinic === "string" ? body.clinic.trim() : undefined,
           contactPhone: typeof body.contactPhone === "string" ? body.contactPhone.trim() : undefined,
           city: typeof body.city === "string" ? body.city.trim() : undefined,
-          photo: typeof body.photo === "string" ? body.photo : undefined,
-          photoCrop: body.photoCrop && typeof body.photoCrop === "object" ? body.photoCrop : undefined,
           profileNotes: typeof body.profileNotes === "string" ? body.profileNotes : undefined,
         });
         if (!doctor) { json(res, 404, { error: "Cuenta no encontrada" }); return; }
