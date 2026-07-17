@@ -1927,6 +1927,7 @@ function renderAdmin() {
             <label>Teléfono<input name="contactPhone" value="${escapeHtml(doctor.contactPhone || "")}" /></label>
             <label>Ciudad<input name="city" value="${escapeHtml(doctor.city || "")}" /></label>
             <label>Tipo<select name="accountType"><option value="personal" ${doctor.accountType !== "clinic" ? "selected" : ""}>Personal</option><option value="clinic" ${doctor.accountType === "clinic" ? "selected" : ""}>Clínica</option></select></label>
+            <label class="admin-edit-photo">Foto del perfil<input name="profilePhoto" type="file" accept="image/png,image/jpeg,image/webp" /><small>Selecciona una imagen para guardarla o reemplazarla.</small></label>
             <label class="admin-edit-notification"><input name="notifications" type="checkbox" ${doctor.notifications !== false ? "checked" : ""} /> Notificar resultados por correo</label>
             <div class="admin-edit-password"><span>Nueva contraseña</span><div class="admin-pw-row"><div class="password-field"><input class="admin-pw-input" type="password" minlength="8" autocomplete="new-password" placeholder="Dejar vacía para conservar" data-pw-email="${escapeHtml(doctor.email)}" /><button class="password-toggle" type="button" data-password-toggle aria-label="Mostrar contraseña" aria-pressed="false">Ver</button></div><button class="small-action admin-reset-password" data-email="${escapeHtml(doctor.email)}" type="button">Restablecer</button></div></div>
             <div class="admin-edit-actions"><button class="primary-action" type="submit">Guardar cambios</button><button class="ghost-action admin-delete-doctor" data-email="${escapeHtml(doctor.email)}" type="button">Archivar</button></div>
@@ -2708,7 +2709,7 @@ profileForm.addEventListener("submit", async (event) => {
   }
 });
 
-profilePhotoInput.addEventListener("change", () => {
+profilePhotoInput?.addEventListener("change", () => {
   applyNewProfilePhoto(profilePhotoInput.files[0]);
   profilePhotoInput.value = "";
 });
@@ -2728,18 +2729,6 @@ document.querySelector("#notifications-toggle")?.addEventListener("change", asyn
 });
 
 const photoHeroZone = document.querySelector(".profile-photo-hero");
-if (photoHeroZone) {
-  photoHeroZone.addEventListener("dragover", (event) => {
-    event.preventDefault();
-    photoHeroZone.classList.add("dragover");
-  });
-  photoHeroZone.addEventListener("dragleave", () => photoHeroZone.classList.remove("dragover"));
-  photoHeroZone.addEventListener("drop", (event) => {
-    event.preventDefault();
-    photoHeroZone.classList.remove("dragover");
-    applyNewProfilePhoto(event.dataTransfer?.files?.[0]);
-  });
-}
 
 [photoZoomInput, photoXInput, photoYInput].forEach((input) => {
   input.addEventListener("input", () => {
@@ -2748,15 +2737,15 @@ if (photoHeroZone) {
   });
 });
 
-editableAvatar.addEventListener("pointerdown", startPhotoDrag);
-editableAvatar.addEventListener("pointermove", movePhotoDrag);
-editableAvatar.addEventListener("pointerup", (event) => {
+editableAvatar?.addEventListener("pointerdown", startPhotoDrag);
+editableAvatar?.addEventListener("pointermove", movePhotoDrag);
+editableAvatar?.addEventListener("pointerup", (event) => {
   stopPhotoDrag(event);
   scheduleCropSave();
 });
-editableAvatar.addEventListener("pointercancel", stopPhotoDrag);
+editableAvatar?.addEventListener("pointercancel", stopPhotoDrag);
 
-centerPhotoButton.addEventListener("click", () => {
+centerPhotoButton?.addEventListener("click", () => {
   doctorProfile.photoZoom = 1;
   doctorProfile.photoX = 0;
   doctorProfile.photoY = 0;
@@ -2994,6 +2983,14 @@ adminDoctorList?.addEventListener("submit", async (event) => {
     city: values.get("city").trim(), accountType: values.get("accountType"),
     notifications: values.get("notifications") === "on",
   };
+  const photoFile = values.get("profilePhoto");
+  if (photoFile instanceof File && photoFile.size) {
+    if (!photoFile.type.startsWith("image/")) { showToast("Selecciona una imagen PNG, JPG o WebP."); return; }
+    try {
+      payload.photo = await resizeProfilePhoto(photoFile);
+      payload.photoCrop = { zoom: 1, x: 0, y: 0 };
+    } catch { showToast("No se pudo procesar la imagen seleccionada."); return; }
+  }
   const res = await fetch(`/api/doctors/${encodeURIComponent(email)}/profile`, {
     method: "PUT", headers: { "Content-Type": "application/json", "x-admin-token": getAdminToken() }, body: JSON.stringify(payload),
   });
