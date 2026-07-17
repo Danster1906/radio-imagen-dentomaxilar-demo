@@ -12,7 +12,7 @@
       href="https://fonts.googleapis.com/css2?family=Schibsted+Grotesk:wght@400;500;600;700;800&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap"
     />
     <link rel="stylesheet" href="styles.css?v=archive-results-2" />
-    <link rel="stylesheet" href="admin.css?v=archive-results-2" />
+    <link rel="stylesheet" href="admin.css?v=admin-doctors-table-1" />
   </head>
   <body>
     <section class="login-screen" id="login-screen">
@@ -799,14 +799,19 @@
           </div>
 
           <div class="admin-grid admin-section" data-admin-section-panel="doctors" hidden>
-            <section class="panel admin-panel">
+            <section class="panel admin-panel wide">
               <div class="panel-heading">
                 <div>
-                  <span class="eyebrow">Doctores</span>
-                  <h2>Alta y socios</h2>
+                  <span class="eyebrow">Doctores activos</span>
+                  <h2>Directorio y edición rápida</h2>
                 </div>
               </div>
-              <div class="admin-doctor-list" id="admin-doctor-list"></div>
+              <div class="admin-doctor-table-wrap">
+                <table class="admin-doctor-table">
+                  <thead><tr><th>Doctor</th><th>Contacto</th><th>Cuenta</th><th>Socios</th><th>Acciones</th></tr></thead>
+                  <tbody id="admin-doctor-list"></tbody>
+                </table>
+              </div>
             </section>
 
             <section class="panel admin-panel wide">
@@ -961,6 +966,6 @@
     </div>
 
     <div class="toast" id="toast" role="status" aria-live="polite"></div>
-    <script src="app.js?v=archive-results-2"></script>
+    <script src="app.js?v=admin-doctors-table-1"></script>
   </body>
 </html>

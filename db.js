@@ -435,7 +435,7 @@ export async function updatePartner(email, { referredPatients, points }) {
   return { referredPatients: rows[0].referred_patients, points: rows[0].points };
 }
 
-export async function updateProfile(email, { name, specialty, clinic, contactPhone, city, photo, photoCrop, profileNotes }) {
+export async function updateProfile(email, { name, specialty, clinic, contactPhone, city, photo, photoCrop, profileNotes, accountType, notifications }) {
   const { rows } = await pool.query(
     `UPDATE accounts SET
        name = COALESCE($2, name),
@@ -445,7 +445,9 @@ export async function updateProfile(email, { name, specialty, clinic, contactPho
        city = COALESCE($6, city),
        photo = COALESCE($7, photo),
        photo_crop = COALESCE($8, photo_crop),
-       profile_notes = COALESCE($9, profile_notes)
+       profile_notes = COALESCE($9, profile_notes),
+       account_type = COALESCE($10, account_type),
+       notifications = COALESCE($11, notifications)
      WHERE email = $1 AND role = 'doctor'
      RETURNING *`,
     [
@@ -458,6 +460,8 @@ export async function updateProfile(email, { name, specialty, clinic, contactPho
       photo ?? null,
       photoCrop ? JSON.stringify(photoCrop) : null,
       profileNotes ?? null,
+      accountType === "clinic" || accountType === "personal" ? accountType : null,
+      typeof notifications === "boolean" ? notifications : null,
     ],
   );
   return rows[0] ? rowToDoctor(rows[0]) : null;

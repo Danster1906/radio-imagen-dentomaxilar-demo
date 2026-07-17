@@ -378,6 +378,7 @@ async function apiLoadMyProfile() {
 const doctorDirectory = {};
 const archivedDoctorDirectory = {};
 let ownershipReviews = [];
+let editingDoctorEmail = "";
 
 const viewTitles = {
   dashboard: "Panel doctor",
@@ -1224,6 +1225,7 @@ async function deleteDoctorFromAdmin(email) {
     const res = await fetch(`/api/doctors/${encodeURIComponent(email)}`, { method: "DELETE", headers: { "x-admin-token": getAdminToken() } });
     if (!res.ok) { showToast("No se pudo eliminar el doctor."); return; }
     archivedDoctorDirectory[email] = { ...doctorDirectory[email], active: false };
+    if (editingDoctorEmail === email) editingDoctorEmail = "";
     delete doctorDirectory[email];
     renderAdmin();
     showToast("Doctor archivado. Sus datos se conservaron.");
@@ -1905,62 +1907,33 @@ function renderAdmin() {
     })
     .join("");
 
-  adminDoctorList.innerHTML = allDoctors
+  adminDoctorList.innerHTML = allDoctors.length ? allDoctors
     .map((doctor) => {
       const tier = getPartnerTier(doctor.partner.referredPatients);
-      const notificationsOn = doctor.notifications !== false;
-      const doctorEvents = partnerEvents
-        .filter((e) => e.email === doctor.email)
-        .slice()
-        .reverse();
-      const historyId = `partner-history-${doctor.email.replace(/[^a-z0-9]/gi, "-")}`;
-      const historyRows = doctorEvents.length
-        ? doctorEvents.map((e) => {
-            const date = new Date(e.timestamp).toLocaleDateString("es-MX", { day: "2-digit", month: "short", year: "numeric" });
-            const time = new Date(e.timestamp).toLocaleTimeString("es-MX", { hour: "2-digit", minute: "2-digit" });
-            const sign = e.delta > 0 ? "+" : "";
-            const reasonLabel = e.reason === "validation" ? "Validación" : e.reason === "reversal" ? "Reversión" : escapeHtml(e.reason);
-            return `<li style="display:flex;justify-content:space-between;align-items:center;padding:4px 0;border-bottom:1px solid #f0f0f0;font-size:0.78rem;">
-              <span style="color:#555;">${escapeHtml(date)} ${escapeHtml(time)} · ${reasonLabel}${e.orderId ? " · " + escapeHtml(e.orderId) : ""}</span>
-              <strong style="color:${e.delta > 0 ? "#1a7a3a" : "#c0392b"};">${sign}${Number(e.delta)} pts</strong>
-            </li>`;
-          }).join("")
-        : `<li style="font-size:0.78rem;color:#999;padding:4px 0;">Sin eventos registrados aún.</li>`;
-
+      const isEditing = editingDoctorEmail === doctor.email;
       return `
-        <article class="admin-doctor-card">
-          <header>
-            <strong>${escapeHtml(doctor.name)}</strong>
-            <span class="admin-chip">${doctor.accountType === "clinic" ? "Clínica" : "Personal"}</span>
-            <span class="admin-chip">${escapeHtml(tier.shortName)}</span>
-          </header>
-          <span>${escapeHtml(doctor.specialty || "Sin especialidad")}</span>
-          <small class="admin-credential-line">Correo: <strong>${escapeHtml(doctor.email)}</strong></small>
-          <div class="admin-pw-row">
-            <div class="password-field">
-              <input class="admin-pw-input" type="password" minlength="8" autocomplete="new-password" placeholder="Nueva contraseña" data-pw-email="${escapeHtml(doctor.email)}" />
-              <button class="password-toggle" type="button" data-password-toggle aria-label="Mostrar contraseña" aria-pressed="false">Ver</button>
-            </div>
-            <button class="small-action admin-reset-password" data-email="${escapeHtml(doctor.email)}" type="button">Cambiar</button>
-          </div>
-          <div class="admin-notif-row" style="display:flex;align-items:center;gap:8px;margin-top:10px;">
-            <label class="admin-notif-label" style="display:flex;align-items:center;gap:6px;font-size:0.8rem;cursor:pointer;">
-              <input type="checkbox" class="admin-notif-toggle" data-email="${escapeHtml(doctor.email)}" ${notificationsOn ? "checked" : ""} style="width:16px;height:16px;cursor:pointer;" />
-              Notificar por correo al subir resultados
-            </label>
-          </div>
-          <small style="margin-top:4px;display:block;">${Number(doctor.partner.referredPatients)} pacientes validados · ${Number(doctor.partner.points).toLocaleString("es-MX")} pts</small>
-          <details style="margin-top:8px;">
-            <summary style="cursor:pointer;font-size:0.8rem;color:var(--brand);user-select:none;">Historial de puntos (${doctorEvents.length})</summary>
-            <ul id="${historyId}" style="list-style:none;margin:6px 0 0;padding:0;">
-              ${historyRows}
-            </ul>
-          </details>
-          <button class="ghost-action admin-delete-doctor" data-email="${escapeHtml(doctor.email)}" type="button" style="margin-top:8px;color:var(--brand);font-size:0.8rem;">Archivar doctor</button>
-        </article>
+        <tr class="admin-doctor-summary">
+          <td data-label="Doctor"><strong>${escapeHtml(doctor.name)}</strong><small>${escapeHtml(doctor.id)} · ${escapeHtml(doctor.specialty || "Sin especialidad")}</small></td>
+          <td data-label="Contacto"><span>${escapeHtml(doctor.email)}</span><small>${escapeHtml(doctor.contactPhone || "Sin teléfono")} · ${escapeHtml(doctor.city || "Sin ciudad")}</small></td>
+          <td data-label="Cuenta"><span class="admin-chip">${doctor.accountType === "clinic" ? "Clínica" : "Personal"}</span><small>${escapeHtml(doctor.clinic || "Sin clínica")}</small></td>
+          <td data-label="Socios"><strong>${Number(doctor.partner.referredPatients)} pacientes</strong><small>${Number(doctor.partner.points).toLocaleString("es-MX")} pts · ${escapeHtml(tier.shortName)}</small></td>
+          <td data-label="Acciones" class="admin-doctor-actions"><button class="small-action admin-edit-doctor" data-email="${escapeHtml(doctor.email)}" type="button">${isEditing ? "Cerrar" : "Editar"}</button></td>
+        </tr>
+        ${isEditing ? `<tr class="admin-doctor-editor-row"><td colspan="5">
+          <form class="admin-doctor-edit-form" data-edit-email="${escapeHtml(doctor.email)}">
+            <label>Nombre<input name="name" value="${escapeHtml(doctor.name)}" required /></label>
+            <label>Especialidad<input name="specialty" value="${escapeHtml(doctor.specialty || "")}" /></label>
+            <label>Clínica<input name="clinic" value="${escapeHtml(doctor.clinic || "")}" /></label>
+            <label>Teléfono<input name="contactPhone" value="${escapeHtml(doctor.contactPhone || "")}" /></label>
+            <label>Ciudad<input name="city" value="${escapeHtml(doctor.city || "")}" /></label>
+            <label>Tipo<select name="accountType"><option value="personal" ${doctor.accountType !== "clinic" ? "selected" : ""}>Personal</option><option value="clinic" ${doctor.accountType === "clinic" ? "selected" : ""}>Clínica</option></select></label>
+            <label class="admin-edit-notification"><input name="notifications" type="checkbox" ${doctor.notifications !== false ? "checked" : ""} /> Notificar resultados por correo</label>
+            <div class="admin-edit-password"><span>Nueva contraseña</span><div class="admin-pw-row"><div class="password-field"><input class="admin-pw-input" type="password" minlength="8" autocomplete="new-password" placeholder="Dejar vacía para conservar" data-pw-email="${escapeHtml(doctor.email)}" /><button class="password-toggle" type="button" data-password-toggle aria-label="Mostrar contraseña" aria-pressed="false">Ver</button></div><button class="small-action admin-reset-password" data-email="${escapeHtml(doctor.email)}" type="button">Restablecer</button></div></div>
+            <div class="admin-edit-actions"><button class="primary-action" type="submit">Guardar cambios</button><button class="ghost-action admin-delete-doctor" data-email="${escapeHtml(doctor.email)}" type="button">Archivar</button></div>
+          </form>
+        </td></tr>` : ""}
       `;
-    })
-    .join("");
+    }).join("") : '<tr><td colspan="5"><p class="admin-helper">No hay doctores activos.</p></td></tr>';
 
   if (adminArchivedList) {
     const archived = Object.values(archivedDoctorDirectory);
@@ -2975,6 +2948,13 @@ document.addEventListener("click", (event) => {
 });
 
 adminDoctorList?.addEventListener("click", async (event) => {
+  const editBtn = event.target.closest(".admin-edit-doctor");
+  if (editBtn) {
+    editingDoctorEmail = editingDoctorEmail === editBtn.dataset.email ? "" : editBtn.dataset.email;
+    renderAdmin();
+    return;
+  }
+
   const deleteBtn = event.target.closest(".admin-delete-doctor");
   if (deleteBtn) {
     await deleteDoctorFromAdmin(deleteBtn.dataset.email);
@@ -3000,6 +2980,29 @@ adminDoctorList?.addEventListener("click", async (event) => {
     } catch { showToast("Error de conexión."); }
     return;
   }
+});
+
+adminDoctorList?.addEventListener("submit", async (event) => {
+  const form = event.target.closest(".admin-doctor-edit-form");
+  if (!form) return;
+  event.preventDefault();
+  const values = new FormData(form);
+  const email = form.dataset.editEmail;
+  const payload = {
+    name: values.get("name").trim(), specialty: values.get("specialty").trim(),
+    clinic: values.get("clinic").trim(), contactPhone: values.get("contactPhone").trim(),
+    city: values.get("city").trim(), accountType: values.get("accountType"),
+    notifications: values.get("notifications") === "on",
+  };
+  const res = await fetch(`/api/doctors/${encodeURIComponent(email)}/profile`, {
+    method: "PUT", headers: { "Content-Type": "application/json", "x-admin-token": getAdminToken() }, body: JSON.stringify(payload),
+  });
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) { showToast(data.error || "No se pudo actualizar el perfil."); return; }
+  doctorDirectory[email] = { ...doctorDirectory[email], ...data.doctor };
+  editingDoctorEmail = "";
+  renderAdmin();
+  showToast(`Perfil de ${payload.name} actualizado.`);
 });
 
 adminArchivedList?.addEventListener("click", async (event) => {

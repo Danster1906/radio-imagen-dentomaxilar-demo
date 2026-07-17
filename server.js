@@ -360,6 +360,27 @@ async function handleRequest(req, res) {
       return;
     }
 
+    // PUT /api/doctors/:email/profile — edición directa desde el administrador
+    if (urlPath.match(/^\/api\/doctors\/[^/]+\/profile$/) && req.method === "PUT") {
+      if (!requireAdmin(req, res)) return;
+      const email = decodeURIComponent(urlPath.replace("/api/doctors/", "").replace("/profile", ""));
+      try {
+        const body = await readBody(req);
+        if (!body.name || !body.name.trim()) { json(res, 400, { error: "El nombre es obligatorio" }); return; }
+        const currentDoctor = await findDoctorByIdOrEmail(email);
+        if (!currentDoctor) { json(res, 404, { error: "Doctor activo no encontrado" }); return; }
+        const doctor = await updateProfile(email, {
+          name: body.name.trim(), specialty: String(body.specialty || "").trim(),
+          clinic: String(body.clinic || "").trim(), contactPhone: String(body.contactPhone || "").trim(),
+          city: String(body.city || "").trim(), accountType: body.accountType,
+          notifications: body.notifications,
+        });
+        if (!doctor) { json(res, 404, { error: "Doctor activo no encontrado" }); return; }
+        json(res, 200, { ok: true, doctor });
+      } catch (e) { json(res, 400, { error: e.message }); }
+      return;
+    }
+
     // PUT /api/doctors/:email/password
     if (urlPath.match(/^\/api\/doctors\/[^/]+\/password$/) && req.method === "PUT") {
       if (!requireAdmin(req, res)) return;
