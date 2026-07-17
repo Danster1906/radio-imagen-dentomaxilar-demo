@@ -909,3 +909,22 @@
   font-size: 0.72rem;
   font-weight: 700;
 }
+
+/* Admin orders: compact expandable rows */
+.admin-row { display: block; overflow: hidden; padding: 0; }
+.admin-row:hover { transform: none; }
+.admin-row[open] { background: #fff; border-color: var(--rid-red); box-shadow: 0 4px 18px -4px rgba(214,43,43,.13), 0 2px 8px -2px rgba(22,32,58,.08); }
+.admin-row-summary { display: grid; grid-template-columns: minmax(220px,1.15fr) minmax(170px,.8fr) minmax(145px,auto) minmax(110px,auto); align-items: center; gap: 16px; padding: 14px 18px; cursor: pointer; list-style: none; }
+.admin-row-summary::-webkit-details-marker { display: none; }
+.admin-order-patient, .admin-order-doctor, .admin-detail-block { display: grid; gap: 4px; min-width: 0; }
+.admin-order-doctor > span, .admin-detail-label { color: var(--muted); font-size: .68rem; font-weight: 900; text-transform: uppercase; }
+.admin-order-status { justify-self: start; }
+.admin-row-toggle { display: inline-flex; align-items: center; justify-content: flex-end; gap: 8px; color: var(--rid-red-dark) !important; font-weight: 800; }
+.admin-row-toggle::after { content: "⌄"; display: inline-grid; place-items: center; width: 28px; height: 28px; border: 1px solid var(--rid-cream-border); border-radius: 50%; background: #fff; transition: transform 150ms ease; }
+.admin-row[open] .admin-row-toggle::after { transform: rotate(180deg); }
+.admin-row[open] .admin-row-toggle span { font-size: 0; }
+.admin-row[open] .admin-row-toggle span::after { content: "Ocultar"; font-size: .78rem; }
+.admin-row-details { display: grid; grid-template-columns: minmax(180px,.7fr) minmax(260px,1.3fr); gap: 18px; padding: 18px; border-top: 1px solid var(--rid-cream-border); background: #fffdfc; }
+.admin-detail-workflow { display: grid; grid-template-columns: minmax(180px,.8fr) minmax(220px,1fr) auto; align-items: end; gap: 16px; grid-column: 1 / -1; padding-top: 16px; border-top: 1px solid var(--rid-cream-border); }
+@media (max-width: 1100px) { .admin-row-summary { grid-template-columns: minmax(190px,1fr) minmax(150px,.8fr) auto; } .admin-row-toggle { grid-column: 1 / -1; justify-content: flex-start; } .admin-detail-workflow { grid-template-columns: 1fr 1fr; } .admin-row-actions { grid-column: 1 / -1; justify-content: flex-start; } }
+@media (max-width: 760px) { .admin-row-summary, .admin-row-details, .admin-detail-workflow { grid-template-columns: 1fr; } .admin-order-status, .admin-row-toggle, .admin-row-actions { grid-column: auto; } }
