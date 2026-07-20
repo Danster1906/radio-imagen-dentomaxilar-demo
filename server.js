@@ -16,6 +16,7 @@ import {
   updateProfile,
   updateNotifications,
   deleteAccount,
+  permanentlyDeleteAccount,
   restoreAccount,
   listOwnershipReviews,
   resolveOwnershipReview,
@@ -437,9 +438,16 @@ async function handleRequest(req, res) {
       if (!requireAdmin(req, res)) return;
       const email = decodeURIComponent(urlPath.replace("/api/doctors/", ""));
       try {
+        const permanent = new URL(req.url, "http://localhost").searchParams.get("permanent") === "true";
+        if (permanent) {
+          const result = await permanentlyDeleteAccount(email);
+          if (!result) { json(res, 404, { error: "Doctor no encontrado" }); return; }
+          json(res, 200, { ok: true, permanent: true, ...result });
+          return;
+        }
         const deleted = await deleteAccount(email);
         if (!deleted) { json(res, 404, { error: "Doctor no encontrado" }); return; }
-        json(res, 200, { ok: true });
+        json(res, 200, { ok: true, permanent: false });
       } catch (e) { json(res, 500, { error: e.message }); }
       return;
     }

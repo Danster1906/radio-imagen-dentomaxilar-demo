@@ -786,9 +786,20 @@
             <section class="panel admin-panel wide">
               <div class="panel-heading">
                 <div>
-                  <span class="eyebrow">Almacenamiento temporal</span>
-                  <h2>Archivos entregados</h2>
+                  <span class="eyebrow">Control de entregas</span>
+                  <h2>Estado de resultados</h2>
                 </div>
+              </div>
+              <div class="admin-result-tabs" role="tablist" aria-label="Filtrar resultados por etapa">
+                <button class="active" data-admin-results-filter="pending-upload" type="button" role="tab">
+                  Por subir <span data-admin-results-count="pending-upload">0</span>
+                </button>
+                <button data-admin-results-filter="available" type="button" role="tab">
+                  En espera de descarga <span data-admin-results-count="available">0</span>
+                </button>
+                <button data-admin-results-filter="downloaded" type="button" role="tab">
+                  Descargados <span data-admin-results-count="downloaded">0</span>
+                </button>
               </div>
               <div class="delivered-files" id="delivered-files"></div>
             </section>
@@ -801,7 +812,12 @@
                   <span class="eyebrow">Doctores activos</span>
                   <h2>Directorio y edición rápida</h2>
                 </div>
+                <label class="admin-doctor-search">
+                  <span class="sr-only">Buscar doctor</span>
+                  <input id="admin-doctor-search" type="search" placeholder="Buscar por nombre, correo, clínica o ID" autocomplete="off" />
+                </label>
               </div>
+              <p class="admin-directory-count" id="admin-doctor-count"></p>
               <div class="admin-doctor-table-wrap">
                 <table class="admin-doctor-table">
                   <thead><tr><th>Doctor</th><th>Contacto</th><th>Cuenta</th><th>Socios</th><th>Acciones</th></tr></thead>
@@ -817,7 +833,8 @@
             </section>
 
             <section class="panel admin-panel wide">
-              <div class="panel-heading"><div><span class="eyebrow">Acceso bloqueado</span><h2>Perfiles archivados</h2></div></div>
+              <div class="panel-heading"><div><span class="eyebrow">Acceso bloqueado</span><h2>Perfiles desactivados</h2></div></div>
+              <p class="admin-helper">Puedes restaurar el acceso o eliminar definitivamente el usuario. Las órdenes se conservan como historial operativo.</p>
               <div class="admin-doctor-list" id="admin-archived-list"></div>
             </section>
 

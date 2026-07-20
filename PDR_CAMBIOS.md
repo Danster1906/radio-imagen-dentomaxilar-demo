@@ -1120,6 +1120,38 @@ El acceso privado de doctores muestra una marca más limpia y consistente con la
 
 No cambia la estructura de datos ni la configuración de Supabase.
 
+## 2026-07-20 - Eliminación de doctores y control operativo de resultados
+
+### Objetivo
+
+Dar al administrador control real sobre las cuentas de doctores y separar visualmente los estudios según la etapa de entrega de sus resultados.
+
+### Cambios realizados
+
+- Se agregó búsqueda de doctores por nombre, correo, ID, especialidad, clínica, teléfono o ciudad.
+- Se separaron las acciones `Desactivar acceso` y `Eliminar perfil`.
+- La eliminación permanente borra cuenta, perfil y sesiones; conserva las órdenes como historial operativo y desvincula archivos y subidas temporales del usuario eliminado.
+- La eliminación permanente requiere dos confirmaciones y está disponible tanto para cuentas activas como desactivadas.
+- La vista de resultados ahora se divide en `Por subir`, `En espera de descarga` y `Descargados`, cada una con contador independiente.
+- Los estudios pendientes ofrecen una acción directa para seleccionarlos en el formulario de carga.
+- Las solicitudes de reenvío vuelven a la bandeja `Por subir`.
+
+### Razón del cambio
+
+El administrador necesitaba eliminar usuarios creados por error o que ya no deben tener cuenta, localizar rápidamente un doctor específico y saber qué resultados requieren acción sin mezclar archivos pendientes con entregas finalizadas.
+
+### Impacto en producto
+
+La administración de doctores tiene una acción de eliminación definitiva visible y segura. La operación de resultados queda organizada por siguiente acción: cargar, esperar descarga o consultar historial descargado.
+
+### Impacto en datos
+
+- `accounts`: se elimina la fila del doctor cuando el administrador confirma la eliminación permanente.
+- `sessions` y `plus_interest`: se eliminan los registros del doctor.
+- `partner_events`: se conserva la auditoría usando el identificador anónimo `deleted:<doctor_id>`.
+- `files_index` y `upload_sessions`: se conserva el registro, pero `doctor_id` queda en `NULL`.
+- `orders`: no se eliminan; permanecen disponibles como historial operativo y clínico.
+
 ## Plantilla para próximos cambios
 
 ### YYYY-MM-DD - Nombre del cambio

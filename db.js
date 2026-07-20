@@ -491,6 +491,52 @@ export async function deleteAccount(email) {
   } finally { client.release(); }
 }
 
+export async function permanentlyDeleteAccount(email) {
+  const client = await pool.connect();
+  try {
+    await client.query("BEGIN");
+    const normalizedEmail = email.toLowerCase();
+    const { rows } = await client.query(
+      "SELECT id, name FROM accounts WHERE email = $1 AND role = 'doctor' FOR UPDATE",
+      [normalizedEmail],
+    );
+    const account = rows[0];
+    if (!account) {
+      await client.query("ROLLBACK");
+      return null;
+    }
+
+    const { rows: orderRows } = await client.query(
+      "SELECT count(*)::int AS total FROM orders WHERE doctor_id = $1",
+      [account.id],
+    );
+
+    // Las órdenes se conservan como historial operativo. Se elimina el acceso
+    // y se desconectan los datos auxiliares que ya no deben apuntar al perfil.
+    await client.query("DELETE FROM sessions WHERE email = $1", [normalizedEmail]);
+    await client.query("DELETE FROM plus_interest WHERE email = $1", [normalizedEmail]);
+    await client.query(
+      "UPDATE partner_events SET email = $2 WHERE email = $1",
+      [normalizedEmail, `deleted:${account.id}`],
+    );
+    await client.query("UPDATE files_index SET doctor_id = NULL WHERE doctor_id = $1", [account.id]);
+    await client.query("UPDATE upload_sessions SET doctor_id = NULL WHERE doctor_id = $1", [account.id]);
+    await client.query("DELETE FROM accounts WHERE email = $1 AND role = 'doctor'", [normalizedEmail]);
+    await client.query("COMMIT");
+
+    return {
+      id: account.id,
+      name: account.name,
+      preservedOrders: orderRows[0]?.total || 0,
+    };
+  } catch (err) {
+    await client.query("ROLLBACK");
+    throw err;
+  } finally {
+    client.release();
+  }
+}
+
 export async function restoreAccount(email) {
   const { rows } = await pool.query(
     `UPDATE accounts SET active = TRUE, archived_at = NULL

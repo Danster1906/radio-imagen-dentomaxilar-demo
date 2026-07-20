@@ -172,6 +172,7 @@ const adminProfile = {
 };
 
 let deliveredFilesIndex = {};
+let adminResultsFilter = "pending-upload";
 
 const downloadedOrders = new Set(
   JSON.parse(localStorage.getItem("ri_downloaded_orders") || "[]")
@@ -407,6 +408,8 @@ const resultsSearch = document.querySelector("#results-search");
 const adminStatusFilter = document.querySelector("#admin-status-filter");
 const adminOrderTable = document.querySelector("#admin-order-table");
 const adminDoctorList = document.querySelector("#admin-doctor-list");
+const adminDoctorSearch = document.querySelector("#admin-doctor-search");
+const adminDoctorCount = document.querySelector("#admin-doctor-count");
 const adminArchivedList = document.querySelector("#admin-archived-list");
 const adminReviewList = document.querySelector("#admin-review-list");
 const adminDoctorForm = document.querySelector("#admin-doctor-form");
@@ -420,6 +423,7 @@ const uploadDropzone = document.querySelector("#upload-dropzone");
 const uploadFileInput = document.querySelector("#upload-file-input");
 const uploadQueueList = document.querySelector("#upload-queue");
 const deliveredFilesList = document.querySelector("#delivered-files");
+const adminResultsFilterButtons = document.querySelectorAll("[data-admin-results-filter]");
 const orderForm = document.querySelector("#order-form");
 const treatingDoctorSelect = document.querySelector("#treating-doctor-select");
 const profileForm = document.querySelector("#profile-form");
@@ -1220,17 +1224,49 @@ async function createDoctorFromAdmin(formData) {
 }
 
 async function deleteDoctorFromAdmin(email) {
-  if (!confirm(`¿Archivar al doctor ${email}? Se bloqueará su acceso, pero sus datos se conservarán.`)) return;
+  if (!confirm(`¿Desactivar el acceso de ${email}? El usuario no podrá iniciar sesión, pero podrás restaurarlo después.`)) return;
   try {
     const res = await fetch(`/api/doctors/${encodeURIComponent(email)}`, { method: "DELETE", headers: { "x-admin-token": getAdminToken() } });
-    if (!res.ok) { showToast("No se pudo eliminar el doctor."); return; }
+    if (!res.ok) { showToast("No se pudo desactivar el doctor."); return; }
     archivedDoctorDirectory[email] = { ...doctorDirectory[email], active: false };
     if (editingDoctorEmail === email) editingDoctorEmail = "";
     delete doctorDirectory[email];
     renderAdmin();
-    showToast("Doctor archivado. Sus datos se conservaron.");
+    showToast("Acceso desactivado. El perfil se puede restaurar o eliminar definitivamente.");
   } catch (e) {
-    showToast("Error de conexión al eliminar doctor.");
+    showToast("Error de conexión al desactivar el doctor.");
+  }
+}
+
+async function permanentlyDeleteDoctorFromAdmin(email) {
+  const doctor = doctorDirectory[email] || archivedDoctorDirectory[email];
+  const displayName = doctor?.name || email;
+  const confirmed = confirm(
+    `¿Eliminar definitivamente a ${displayName}?\n\nSe borrarán su acceso, perfil y sesiones. Las órdenes de pacientes se conservarán como historial. Esta acción no se puede deshacer.`,
+  );
+  if (!confirmed) return;
+  if (!confirm(`Confirmación final: eliminar permanentemente ${email}.`)) return;
+
+  try {
+    const res = await fetch(`/api/doctors/${encodeURIComponent(email)}?permanent=true`, {
+      method: "DELETE",
+      headers: { "x-admin-token": getAdminToken() },
+    });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) {
+      showToast(data.error || "No se pudo eliminar el perfil.");
+      return;
+    }
+    delete doctorDirectory[email];
+    delete archivedDoctorDirectory[email];
+    if (editingDoctorEmail === email) editingDoctorEmail = "";
+    renderAdmin();
+    const historyCopy = data.preservedOrders
+      ? ` Se conservaron ${data.preservedOrders} órdenes en el historial.`
+      : "";
+    showToast(`Perfil eliminado definitivamente.${historyCopy}`);
+  } catch {
+    showToast("Error de conexión al eliminar el perfil.");
   }
 }
 
@@ -1842,7 +1878,26 @@ function renderAdmin() {
   }
 
   const selectedStatus = adminStatusFilter?.value || "all";
-  const allDoctors = Object.values(doctorDirectory);
+  const doctorSearch = (adminDoctorSearch?.value || "")
+    .trim()
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "");
+  const allActiveDoctors = Object.values(doctorDirectory);
+  const allDoctors = allActiveDoctors.filter((doctor) => {
+    if (!doctorSearch) return true;
+    return [doctor.name, doctor.email, doctor.id, doctor.specialty, doctor.clinic, doctor.contactPhone, doctor.city]
+      .join(" ")
+      .toLowerCase()
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "")
+      .includes(doctorSearch);
+  });
+  if (adminDoctorCount) {
+    adminDoctorCount.textContent = doctorSearch
+      ? `${allDoctors.length} de ${allActiveDoctors.length} doctores`
+      : `${allActiveDoctors.length} doctores activos`;
+  }
   const visibleOrders = orders.filter((order) => selectedStatus === "all" || order.status === selectedStatus);
   const newOrders = orders.filter((order) => order.status === "Recibida").length;
   const scheduledOrders = orders.filter((order) => order.status === "Agendada").length;
@@ -1898,7 +1953,7 @@ function renderAdmin() {
           <td data-label="Contacto"><span>${escapeHtml(doctor.email)}</span><small>${escapeHtml(doctor.contactPhone || "Sin teléfono")} · ${escapeHtml(doctor.city || "Sin ciudad")}</small></td>
           <td data-label="Cuenta"><span class="admin-chip">${doctor.accountType === "clinic" ? "Clínica" : "Personal"}</span><small>${escapeHtml(doctor.clinic || "Sin clínica")}</small></td>
           <td data-label="Socios"><strong>${Number(doctor.partner.referredPatients)} pacientes</strong><small>${Number(doctor.partner.points).toLocaleString("es-MX")} pts · ${escapeHtml(tier.shortName)}</small></td>
-          <td data-label="Acciones" class="admin-doctor-actions"><button class="small-action admin-edit-doctor" data-email="${escapeHtml(doctor.email)}" type="button">${isEditing ? "Cerrar" : "Editar"}</button></td>
+          <td data-label="Acciones" class="admin-doctor-actions"><button class="small-action admin-edit-doctor" data-email="${escapeHtml(doctor.email)}" type="button">${isEditing ? "Cerrar" : "Editar"}</button><button class="admin-delete-link admin-permanent-delete-doctor" data-email="${escapeHtml(doctor.email)}" type="button">Eliminar</button></td>
         </tr>
         ${isEditing ? `<tr class="admin-doctor-editor-row"><td colspan="5">
           <form class="admin-doctor-edit-form" data-edit-email="${escapeHtml(doctor.email)}">
@@ -1911,11 +1966,11 @@ function renderAdmin() {
             <label class="admin-edit-photo">Foto del perfil<input name="profilePhoto" type="file" accept="image/png,image/jpeg,image/webp" /><small>Selecciona una imagen para guardarla o reemplazarla.</small></label>
             <label class="admin-edit-notification"><input name="notifications" type="checkbox" ${doctor.notifications !== false ? "checked" : ""} /> Notificar resultados por correo</label>
             <div class="admin-edit-password"><span>Nueva contraseña</span><div class="admin-pw-row"><div class="password-field"><input class="admin-pw-input" type="password" minlength="8" autocomplete="new-password" placeholder="Dejar vacía para conservar" data-pw-email="${escapeHtml(doctor.email)}" /><button class="password-toggle" type="button" data-password-toggle aria-label="Mostrar contraseña" aria-pressed="false">Ver</button></div><button class="small-action admin-reset-password" data-email="${escapeHtml(doctor.email)}" type="button">Restablecer</button></div></div>
-            <div class="admin-edit-actions"><button class="primary-action" type="submit">Guardar cambios</button><button class="ghost-action admin-delete-doctor" data-email="${escapeHtml(doctor.email)}" type="button">Archivar</button></div>
+            <div class="admin-edit-actions"><button class="primary-action" type="submit">Guardar cambios</button><button class="ghost-action admin-delete-doctor" data-email="${escapeHtml(doctor.email)}" type="button">Desactivar acceso</button></div>
           </form>
         </td></tr>` : ""}
       `;
-    }).join("") : '<tr><td colspan="5"><p class="admin-helper">No hay doctores activos.</p></td></tr>';
+    }).join("") : `<tr><td colspan="5"><p class="admin-helper">${doctorSearch ? "No encontramos doctores con esa búsqueda." : "No hay doctores activos."}</p></td></tr>`;
 
   if (adminArchivedList) {
     const archived = Object.values(archivedDoctorDirectory);
@@ -1924,7 +1979,7 @@ function renderAdmin() {
         <header><strong>${escapeHtml(doctor.name)}</strong><span class="admin-chip">Archivado</span></header>
         <span>${escapeHtml(doctor.email)}</span>
         <small>${doctor.archivedAt ? new Date(doctor.archivedAt).toLocaleString("es-MX") : "Acceso bloqueado"}</small>
-        <button class="small-action admin-restore-doctor" data-email="${escapeHtml(doctor.email)}" type="button">Restaurar perfil</button>
+        <div class="admin-archived-actions"><button class="small-action admin-restore-doctor" data-email="${escapeHtml(doctor.email)}" type="button">Restaurar acceso</button><button class="danger-action admin-permanent-delete-doctor" data-email="${escapeHtml(doctor.email)}" type="button">Eliminar definitivamente</button></div>
       </article>`).join("") : '<p class="admin-helper">No hay perfiles archivados.</p>';
   }
   if (adminReviewList) {
@@ -2001,23 +2056,64 @@ function renderDeliveredFiles() {
   const entries = Object.entries(deliveredFilesIndex).flatMap(([orderId, entry]) =>
     (entry.files || []).map((file) => ({ orderId, file })),
   );
+  const pendingOrders = orders.filter((order) => {
+    if (!["Completa", "Lista para descargar"].includes(order.status)) return false;
+    const files = deliveredFilesIndex[order.id]?.files || [];
+    const hasAvailableFile = files.some((file) => !file.deleted && !file.downloaded);
+    const hasDownloadedFile = files.some((file) => file.downloaded);
+    const needsResend = files.some((file) => file.resendRequested);
+    const removedByAdmin = files.some((file) => file.deletedBy === "admin" && !file.downloaded);
+    return needsResend || removedByAdmin || (!hasAvailableFile && !hasDownloadedFile);
+  });
+  const availableEntries = entries.filter(({ file }) => !file.deleted && !file.downloaded);
+  const downloadedEntries = entries.filter(({ file }) => file.downloaded && !file.resendRequested);
+  const groups = {
+    "pending-upload": pendingOrders,
+    available: availableEntries,
+    downloaded: downloadedEntries,
+  };
 
-  if (!entries.length) {
-    deliveredFilesList.innerHTML = '<p class="admin-helper">Aún no hay archivos subidos.</p>';
+  document.querySelectorAll("[data-admin-results-count]").forEach((node) => {
+    node.textContent = groups[node.dataset.adminResultsCount]?.length || 0;
+  });
+  adminResultsFilterButtons.forEach((button) => {
+    const active = button.dataset.adminResultsFilter === adminResultsFilter;
+    button.classList.toggle("active", active);
+    button.setAttribute("aria-selected", String(active));
+  });
+
+  if (adminResultsFilter === "pending-upload") {
+    deliveredFilesList.innerHTML = pendingOrders.length
+      ? pendingOrders.map((order) => {
+          const resendRequested = (deliveredFilesIndex[order.id]?.files || []).some((file) => file.resendRequested);
+          return `<article class="download-card result-work-card">
+            <header><strong>${escapeHtml(order.patient)}</strong><span class="admin-chip ${resendRequested ? "chip-resend" : "chip-pending"}">${resendRequested ? "Reenvío solicitado" : "Falta resultado"}</span></header>
+            <span>${escapeHtml(order.studies.join(", "))}</span>
+            <small>${escapeHtml(order.id)} · ${escapeHtml(order.doctor || "Doctor no disponible")}</small>
+            <button class="small-action select-result-order" data-select-result-order="${escapeHtml(order.id)}" type="button">Seleccionar para subir</button>
+          </article>`;
+        }).join("")
+      : '<p class="admin-helper admin-results-empty">No hay estudios terminados pendientes de subir.</p>';
     return;
   }
 
-  entries.sort((a, b) => (b.file.uploadedAt || "").localeCompare(a.file.uploadedAt || ""));
+  const visibleEntries = groups[adminResultsFilter] || [];
+  if (!visibleEntries.length) {
+    deliveredFilesList.innerHTML = `<p class="admin-helper admin-results-empty">${adminResultsFilter === "available" ? "No hay resultados esperando descarga." : "Aún no hay resultados descargados."}</p>`;
+    return;
+  }
 
-  deliveredFilesList.innerHTML = entries
+  visibleEntries.sort((a, b) =>
+    (b.file.downloadedAt || b.file.uploadedAt || "").localeCompare(a.file.downloadedAt || a.file.uploadedAt || ""),
+  );
+
+  deliveredFilesList.innerHTML = visibleEntries
     .map(({ orderId, file }) => {
       const order = orders.find((currentOrder) => currentOrder.id === orderId);
       const patient = order?.patient || orderId;
-      const chip = file.resendRequested
-        ? '<span class="admin-chip chip-resend">Reenvío solicitado</span>'
-        : file.deleted || file.downloaded
-          ? '<span class="admin-chip">Descargado y eliminado</span>'
-          : '<span class="admin-chip chip-pending">Pendiente de descarga</span>';
+      const chip = file.deleted || file.downloaded
+        ? '<span class="admin-chip chip-downloaded">Descargado</span>'
+        : '<span class="admin-chip chip-available">Disponible</span>';
       const when = file.downloadedAt || file.uploadedAt || "";
       const canDelete = !file.deleted && !file.downloaded && file.storagePrefix;
       return `
@@ -2762,6 +2858,14 @@ resultsTabButtons.forEach((btn) => {
 });
 
 adminStatusFilter?.addEventListener("change", renderAdmin);
+adminDoctorSearch?.addEventListener("input", renderAdmin);
+
+adminResultsFilterButtons.forEach((button) => {
+  button.addEventListener("click", () => {
+    adminResultsFilter = button.dataset.adminResultsFilter;
+    renderDeliveredFiles();
+  });
+});
 
 adminOrderTable?.addEventListener("change", async (event) => {
   const statusControl = event.target.closest("[data-admin-status]");
@@ -2877,6 +2981,13 @@ uploadQueueList?.addEventListener("click", (event) => {
 });
 
 deliveredFilesList?.addEventListener("click", async (event) => {
+  const selectOrderBtn = event.target.closest("[data-select-result-order]");
+  if (selectOrderBtn) {
+    if (manualUploadOrder) manualUploadOrder.value = selectOrderBtn.dataset.selectResultOrder;
+    manualUploadForm?.scrollIntoView({ behavior: "smooth", block: "center" });
+    window.setTimeout(() => uploadDropzone?.focus(), 350);
+    return;
+  }
   const deleteBtn = event.target.closest(".admin-delete-file");
   if (!deleteBtn) {
     return;
@@ -2928,6 +3039,12 @@ adminDoctorList?.addEventListener("click", async (event) => {
   const deleteBtn = event.target.closest(".admin-delete-doctor");
   if (deleteBtn) {
     await deleteDoctorFromAdmin(deleteBtn.dataset.email);
+    return;
+  }
+
+  const permanentDeleteBtn = event.target.closest(".admin-permanent-delete-doctor");
+  if (permanentDeleteBtn) {
+    await permanentlyDeleteDoctorFromAdmin(permanentDeleteBtn.dataset.email);
     return;
   }
 
@@ -2984,6 +3101,11 @@ adminDoctorList?.addEventListener("submit", async (event) => {
 });
 
 adminArchivedList?.addEventListener("click", async (event) => {
+  const permanentDeleteBtn = event.target.closest(".admin-permanent-delete-doctor");
+  if (permanentDeleteBtn) {
+    await permanentlyDeleteDoctorFromAdmin(permanentDeleteBtn.dataset.email);
+    return;
+  }
   const button = event.target.closest(".admin-restore-doctor");
   if (!button) return;
   const res = await fetch(`/api/doctors/${encodeURIComponent(button.dataset.email)}/restore`, { method: "PUT", headers: { "x-admin-token": getAdminToken() } });
